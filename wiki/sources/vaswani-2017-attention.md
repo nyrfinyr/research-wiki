@@ -124,17 +124,14 @@ Self-attention è più veloce di un RNN quando `n < d`, condizione tipica per ra
 - L'interpretabilità delle teste di attention è suggerita ("many appear to exhibit behavior related to syntactic and semantic structure", §4) ma non quantificata.
 - Non viene confrontato con baseline non-NMT (es. modelli linguistici puri) — questo arriverà nei follow-up della letteratura.
 
-## Entità citate
+## Affiliazioni e infrastruttura
 
-- Autori: [[ashish-vaswani]], [[noam-shazeer]], [[niki-parmar]], [[jakob-uszkoreit]], [[llion-jones]], [[aidan-gomez]], [[lukasz-kaiser]], [[illia-polosukhin]].
-- Affiliazioni: [[google-brain]], [[google-research]], University of Toronto (Gomez).
-- Tool: [[tensor2tensor]] (codebase usata, open source su GitHub).
-- Dataset/benchmark: [[wmt-2014]], [[penn-treebank]].
+- Autori: vedi frontmatter `authors:`. Affiliazioni dichiarate nel paper: Google Brain (Vaswani, Shazeer, Polosukhin), Google Research (Parmar, Uszkoreit, Jones, Kaiser), University of Toronto (Gomez).
 - Hardware: NVIDIA P100 (8× per training).
 
 ## Concetti citati
 
-[[transformer]], [[self-attention]], [[scaled-dot-product-attention]], [[multi-head-attention]], [[positional-encoding]], [[encoder-decoder-architecture]], [[sequence-transduction]], [[layer-normalization]], [[byte-pair-encoding]], [[label-smoothing]], [[bleu]].
+[[transformer]], [[self-attention]], [[scaled-dot-product-attention]], [[multi-head-attention]], [[positional-encoding]], [[encoder-decoder-architecture]], [[sequence-transduction]], [[layer-normalization]], [[byte-pair-encoding]], [[label-smoothing]], [[bleu]], [[tensor2tensor]], [[wmt-2014]], [[penn-treebank]].
 
 ## Citazioni dirette rilevanti
 

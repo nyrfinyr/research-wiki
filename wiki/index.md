@@ -14,38 +14,11 @@ Catalogo di tutte le pagine del wiki. L'LLM lo aggiorna a ogni ingest. Leggi que
 
 - [[sources/vaswani-2017-attention]] — Transformer: prima architettura di sequence transduction interamente basata su attention; SOTA su WMT 2014 EN-DE/EN-FR · 2026-05-15
 
-## Entities
-
-<!-- Autori, lab, istituzioni, tool, dataset, benchmark. -->
-
-### Autori
-
-- [[entities/ashish-vaswani]] — primo autore Transformer, Google Brain (2017)
-- [[entities/noam-shazeer]] — ideatore di scaled dot-product e multi-head attention, Google Brain
-- [[entities/niki-parmar]] — Google Research, contributo a tensor2tensor e model variants
-- [[entities/jakob-uszkoreit]] — Google Research; propose per primo di sostituire RNN con self-attention
-- [[entities/llion-jones]] — Google Research; codebase iniziale, efficient inference, visualizzazioni
-- [[entities/aidan-gomez]] — University of Toronto / Google Brain; co-implementatore tensor2tensor
-- [[entities/lukasz-kaiser]] — Google Brain; co-implementatore tensor2tensor
-- [[entities/illia-polosukhin]] — co-progettista dei primi modelli Transformer (ex Google Research)
-
-### Lab / organizzazioni
-
-- [[entities/google-brain]]
-- [[entities/google-research]]
-
-### Tool
-
-- [[entities/tensor2tensor]] — codebase TF per seq2seq, usata in Vaswani 2017
-
-### Dataset / benchmark
-
-- [[entities/wmt-2014]] — benchmark MT EN-DE / EN-FR
-- [[entities/penn-treebank]] — benchmark constituency parsing inglese (WSJ)
-
 ## Concepts
 
-<!-- Idee, metodi, framework, problemi. -->
+<!-- Idee, metodi, framework, problemi. Tool / dataset / benchmark stanno qui (non in entities). -->
+
+### Architetture e metodi
 
 - [[concepts/transformer]] — architettura encoder-decoder interamente basata su attention
 - [[concepts/self-attention]] — intra-attention, base computazionale del Transformer
@@ -57,6 +30,12 @@ Catalogo di tutte le pagine del wiki. L'LLM lo aggiorna a ogni ingest. Leggi que
 - [[concepts/layer-normalization]] — normalizzazione per feature
 - [[concepts/byte-pair-encoding]] — tokenizzazione sub-word
 - [[concepts/label-smoothing]] — regolarizzazione del target
+
+### Tool, dataset, benchmark
+
+- [[concepts/tensor2tensor]] — codebase TF per seq2seq, usata in Vaswani 2017
+- [[concepts/wmt-2014]] — benchmark MT EN-DE / EN-FR
+- [[concepts/penn-treebank]] — benchmark constituency parsing inglese (WSJ)
 - [[concepts/bleu]] — metrica MT n-gram-based
 
 ## Syntheses

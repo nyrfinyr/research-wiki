@@ -4,7 +4,9 @@
 
 ## Domain
 
-Wiki personale di **ricerca scientifica**. Raccoglie paper (principalmente via Zotero), articoli divulgativi, talk, report tecnici. Costruisce nel tempo pagine per entità (autori, lab, istituzioni, tool/dataset/benchmark) e concetti (idee, metodi, framework, problemi aperti), più sintesi cross-cutting (confronti, rassegne, tesi di lettura).
+Wiki personale di **ricerca scientifica**. Raccoglie paper (principalmente via Zotero), articoli divulgativi, talk, report tecnici. Costruisce nel tempo pagine per concetti (idee, metodi, framework, problemi aperti) e sintesi cross-cutting (confronti, rassegne, tesi di lettura).
+
+**Niente pagine per autori o entità.** Gli autori vivono solo nella frontmatter `authors: [...]` delle pagine source e nelle citazioni inline — non creare mai `entities/<autore>.md` automaticamente durante l'ingest. Se serve una pagina per un'organizzazione, un tool o un dataset, trattala come concetto sotto `concepts/`.
 
 Lingua del wiki: **italiano** per le sintesi e i commenti dell'utente; **inglese** quando si citano direttamente passaggi originali dei paper. I titoli delle pagine seguono la lingua più naturale per l'entità/concetto (es. nomi propri non si traducono).
 
@@ -33,8 +35,7 @@ Per aggiungere un paper *nuovo* alla libreria prima di ingestirlo, usa `zotero -
 └── wiki/
     ├── index.md
     ├── log.md
-    ├── entities/      # autori, lab, istituzioni, tool, dataset, benchmark
-    ├── concepts/      # idee, metodi, problemi, framework
+    ├── concepts/      # idee, metodi, problemi, framework, tool/dataset trattati come concetti
     ├── sources/       # una pagina riassunto per ogni fonte ingerita
     └── syntheses/     # confronti, rassegne, risposte filed-back
 ```
@@ -46,7 +47,7 @@ Frontmatter YAML obbligatoria su ogni pagina:
 ```yaml
 ---
 title: <Titolo leggibile>
-type: entity | concept | source | synthesis
+type: concept | source | synthesis
 tags: [...]
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
@@ -64,21 +65,20 @@ year: <YYYY>
 
 Sezioni per tipo:
 
-- **source (paper)**: TL;DR (1 paragrafo) → Contributo principale (1-3 bullet) → Metodo → Risultati chiave (con numeri e tabelle quando rilevanti) → Limitazioni dichiarate dagli autori → Domande aperte / critiche → Entità citate (link) → Concetti citati (link). Le quote dirette includono numero di pagina/sezione: `> "..." (§3.2, p. 7)`.
-- **entity**: 1 paragrafo di definizione → Cosa sappiamo (bullet, ciascuno con `[source: raw/papers/...]`) → Relazioni (`[[link]]` ad altre entità/concetti) → Contraddizioni (se presenti) → Sources (backlinks auto-raccolti).
-- **concept**: 1 paragrafo di definizione → Claim chiave con citazioni → Concetti/entità collegate → Domande aperte → Sources.
+- **source (paper)**: TL;DR (1 paragrafo) → Contributo principale (1-3 bullet) → Metodo → Risultati chiave (con numeri e tabelle quando rilevanti) → Limitazioni dichiarate dagli autori → Domande aperte / critiche → Concetti citati (link). Le quote dirette includono numero di pagina/sezione: `> "..." (§3.2, p. 7)`. Gli autori non hanno una pagina dedicata: restano solo nella frontmatter `authors:` e nelle citazioni inline.
+- **concept**: 1 paragrafo di definizione → Claim chiave con citazioni → Concetti collegati → Domande aperte → Sources.
 - **synthesis**: domanda/tesi in cima → argomentazione con citazioni → verdetto/risposta → fonti utilizzate.
 
 ## Citation rules
 
-- Link interni: `[[entity-slug]]` o `[[concepts/foo]]` per disambiguazione.
+- Link interni: `[[concept-slug]]` o `[[concepts/foo]]` per disambiguazione.
 - Citazioni di fonte inline a fine claim: `… come mostrato in [source: raw/papers/vaswani-2017-attention.pdf]`. Per paper con DOI, opzionalmente aggiungi anche `[doi:10.xxxx/...]`.
 - Contraddizioni: `> ⚠ Contradicts [[other-source]]: <spiegazione in una riga>`.
 
 ## Convenzioni operative specifiche di questo wiki
 
 1. **Una fonte alla volta.** Discutere takeaways con l'utente prima di scrivere — niente batch silenziosi salvo richiesta esplicita.
-2. **Pagine entità autore**: includere affiliazione corrente, principali lab/coautori, link a Google Scholar/Semantic Scholar quando noto. Non inventare dati biografici non presenti nelle fonti.
+2. **Niente pagine autore.** Gli autori restano nella frontmatter `authors:` delle pagine source. Non creare `entities/<autore>.md` né altra pagina per persone fisiche, salvo richiesta esplicita dell'utente.
 3. **Numeri e formule**: preservare con cura. Quando una claim si appoggia a un numero specifico (accuracy, FLOPs, parametri), citare la tabella o sezione esatta.
 4. **Open questions** vivono sia nella pagina della fonte sia nell'indice (sezione "Open questions").
 5. **Git**: ogni ingest produce un commit a sé con messaggio `ingest: <Author> (<Year>) — <Short Title>`. Lint passes: `lint: <date> — <high-level summary>`. Init/refactor strutturali: messaggi descrittivi liberi.
@@ -89,7 +89,7 @@ Sezioni per tipo:
 2. Leggi il paper end-to-end (per PDF >10 pagine, leggi a range di pagine).
 3. Discuti 3-6 takeaway con l'utente prima di scrivere.
 4. Scrivi `wiki/sources/<slug>.md` (formato paper sopra).
-5. Per ogni entità/concetto citato: aggiorna pagina esistente o crea stub.
+5. Per ogni concetto citato: aggiorna pagina esistente o crea stub. **Non** creare pagine per autori (restano solo in frontmatter `authors:`).
 6. Aggiorna `wiki/index.md`.
 7. Appendi a `wiki/log.md`: `## [YYYY-MM-DD] ingest | <Author> (<Year>) — <Title>` + bullet pagine toccate.
 8. `git add -A && git commit -m "ingest: <Author> (<Year>) — <Short Title>"`.
@@ -103,7 +103,7 @@ Sezioni per tipo:
 
 ## Workflow di lint
 
-Su richiesta. Check: orphan, stub, link rotti, contraddizioni, pagine mancanti (entità/concetti citati ≥3 volte senza pagina propria), drift dell'indice, gap di dati. Output: un report unico; attendere approvazione prima di applicare.
+Su richiesta. Check: orphan, stub, link rotti, contraddizioni, pagine mancanti (concetti citati ≥3 volte senza pagina propria), drift dell'indice, gap di dati. Output: un report unico; attendere approvazione prima di applicare.
 
 ## Conventions
 

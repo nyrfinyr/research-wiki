@@ -1,6 +1,6 @@
 ---
 title: Penn Treebank (WSJ)
-type: entity
+type: concept
 tags: [dataset, benchmark, parsing, nlp]
 created: 2026-05-15
 updated: 2026-05-15
