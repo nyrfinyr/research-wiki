@@ -2,3 +2,10 @@
 .obsidian/workspace*
 .obsidian/cache
 .trash/
+
+# Astro Starlight site
+site/node_modules/
+site/dist/
+site/.astro/
+site/.DS_Store
+
