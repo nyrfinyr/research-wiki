@@ -31,3 +31,17 @@ Pages created:
 Pages updated: `wiki/index.md` (populated sources/entities/concepts/open-questions).
 
 Contradictions detected: none (first source). Open questions filed in `index.md`.
+
+## [2026-05-18] query | extending Look Twice to Video-VQA (synthesis filed-back)
+
+Discussion of a research direction: applying the LoT method ([[sources/morini-2026-look-twice]]) to Video-VQA, taking into account Map the Flow, SToP, SelfElicit, and Qwen2.5/3-VL. None of these sources is ingested yet; the synthesis was written from direct reads of the PDFs in `raw/papers/`.
+
+Pages created:
+
+- `wiki/syntheses/extending-look-twice-to-video-vqa.md`
+
+Pages updated:
+
+- `wiki/index.md` (added entry under Syntheses, bumped `updated`).
+
+Dangling wikilinks intentionally left: `sources/morini-2026-look-twice`, `sources/kim-2026-map-the-flow`, `sources/kim-2026-sink-token-aware-pruning`, `sources/liu-2025-selfelicit`, `concepts/qwen2-5-vl`, `concepts/qwen3-vl` — to be resolved when the corresponding sources are ingested.

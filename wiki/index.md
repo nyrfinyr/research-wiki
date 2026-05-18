@@ -1,7 +1,7 @@
 ---
 title: Index
 type: index
-updated: 2026-05-15
+updated: 2026-05-18
 ---
 
 # Index
@@ -42,7 +42,7 @@ Catalog of all wiki pages. The LLM updates it on every ingest. Read this first w
 
 <!-- Comparisons, surveys, filed-back answers. -->
 
-_(none yet)_
+- [[syntheses/extending-look-twice-to-video-vqa]] — design memo for transferring LoT from image KB-VQA to Video-VQA, integrating Map the Flow, SToP, SelfElicit on a Qwen3-VL backbone · 2026-05-18
 
 ## Open questions
 
