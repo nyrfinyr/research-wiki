@@ -60,3 +60,14 @@ Pages updated:
 - `wiki/index.md` — added the six cited source entries under "Sources"; added a note flagging the broader index drift (full resync requires a lint pass).
 
 No new ingest performed. A `lint` pass is recommended to (a) fully repopulate `index.md` Sources / Concepts / Open questions sections from the filesystem, (b) check orphans / dangling links across the now-larger wiki, (c) reconcile the legacy `entities/` directory (pre-dating the no-entity-pages rule) with the current schema.
+
+## [2026-05-18] refactor | replace catalog index with static landing page
+
+The previous `wiki/index.md` was a hand-maintained catalog of Sources / Concepts / Open questions that had drifted badly out of sync (entries for 1 of 22 sources and ~10 of ~150 concepts). Rather than re-syncing it (which would only postpone the next drift), we removed the catalog responsibility from the index entirely.
+
+Pages updated:
+
+- `wiki/index.md` — rewritten as a static landing page. Tells the reader (human or LLM) that the filesystem is the catalog and to list `wiki/sources/`, `wiki/concepts/`, `wiki/syntheses/` directly.
+- `CLAUDE.md` — directory-layout comment annotated; ingest workflow step "Update wiki/index.md" removed; query workflow step 1 rewritten as "list the directories"; convention 4 ("open questions live on the source page and in the index") simplified to "on the source page only".
+
+No source or concept pages were touched. The legacy `entities/` directory (pre-dating the no-entity-pages rule) is still present and remains a separate cleanup item.
