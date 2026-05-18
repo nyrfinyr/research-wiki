@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # Video-LLaMA
 
-MLLM video early-era di Alibaba DAMO (Zhang et al., 2023): combina un Video Q-Former e un Audio Q-Former sopra encoder pretrained, collegati a un LLM LLaMA. Primo MLLM video con supporto audio integrato; predecessore della linea VideoLLaMA / VideoLLaMA 3.
+Early-era video MLLM from Alibaba DAMO (Zhang et al., 2023): combines a Video Q-Former and an Audio Q-Former on top of pretrained encoders, connected to a LLaMA LLM. First video MLLM with integrated audio support; predecessor of the VideoLLaMA / VideoLLaMA 3 line.
 
 ## Sources
 
-- [[li-2024-mvbench]] — modello di confronto
+- [[li-2024-mvbench]] — comparison model
 
-## Concetti correlati
+## Related concepts
 
-- [[q-former]] — modulo riutilizzato
-- [[videollama-3]] — discendente
+- [[q-former]] — reused module
+- [[videollama-3]] — descendant
 - [[llama]] — LLM backbone

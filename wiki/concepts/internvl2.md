@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # InternVL2
 
-Seconda iterazione della famiglia InternVL (Shanghai AI Lab, 2024): vision encoder InternViT + projector + LLM (vari backbone tra cui InternLM2 e Qwen2). Disponibile in scale da 1B a 76B, supporta video tramite frame sampling. Modello valutato su long-video benchmark.
+Second iteration of the InternVL family (Shanghai AI Lab, 2024): InternViT vision encoder + projector + LLM (various backbones including InternLM2 and Qwen2). Available at scales from 1B to 76B, supports video via frame sampling. Model evaluated on long-video benchmarks.
 
 ## Sources
 
-- [[wang-2025-lvbench]] — modello valutato su LVBench
+- [[wang-2025-lvbench]] — model evaluated on LVBench
 
-## Concetti correlati
+## Related concepts
 
-- [[internvl-chat]] — versione iniziale
-- [[llava-onevision]], [[qwen2-5-vl]] — competitor
+- [[internvl-chat]] — initial version
+- [[llava-onevision]], [[qwen2-5-vl]] — competitors

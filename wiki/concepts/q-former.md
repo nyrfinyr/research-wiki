@@ -8,16 +8,16 @@ updated: 2026-05-15
 
 # Q-Former
 
-Query Transformer introdotto da BLIP-2 (Salesforce, 2023): un Transformer leggero (tipicamente BERT-base) con un set fisso di **query learnable** che estraggono un numero ridotto di token visivi da feature image/video, comprimendoli prima di darli in pasto all'LLM. Diventato modulo paradigmatico di compressione token visivi nei MLLM image+video; usato da BLIP-2, InstructBLIP, Video-LLaMA, VideoChat2.
+Query Transformer introduced by BLIP-2 (Salesforce, 2023): a lightweight Transformer (typically BERT-base) with a fixed set of **learnable queries** that extract a reduced number of visual tokens from image/video features, compressing them before feeding them to the LLM. It has become a paradigmatic visual-token compression module in image+video MLLMs; used by BLIP-2, InstructBLIP, Video-LLaMA, VideoChat2.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — modulo di compressione token visivi
-- [[li-2024-mvbench]] — BERT-base con 32 query (Stage 1) + 64 random-init (Stage 2/3) = 96 query in VideoChat2
-- [[wang-2025-lvbench]] — usato da Video-LLaMA
+- [[fu-2025-video-mme]] — visual-token compression module
+- [[li-2024-mvbench]] — BERT-base with 32 queries (Stage 1) + 64 random-init (Stage 2/3) = 96 queries in VideoChat2
+- [[wang-2025-lvbench]] — used by Video-LLaMA
 
-## Concetti correlati
+## Related concepts
 
-- [[blip-2]] — paper d'origine
-- [[instructblip]] — instruction-tuning su Q-Former
-- [[videochat2]] — adattamento video con 96 query
+- [[blip-2]] — origin paper
+- [[instructblip]] — instruction-tuning on Q-Former
+- [[videochat2]] — video adaptation with 96 queries

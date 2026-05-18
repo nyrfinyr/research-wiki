@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # LLaVA-NeXT-Video
 
-Estensione video di LLaVA-NeXT (2024): aggiunge supporto per sequenze di frame a partire dal modello image-only. MLLM open-source di riferimento valutato su benchmark video.
+Video extension of LLaVA-NeXT (2024): adds support for frame sequences starting from the image-only model. Reference open-source MLLM evaluated on video benchmarks.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — MLLM video open-source valutato
+- [[fu-2025-video-mme]] — open-source video MLLM evaluated
 
-## Concetti correlati
+## Related concepts
 
-- [[llava-next]] — base image-only
-- [[llava-video]] — successore video
-- [[llava]] — famiglia
+- [[llava-next]] — image-only base
+- [[llava-video]] — video successor
+- [[llava]] — family

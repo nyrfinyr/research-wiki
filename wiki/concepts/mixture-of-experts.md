@@ -8,28 +8,28 @@ updated: 2026-05-15
 
 # Mixture-of-Experts (MoE)
 
-Architettura in cui i blocchi feed-forward del Transformer sono **partizionati in `E` esperti** (FFN paralleli), e ad ogni token un **router** seleziona dinamicamente un subset `k ≪ E` di esperti (tipicamente `k=2`) cui dispatchare il calcolo. Il risultato è un modello con **alto parameter count totale** ma **basso compute attivato per token** — la nomenclatura usuale è "totale-A-attivati", es. **30B-A3B** (30B totali, 3B attivati) o **235B-A22B** (235B totali, 22B attivati). Nel mondo VLM, Qwen3-VL è il primo della famiglia Qwen-VL a introdurre varianti MoE [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1, §2].
+Architecture in which the Transformer's feed-forward blocks are **partitioned into `E` experts** (parallel FFNs), and at each token a **router** dynamically selects a subset `k ≪ E` of experts to dispatch the computation to (typically `k=2`). The result is a model with **high total parameter count** but **low compute activated per token** — the usual nomenclature is "total-A-activated", e.g. **30B-A3B** (30B total, 3B activated) or **235B-A22B** (235B total, 22B activated). In the VLM world, Qwen3-VL is the first in the Qwen-VL family to introduce MoE variants [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1, §2].
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **Sparse activation**: per ogni token, solo `k` esperti partecipano alla forward (e backward). Routing tipicamente top-`k` softmax con load-balancing loss per evitare collasso del router su pochi esperti.
-- **Varianti Qwen3-VL MoE**: due taglie introdotte ex novo nella famiglia — **30B-A3B** e **235B-A22B**; entrambe condividono la stessa ricetta di pre-training (4 stage, 2.2T token) e post-training (SFT su 1.2M campioni, strong-to-weak distillation, RL con SAPO) delle varianti dense (2B/4B/8B/32B) [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1].
-- **Trade-off**: parameter scaling è "gratis" rispetto al compute (sparse) ma **costoso in VRAM** (tutti gli esperti devono essere caricati in memoria); inoltre il routing introduce overhead di comunicazione su multi-GPU. Per inference single-host conviene quando si dispone di VRAM abbondante.
-- **Performance**: Qwen3-VL-235B-A22B compete su STEM, OCR, document understanding, video understanding, grounding con Gemini 2.5 Pro / GPT-5 / Claude Opus 4.1; il flagship MoE è la versione di punta della famiglia [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5].
+- **Sparse activation**: for each token, only `k` experts participate in the forward (and backward). Routing is typically top-`k` softmax with a load-balancing loss to prevent router collapse onto few experts.
+- **Qwen3-VL MoE variants**: two new sizes introduced in the family — **30B-A3B** and **235B-A22B**; both share the same pre-training recipe (4 stages, 2.2T tokens) and post-training (SFT on 1.2M samples, strong-to-weak distillation, RL with SAPO) as the dense variants (2B/4B/8B/32B) [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1].
+- **Trade-off**: parameter scaling is "free" relative to compute (sparse) but **costly in VRAM** (all experts must be loaded in memory); moreover routing introduces communication overhead on multi-GPU. For single-host inference it is worthwhile when abundant VRAM is available.
+- **Performance**: Qwen3-VL-235B-A22B competes on STEM, OCR, document understanding, video understanding, grounding with Gemini 2.5 Pro / GPT-5 / Claude Opus 4.1; the MoE flagship is the top-of-the-line of the family [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5].
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **Switch Transformer** (Fedus 2021): `k=1`, semplifica routing.
-- **GShard / Mixtral**: `k=2`, soft routing con load balancing.
-- **DeepSeekMoE**: esperti fine-grained + shared experts.
-- **Qwen3-VL MoE**: non riporta dettagli sul routing specifico (`k`, expert count, balancing loss); citata solo a livello di sigla `A3B / A22B` [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1].
+- **Switch Transformer** (Fedus 2021): `k=1`, simplifies routing.
+- **GShard / Mixtral**: `k=2`, soft routing with load balancing.
+- **DeepSeekMoE**: fine-grained experts + shared experts.
+- **Qwen3-VL MoE**: does not report details on specific routing (`k`, expert count, balancing loss); only cited at the level of the `A3B / A22B` acronym [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1].
 
-## Concetti correlati
+## Related concepts
 
-- [[supervised-fine-tuning]] — ricetta di post-training condivisa con le varianti dense Qwen3-VL.
-- [[instruction-tuning]] — applicata anche alle varianti MoE.
-- [[direct-preference-optimization]] — DPO/SAPO si applicano a MoE come ai dense.
+- [[supervised-fine-tuning]] — post-training recipe shared with the Qwen3-VL dense variants.
+- [[instruction-tuning]] — also applied to MoE variants.
+- [[direct-preference-optimization]] — DPO/SAPO applies to MoE as it does to dense.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — introduce le varianti MoE 30B-A3B e 235B-A22B.
+- [[qwen3-vl-2025-tech-report]] — introduces the 30B-A3B and 235B-A22B MoE variants.

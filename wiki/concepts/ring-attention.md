@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Ring Attention
 
-Ring Attention è una tecnica di parallelizzazione dell'attenzione su sequenze lunghissime in cui ogni device tiene una chunk dei token K/V e li fa "circolare" tra i device in modo che ogni Q veda tutti i K, senza mai materializzare la matrice di attenzione completa su un singolo nodo. Permette di scalare il [[long-context]] linearmente nel numero di device.
+Ring Attention is a technique for parallelizing attention over very long sequences in which each device holds a chunk of the K/V tokens and "circulates" them among devices so that each Q sees all the Ks, without ever materializing the full attention matrix on a single node. It allows [[long-context]] to scale linearly in the number of devices.
 
-Nel wiki è citata come la tecnica long-context dietro a Large World Model nei lavori su video benchmark.
+In the wiki it is cited as the long-context technique behind Large World Model in work on video benchmarks.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — citata come tecnica per long-context
-- [[wang-2025-lvbench]] — citata per LWM
+- [[fu-2025-video-mme]] — cited as a long-context technique
+- [[wang-2025-lvbench]] — cited for LWM

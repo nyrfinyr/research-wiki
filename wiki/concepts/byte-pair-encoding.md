@@ -8,9 +8,9 @@ updated: 2026-05-15
 
 # Byte-Pair Encoding (BPE)
 
-Schema di tokenizzazione sub-word: parte dai caratteri e itera fondendo la coppia di simboli più frequente fino a raggiungere una dimensione di vocabolario target. Permette di rappresentare parole rare e morfologia ricca con un vocabolario fisso e di evitare gli OOV.
+Sub-word tokenization scheme: starts from characters and iterates by merging the most frequent symbol pair until a target vocabulary size is reached. It allows representing rare words and rich morphology with a fixed vocabulary and avoids OOVs.
 
-In [[vaswani-2017-attention]] è usato per WMT 2014 EN-DE con vocabolario sorgente-target condiviso di ~37k token (§5.1) [source: raw/papers/vaswani-2017-attention.pdf §5.1]. Per EN-FR si usa invece word-piece a 32k token.
+In [[vaswani-2017-attention]] it is used for WMT 2014 EN-DE with a shared source-target vocabulary of ~37k tokens (§5.1) [source: raw/papers/vaswani-2017-attention.pdf §5.1]. For EN-FR a 32k-token word-piece is used instead.
 
 ## Sources
 

@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Temporal Understanding
 
-Il temporal understanding è la competenza di un modello nel cogliere relazioni temporali tra eventi in un video — ordine, direzione, durata, antonimi d'azione — e non solo l'identità degli oggetti o della scena. È la dimensione che separa i video-LLM "veri" dai modelli che di fatto trattano i video come un singolo frame.
+Temporal understanding is a model's ability to capture temporal relations between events in a video — order, direction, duration, action antonyms — and not just the identity of objects or the scene. It is the dimension that separates "real" video-LLMs from models that effectively treat videos as a single frame.
 
-Nel wiki è la competenza centrale misurata da [[mvbench]] e correlata con [[temporal-reasoning]] e [[fine-grained-video-understanding]].
+In the wiki it is the central capability measured by [[mvbench]] and correlates with [[temporal-reasoning]] and [[fine-grained-video-understanding]].
 
 ## Sources
 
-- [[li-2024-mvbench]] — competenza misurata dal benchmark
+- [[li-2024-mvbench]] — capability measured by the benchmark

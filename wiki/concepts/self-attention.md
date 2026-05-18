@@ -8,33 +8,33 @@ updated: 2026-05-15
 
 # Self-Attention
 
-Detta anche **intra-attention**. Meccanismo di attention in cui query, key e value provengono tutte dalla stessa sequenza: relaziona ogni posizione della sequenza con tutte le altre per calcolare una rappresentazione contestuale [source: raw/papers/vaswani-2017-attention.pdf §2].
+Also called **intra-attention**. Attention mechanism in which queries, keys, and values all come from the same sequence: it relates each position of the sequence to every other one to compute a contextual representation [source: raw/papers/vaswani-2017-attention.pdf §2].
 
-Prima del [[transformer]] era stata già usata per reading comprehension, abstractive summarization, textual entailment e sentence embedding (§2 in [[vaswani-2017-attention]]). Il contributo di [[vaswani-2017-attention]] è essere la **prima architettura di sequence transduction interamente basata su self-attention**, senza RNN né convoluzioni.
+Before the [[transformer]] it had already been used for reading comprehension, abstractive summarization, textual entailment, and sentence embedding (§2 in [[vaswani-2017-attention]]). The contribution of [[vaswani-2017-attention]] is being the **first sequence transduction architecture entirely based on self-attention**, with no RNN or convolutions.
 
-## Perché self-attention vs. RNN/CNN
+## Why self-attention vs. RNN/CNN
 
-Tre desiderata sono valutati in §4 di [[vaswani-2017-attention]]:
+Three desiderata are evaluated in §4 of [[vaswani-2017-attention]]:
 
-1. **Complessità computazionale per layer** — self-attention: O(n²·d); RNN: O(n·d²); CNN: O(k·n·d²).
-2. **Operazioni sequenziali** — self-attention: O(1); RNN: O(n); CNN: O(1).
-3. **Path length massimo** tra due posizioni — self-attention: O(1); RNN: O(n); CNN dilatata: O(log_k n).
+1. **Computational complexity per layer** — self-attention: O(n²·d); RNN: O(n·d²); CNN: O(k·n·d²).
+2. **Sequential operations** — self-attention: O(1); RNN: O(n); CNN: O(1).
+3. **Maximum path length** between two positions — self-attention: O(1); RNN: O(n); dilated CNN: O(log_k n).
 
-Self-attention è più veloce di un RNN quando `n < d`, condizione tipica per rappresentazioni sub-word (BPE/word-piece).
+Self-attention is faster than an RNN when `n < d`, a condition typical for sub-word representations (BPE/word-piece).
 
 ## Restricted self-attention
 
-Per ridurre il costo O(n²) si può limitare l'attention a un intorno di dimensione `r` attorno alla posizione di output, portando il path length a O(n/r). Citato come future work in [[vaswani-2017-attention]] §4.
+To reduce the O(n²) cost, attention can be restricted to a neighborhood of size `r` around the output position, bringing the path length to O(n/r). Cited as future work in [[vaswani-2017-attention]] §4.
 
-## Realizzazione nel Transformer
+## Realization in the Transformer
 
-Tre usi distinti in [[transformer]]:
+Three distinct uses in [[transformer]]:
 
-- Self-attention nell'encoder: Q, K, V dall'output del layer precedente.
-- Self-attention **mascherata** nel decoder: stessa cosa ma con maschera triangolare che impedisce di attendere a posizioni future.
-- Encoder-decoder attention (non è self-attention): Q dal decoder, K/V dall'encoder.
+- Self-attention in the encoder: Q, K, V from the output of the previous layer.
+- **Masked** self-attention in the decoder: same thing but with a triangular mask that prevents attending to future positions.
+- Encoder-decoder attention (not self-attention): Q from the decoder, K/V from the encoder.
 
-Implementata via [[scaled-dot-product-attention]] proiettata in [[multi-head-attention]].
+Implemented via [[scaled-dot-product-attention]] projected into [[multi-head-attention]].
 
 ## Sources
 

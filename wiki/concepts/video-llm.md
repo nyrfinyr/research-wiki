@@ -8,54 +8,54 @@ updated: 2026-05-15
 
 # Video LLM
 
-Un **Video LLM** è un [[multimodal-large-language-model|MLLM]] specializzato (o esteso) per l'elaborazione di video. Nel wiki si distinguono due famiglie operative:
+A **Video LLM** is a [[multimodal-large-language-model|MLLM]] specialized (or extended) for video processing. In the wiki two operational families are distinguished:
 
-1. **Image-MLLM applicato frame-by-frame**: un MLLM image-based che riceve un set di frame campionati dal video come immagini multiple e produce la risposta sul concatenato. Esempi: LLaVA, InternVL applicati al video. Vantaggio: riusa direttamente lo stack image-MLLM; svantaggio: nessuna nozione di tempo nativa, sampling uniforme rigido, no temporal grounding.
-2. **Native video-LLM**: un MLLM con supporto nativo per la dimensione temporale (positional encoding 3D, dynamic FPS sampling, video token compression). Esempi tipici nel wiki: [[qwen2-5-vl-2025-tech-report|Qwen2.5-VL]] (T-RoPE absolute-time aligned, dynamic FPS, max 768 frame), [[qwen3-vl-2025-tech-report|Qwen3-VL]] (interleaved MRoPE, textual timestamp tokens, 256K context), [[zhang-2025-videollama-3|VideoLLaMA 3]] (AVT 2D-RoPE + DiffFP), LLaVA-Video, LLaVA-OneVision, VideoChat2 (vedi [[li-2024-mvbench]]).
+1. **Image-MLLM applied frame-by-frame**: an image-based MLLM that receives a set of frames sampled from the video as multiple images and produces the answer on the concatenation. Examples: LLaVA, InternVL applied to video. Advantage: directly reuses the image-MLLM stack; disadvantage: no native notion of time, rigid uniform sampling, no temporal grounding.
+2. **Native video-LLM**: an MLLM with native support for the temporal dimension (3D positional encoding, dynamic FPS sampling, video token compression). Typical examples in the wiki: [[qwen2-5-vl-2025-tech-report|Qwen2.5-VL]] (T-RoPE absolute-time aligned, dynamic FPS, max 768 frames), [[qwen3-vl-2025-tech-report|Qwen3-VL]] (interleaved MRoPE, textual timestamp tokens, 256K context), [[zhang-2025-videollama-3|VideoLLaMA 3]] (AVT 2D-RoPE + DiffFP), LLaVA-Video, LLaVA-OneVision, VideoChat2 (see [[li-2024-mvbench]]).
 
-I source pages del wiki usano "video-LLM" per indicare entrambe le famiglie nel contesto della valutazione su benchmark video; quando serve distinguere, la disambiguazione è esplicita (es. [[wang-2025-lvbench]] tassonomizza in "native long-video models" vs "non-native long-video models").
+The source pages of the wiki use "video-LLM" to refer to both families in the context of evaluation on video benchmarks; when a distinction is needed, the disambiguation is explicit (e.g. [[wang-2025-lvbench]] taxonomizes into "native long-video models" vs "non-native long-video models").
 
-## Sfide tipiche
+## Typical challenges
 
-- **Long-context modeling**: numero di token visivi cresce linearmente con #frame; es. 6.270 token per 32 frame su LLaVA-OneVision-7B [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §1].
-- **Sampling**: uniform vs adaptive ([[keyframe-sampling]]) — vedi [[tang-2025-adaptive-keyframe-sampling]], [[arnab-2025-temporal-chain-of-thought]].
-- **Temporal positional encoding**: MRoPE chunked vs interleaved, T-RoPE absolute-time, textual timestamp tokens — vedi [[qwen3-vl-2025-tech-report]] §2.1, §2.3.
-- **Token compression**: video token pruning, frame pruning (DiffFP), Q-Former — vedi [[zhang-2025-videollama-3]], [[kim-2026-sink-token-aware-pruning]].
-- **Audio**: la maggior parte degli open-source video-LLM **non** lo supporta nativamente, motivo per cui [[lvbench]] e [[wang-2025-lvbench]] lo escludono dal benchmark.
+- **Long-context modeling**: number of visual tokens grows linearly with #frames; e.g. 6,270 tokens for 32 frames on LLaVA-OneVision-7B [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §1].
+- **Sampling**: uniform vs adaptive ([[keyframe-sampling]]) — see [[tang-2025-adaptive-keyframe-sampling]], [[arnab-2025-temporal-chain-of-thought]].
+- **Temporal positional encoding**: chunked vs interleaved MRoPE, T-RoPE absolute-time, textual timestamp tokens — see [[qwen3-vl-2025-tech-report]] §2.1, §2.3.
+- **Token compression**: video token pruning, frame pruning (DiffFP), Q-Former — see [[zhang-2025-videollama-3]], [[kim-2026-sink-token-aware-pruning]].
+- **Audio**: most open-source video-LLMs do **not** support it natively, which is why [[lvbench]] and [[wang-2025-lvbench]] exclude it from the benchmark.
 
-## Famiglie nel wiki
+## Families in the wiki
 
-- **Qwen2.5-VL** (3B/7B/72B) — vedi [[qwen2-5-vl-2025-tech-report]].
-- **Qwen3-VL** (2B/4B/8B/32B + 30B-A3B/235B-A22B MoE) — vedi [[qwen3-vl-2025-tech-report]].
-- **VideoLLaMA 3** (2B/7B, Qwen2.5 backbone, AVT + DiffFP) — vedi [[zhang-2025-videollama-3]].
-- **VideoLLaMA 2** — predecessore con audio encoder.
-- **LLaVA-Video / LLaVA-OneVision / LLaVA-NeXT-Video** — riferimenti come backbone in [[tang-2025-adaptive-keyframe-sampling]], [[doorenbos-2026-video-panels]].
-- **VideoChat / VideoChat2** — vedi [[li-2024-mvbench]].
-- **MovieChat, LWM, mPLUG-Owl3, Apollo, InternVL2.5-Video, GLM4V-Plus, Seed1.5-VL** — citati in tabelle di confronto.
+- **Qwen2.5-VL** (3B/7B/72B) — see [[qwen2-5-vl-2025-tech-report]].
+- **Qwen3-VL** (2B/4B/8B/32B + 30B-A3B/235B-A22B MoE) — see [[qwen3-vl-2025-tech-report]].
+- **VideoLLaMA 3** (2B/7B, Qwen2.5 backbone, AVT + DiffFP) — see [[zhang-2025-videollama-3]].
+- **VideoLLaMA 2** — predecessor with audio encoder.
+- **LLaVA-Video / LLaVA-OneVision / LLaVA-NeXT-Video** — references as backbones in [[tang-2025-adaptive-keyframe-sampling]], [[doorenbos-2026-video-panels]].
+- **VideoChat / VideoChat2** — see [[li-2024-mvbench]].
+- **MovieChat, LWM, mPLUG-Owl3, Apollo, InternVL2.5-Video, GLM4V-Plus, Seed1.5-VL** — cited in comparison tables.
 - **Closed-source**: GPT-4V/4o, Gemini 1.5/2.0/2.5, Claude 3.5/Opus 4.x.
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — native video-LLM con T-RoPE.
-- [[qwen3-vl-2025-tech-report]] — native video-LLM con interleaved MRoPE + textual timestamps.
-- [[zhang-2025-videollama-3]] — paradigma vision-centric, AVT + DiffFP.
+- [[qwen2-5-vl-2025-tech-report]] — native video-LLM with T-RoPE.
+- [[qwen3-vl-2025-tech-report]] — native video-LLM with interleaved MRoPE + textual timestamps.
+- [[zhang-2025-videollama-3]] — vision-centric paradigm, AVT + DiffFP.
 - [[li-2024-mvbench]] — VideoChat2.
-- [[arnab-2025-temporal-chain-of-thought]] — inference-time training-free su video-LLM.
-- [[tang-2025-adaptive-keyframe-sampling]] — keyframe selection plug-and-play.
-- [[doorenbos-2026-video-panels]] — visual prompting su video-LLM.
-- [[zhang-2024-llovi]] — pipeline alternativa caption + LLM.
-- [[wang-2025-lvbench]] — tassonomizza native vs non-native long-video models.
-- [[kim-2026-sink-token-aware-pruning]] — token pruning su video-LLM.
-- [[kim-2025-map-the-flow]] — interpretabilità su video-LLM.
-- [[liu-2026-adaptive-information-flow]] — adaptive information flow nei video-LLM.
+- [[arnab-2025-temporal-chain-of-thought]] — training-free inference-time on video-LLMs.
+- [[tang-2025-adaptive-keyframe-sampling]] — plug-and-play keyframe selection.
+- [[doorenbos-2026-video-panels]] — visual prompting on video-LLMs.
+- [[zhang-2024-llovi]] — alternative caption + LLM pipeline.
+- [[wang-2025-lvbench]] — taxonomizes native vs non-native long-video models.
+- [[kim-2026-sink-token-aware-pruning]] — token pruning on video-LLMs.
+- [[kim-2025-map-the-flow]] — interpretability on video-LLMs.
+- [[liu-2026-adaptive-information-flow]] — adaptive information flow in video-LLMs.
 
-## Concetti correlati
+## Related concepts
 
-- [[multimodal-large-language-model]] — super-categoria.
-- [[vision-language-model]] — categoria adiacente (image-only).
-- [[long-video-understanding]] — task target.
-- [[video-question-answering]] — paradigma.
-- [[keyframe-sampling]] — strategia di input handling.
-- [[video-token-compression]] — strategia di efficienza.
-- [[mrope]] / [[interleaved-mrope]] — positional encoding 3D.
-- [[long-context]] — esigenza strutturale.
+- [[multimodal-large-language-model]] — super-category.
+- [[vision-language-model]] — adjacent category (image-only).
+- [[long-video-understanding]] — target task.
+- [[video-question-answering]] — paradigm.
+- [[keyframe-sampling]] — input-handling strategy.
+- [[video-token-compression]] — efficiency strategy.
+- [[mrope]] / [[interleaved-mrope]] — 3D positional encoding.
+- [[long-context]] — structural requirement.

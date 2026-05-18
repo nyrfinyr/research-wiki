@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Self-Elicit
 
-Self-Elicit (Liu 2025) è un metodo training-free di evidence highlighting in cui il modello stesso identifica, attraverso i propri pattern di attenzione sui layer profondi, le porzioni di contesto rilevanti per la query e le ri-promuove via prompt augmentation. Sfrutta l'attenzione come segnale di rilevanza interno al modello.
+Self-Elicit (Liu 2025) is a training-free evidence-highlighting method in which the model itself identifies, through its own attention patterns over deep layers, the portions of context relevant to the query and re-promotes them via prompt augmentation. It exploits attention as a relevance signal internal to the model.
 
-Nel wiki è il metodo introdotto dal paper Liu 2025 e citato da Look-Twice come precedente diretto sull'idea di attention-as-relevance.
+In the wiki it is the method introduced by the Liu 2025 paper and cited by Look-Twice as a direct precedent for the attention-as-relevance idea.
 
 ## Sources
 
-- [[liu-2025-selfelicit]] — metodo introdotto dal paper
-- [[morini-2026-look-twice]] — citato come precedente
+- [[liu-2025-selfelicit]] — method introduced by the paper
+- [[morini-2026-look-twice]] — cited as a precedent

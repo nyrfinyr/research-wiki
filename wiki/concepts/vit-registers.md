@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # ViT Registers
 
-ViT registers (Darcet et al. 2023) sono token aggiuntivi senza significato semantico inseriti nell'input di un Vision Transformer durante il training, con la funzione di assorbire l'attenzione "di scarto" che altrimenti finirebbe su token di background producendo artefatti nelle feature map. Sono parenti stretti dei sink token osservati negli LLM.
+ViT registers (Darcet et al. 2023) are additional tokens without semantic meaning inserted into the input of a Vision Transformer during training, whose function is to absorb the "leftover" attention that would otherwise land on background tokens, producing artifacts in the feature maps. They are close relatives of the sink tokens observed in LLMs.
 
-Nel wiki sono il riferimento concettuale del paper Kim 2026, che ipotizza i sink token nei video-LLM come l'oggetto che dei registers "vorrebbero" assorbire — e che SToP rimuove training-free.
+In the wiki they are the conceptual reference for the Kim 2026 paper, which hypothesizes the sink tokens in video-LLMs as the object that registers "would like" to absorb — and that SToP removes training-free.
 
 ## Sources
 
-- [[kim-2026-sink-token-aware-pruning]] — riferimento per la connessione concettuale
+- [[kim-2026-sink-token-aware-pruning]] — reference for the conceptual connection

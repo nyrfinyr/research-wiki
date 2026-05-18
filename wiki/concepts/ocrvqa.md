@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # OCR-VQA
 
-OCR-VQA è un benchmark di VQA su copertine di libri in cui le domande riguardano titolo, autore, anno, editore — informazioni leggibili solo via OCR. Stressa esplicitamente la capacità di estrarre testo dall'immagine, più che il ragionamento visivo o linguistico.
+OCR-VQA is a VQA benchmark over book covers in which questions concern title, author, year, publisher — information readable only via OCR. It explicitly stresses the ability to extract text from the image, rather than visual or linguistic reasoning.
 
-Nel wiki è citato come bench OCR-centrico complementare a [[textvqa]] e [[docvqa]].
+In the wiki it is cited as an OCR-centric benchmark complementary to [[textvqa]] and [[docvqa]].
 
 ## Sources
 
-- [[liu-2026-adaptive-information-flow]] — citato come benchmark OCR
-- [[pei-2025-causal-mask-attention]] — citato come bench text-rich VQA
+- [[liu-2026-adaptive-information-flow]] — cited as an OCR benchmark
+- [[pei-2025-causal-mask-attention]] — cited as a text-rich VQA benchmark

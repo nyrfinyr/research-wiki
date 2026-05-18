@@ -8,22 +8,22 @@ updated: 2026-05-15
 
 # EgoSchema
 
-EgoSchema è un benchmark diagnostico di **very long-form video question-answering** introdotto da [[mangalam-2023-egoschema]]: 5.063 domande a scelta multipla (5 opzioni) su clip egocentriche di **3 minuti** estratte da [[ego4d]], per un totale di ~250 ore di video. Il contributo concettuale è la nozione di **temporal certificate length** (vedi [[certificate-length]]): la mediana per EgoSchema è ~100 s, **5.7×** più lunga di LVU (secondo dataset) e **25–100×** più lunga di NextQA, AGQA, MSRVTT, ActivityNet-QA, Kinetics. Funge da probe standard per long-video MLLM ed è citato in quasi tutti i tech report e i paper di metodi training-free successivi.
+EgoSchema is a diagnostic benchmark of **very long-form video question-answering** introduced by [[mangalam-2023-egoschema]]: 5,063 multiple-choice questions (5 options) on **3-minute** egocentric clips extracted from [[ego4d]], for a total of ~250 hours of video. The conceptual contribution is the notion of **temporal certificate length** (see [[certificate-length]]): the median for EgoSchema is ~100 s, **5.7×** longer than LVU (the second dataset) and **25–100×** longer than NextQA, AGQA, MSRVTT, ActivityNet-QA, Kinetics. It serves as a standard probe for long-video MLLMs and is cited in nearly all subsequent tech reports and training-free method papers.
 
-## Composizione / Protocollo
+## Composition / Protocol
 
-- **5.063 QA pairs** (Fullset con eval server-side) + **500 QA Subset** con ground-truth pubblica.
-- Clip di 3 min ognuna; 5 opzioni per QA → random baseline = 20 % [source: raw/papers/mangalam-2023-egoschema.pdf §3.1, §4.2].
-- Video da Ego4D, filtrati a clip non-overlapping di 3 min con ≥ 30 narrazioni timestamped.
-- Generazione QAW via pipeline LLM-in-the-loop a 4 stadi (filtering → Q(AW)-shot generation con GPT-4/Bard/Claude → LLM blind filter → 2 round di curazione umana, con vincolo **certificate length ≥ 30 s**).
-- Metrica: accuracy multiple-choice (match diretto della lettera). Setting zero-shot standard.
-- Frame campionati uniformemente dalla clip di 3 min; #frame varia per modello (5–180 nella valutazione originale).
+- **5,063 QA pairs** (Fullset with server-side eval) + **500 QA Subset** with public ground-truth.
+- 3-min clips each; 5 options per QA → random baseline = 20 % [source: raw/papers/mangalam-2023-egoschema.pdf §3.1, §4.2].
+- Videos from Ego4D, filtered to non-overlapping 3-min clips with ≥ 30 timestamped narrations.
+- QAW generation via a 4-stage LLM-in-the-loop pipeline (filtering → Q(AW)-shot generation with GPT-4/Bard/Claude → LLM blind filter → 2 rounds of human curation, with a **certificate length ≥ 30 s** constraint).
+- Metric: multiple-choice accuracy (direct letter match). Standard zero-shot setting.
+- Frames sampled uniformly from the 3-min clip; #frames varies by model (5–180 in the original evaluation).
 
-## Numeri di riferimento
+## Reference numbers
 
-Risultati da source pages del wiki:
+Results from the wiki's source pages:
 
-| Modello | #frame | Acc Fullset | Fonte |
+| Model | #frame | Acc Fullset | Source |
 |---|---|---|---|
 | Random | — | 20.0 | [[mangalam-2023-egoschema]] |
 | FrozenBiLM | 90 | 26.9 | [[mangalam-2023-egoschema]] |
@@ -42,28 +42,28 @@ Risultati da source pages del wiki:
 | TCoT (Gemini Flash, Subset) | dyn-seg | 75.2 | [[arnab-2025-temporal-chain-of-thought]] |
 | TCoT (Gemini Flash, Fullset) | dyn-seg | 69.1 | [[arnab-2025-temporal-chain-of-thought]] |
 
-Il modello Qwen2.5-VL-72B è il primo MLLM open-weight a uguagliare l'human baseline sul Fullset (76.2 vs 76.0).
+Qwen2.5-VL-72B is the first open-weight MLLM to match the human baseline on the Fullset (76.2 vs 76.0).
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — introduce il benchmark e definisce certificate length.
-- [[li-2024-mvbench]] — valuta VideoChat2/VideoChat2-Mistral in zero-shot.
-- [[fu-2025-video-mme]] — confronta certificate length con le proprie fasce short/medium/long.
-- [[wang-2025-lvbench]] — cita EgoSchema in Tab. 1 come predecessore.
-- [[zhang-2024-llovi]] — riporta 61.2 % SOTA su Fullset (GPT-4 + LaViLa caption).
-- [[arnab-2025-temporal-chain-of-thought]] — valuta TCoT (75.2 % Subset / 69.1 % Fullset).
-- [[tang-2025-adaptive-keyframe-sampling]] — cita come benchmark di riferimento.
-- [[zhang-2025-videollama-3]] — riporta i numeri di VideoLLaMA 3 (63.3 / 58.5).
-- [[doorenbos-2026-video-panels]] — cita come benchmark di riferimento.
-- [[qwen2-5-vl-2025-tech-report]] — riporta i numeri della famiglia Qwen2.5-VL.
+- [[mangalam-2023-egoschema]] — introduces the benchmark and defines certificate length.
+- [[li-2024-mvbench]] — evaluates VideoChat2/VideoChat2-Mistral in zero-shot.
+- [[fu-2025-video-mme]] — compares certificate length with its own short/medium/long bands.
+- [[wang-2025-lvbench]] — cites EgoSchema in Tab. 1 as a predecessor.
+- [[zhang-2024-llovi]] — reports 61.2 % SOTA on Fullset (GPT-4 + LaViLa captions).
+- [[arnab-2025-temporal-chain-of-thought]] — evaluates TCoT (75.2 % Subset / 69.1 % Fullset).
+- [[tang-2025-adaptive-keyframe-sampling]] — cites as a reference benchmark.
+- [[zhang-2025-videollama-3]] — reports VideoLLaMA 3 numbers (63.3 / 58.5).
+- [[doorenbos-2026-video-panels]] — cites as a reference benchmark.
+- [[qwen2-5-vl-2025-tech-report]] — reports the Qwen2.5-VL family numbers.
 
-## Concetti correlati
+## Related concepts
 
-- [[certificate-length]] — metrica introdotta nel paper.
-- [[ego4d]] — sorgente dei video.
-- [[long-video-understanding]] — task target.
-- [[video-question-answering]] — paradigma.
-- [[multiple-choice-qa]] — formato delle domande.
-- [[video-mme]] — benchmark successivo che adotta certificate length.
-- [[lvbench]] — benchmark long-video con concetto analogo (clue duration).
-- [[mvbench]] — benchmark short-clip temporal.
+- [[certificate-length]] — metric introduced in the paper.
+- [[ego4d]] — video source.
+- [[long-video-understanding]] — target task.
+- [[video-question-answering]] — paradigm.
+- [[multiple-choice-qa]] — question format.
+- [[video-mme]] — subsequent benchmark that adopts certificate length.
+- [[lvbench]] — long-video benchmark with an analogous concept (clue duration).
+- [[mvbench]] — short-clip temporal benchmark.

@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # VideoChat
 
-MLLM video early-era di Shanghai AI Lab (Li et al., 2023): combina un video foundation model con un LLM tramite un sistema di chat-oriented prompting. Predecessore di VideoChat2.
+Early-era video MLLM from Shanghai AI Lab (Li et al., 2023): combines a video foundation model with an LLM via a chat-oriented prompting system. Predecessor of VideoChat2.
 
 ## Sources
 
-- [[li-2024-mvbench]] — predecessore di VideoChat2
+- [[li-2024-mvbench]] — predecessor of VideoChat2
 
-## Concetti correlati
+## Related concepts
 
-- [[videochat2]] — successore
-- [[video-llama]] — alternativa contemporanea
+- [[videochat2]] — successor
+- [[video-llama]] — contemporary alternative

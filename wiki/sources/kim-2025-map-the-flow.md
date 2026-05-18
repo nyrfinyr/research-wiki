@@ -18,100 +18,100 @@ year: 2025
 
 ## TL;DR
 
-Studio di **interpretabilità meccanicistica** sui Video LLM (LLaVA-NeXT-7B/13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B): gli autori usano **Attention Knockout** (Geva et al. 2023) e **Logit Lens** (nostalgebraist 2020) per ricostruire il *come* e il *dove* i Video LLM eseguono ragionamento temporale durante la VideoQA. Identificano un pipeline ricorrente in 4 stadi: (1) **cross-frame interactions** tra token video nei layer early-to-middle, (2) **video-language integration** sui *temporal keyword* del prompt nei layer middle, (3) la probabilità della risposta corretta sale bruscamente nei layer middle-to-late, (4) attivare solo i "pathway efficaci" individuati conserva la performance VideoQA sopprimendo fino al **58% degli edge di attenzione** (LLaVA-NeXT-7B-Video-FT). Il lavoro fornisce un blueprint per pruning di attenzione strutturato, early-exit e regolarizzazione dei pathway dominanti nei Video LLM, e mostra che il fine-tuning su VideoQA induce *specificamente* la dipendenza cross-frame nei layer early-middle (cosa assente nel solo ImageLLM precursore).
+**Mechanistic interpretability** study on Video LLMs (LLaVA-NeXT-7B/13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B): the authors use **Attention Knockout** (Geva et al. 2023) and **Logit Lens** (nostalgebraist 2020) to reconstruct *how* and *where* Video LLMs perform temporal reasoning during VideoQA. They identify a recurring 4-stage pipeline: (1) **cross-frame interactions** between video tokens in early-to-middle layers, (2) **video-language integration** on the prompt's *temporal keywords* in middle layers, (3) the probability of the correct answer rises abruptly in middle-to-late layers, (4) activating only the identified "effective pathways" preserves VideoQA performance while suppressing up to **58% of attention edges** (LLaVA-NeXT-7B-Video-FT). The work provides a blueprint for structured attention pruning, early-exit and regularisation of dominant pathways in Video LLMs, and shows that fine-tuning on VideoQA specifically induces cross-frame dependence in early-middle layers (absent in the pure ImageLLM predecessor).
 
-## Contributo principale
+## Main contribution
 
-- Prima caratterizzazione end-to-end del *flusso interno* dell'informazione nei Video LLM su VideoQA: ragionamento temporale strutturato in 4 fasi consistenti su 4 modelli e 5 task TVBench, validata anche su TOMATO e LongVideoBench [source: raw/papers/kim-2025-map-the-flow.pdf §3, §A, Tab. 3, Tab. A].
-- Evidenza che il video-instruction-tuning aggiunge esplicitamente l'abilità di **cross-frame attention** nei layer 1-16, *assente* nel modello solo immagine (LLaVA-NeXT-7B vs LLaVA-NeXT-7B-Video-FT, Fig. 2) [source: raw/papers/kim-2025-map-the-flow.pdf §3.2, Tab. 2].
-- Identificazione dei **temporal keyword** (verbi, option token nel prompt) come **checkpoint** di integrazione video-language, e validazione causale: tenendo solo i pathway efficaci si conserva accuracy VideoQA con il **42-58%** degli edge originali (Tab. 3) [source: raw/papers/kim-2025-map-the-flow.pdf §3.3, §3.5].
+- First end-to-end characterisation of the *internal information flow* of Video LLMs on VideoQA: temporal reasoning structured in 4 phases consistent across 4 models and 5 TVBench tasks, also validated on TOMATO and LongVideoBench [source: raw/papers/kim-2025-map-the-flow.pdf §3, §A, Tab. 3, Tab. A].
+- Evidence that video instruction tuning explicitly adds the **cross-frame attention** ability in layers 1-16, *absent* in the image-only model (LLaVA-NeXT-7B vs. LLaVA-NeXT-7B-Video-FT, Fig. 2) [source: raw/papers/kim-2025-map-the-flow.pdf §3.2, Tab. 2].
+- Identification of **temporal keywords** (verbs, option tokens in the prompt) as **checkpoints** of video-language integration, and causal validation: keeping only the effective pathways preserves VideoQA accuracy with **42-58%** of the original edges (Tab. 3) [source: raw/papers/kim-2025-map-the-flow.pdf §3.3, §3.5].
 
-## Metodo
+## Method
 
 ### Setup (§3.1)
 
-- **Task**: 5 task da [[tvbench]] (Cores et al. 2024), benchmark VideoQA che minimizza bias da scena statica — Action Antonym, Action Sequence, Scene Transition, Moving Direction, Object Count (Tab. 1).
-- **Filtro**: solo sample dove il modello risponde correttamente (per garantire causal tracing valido).
-- **Backbone primario**: LLaVA-NeXT-7B (image-only) fine-tunato 3 epoche su VideoChat2-IT → **LLaVA-NeXT-7B-Video-FT**, 8 frame × 144 token. Backbone aggiuntivi: LLaVA-NeXT-13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B (§E, §F).
-- **Benchmark estesi**: TVBench, TOMATO, VCGBench (open-ended), LongVideoBench (long-form), Video-MME.
+- **Tasks**: 5 tasks from [[tvbench]] (Cores et al. 2024), a VideoQA benchmark that minimises static-scene bias — Action Antonym, Action Sequence, Scene Transition, Moving Direction, Object Count (Tab. 1).
+- **Filter**: only samples answered correctly by the model (to ensure valid causal tracing).
+- **Primary backbone**: LLaVA-NeXT-7B (image-only) fine-tuned 3 epochs on VideoChat2-IT → **LLaVA-NeXT-7B-Video-FT**, 8 frames × 144 tokens. Additional backbones: LLaVA-NeXT-13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B (§E, §F).
+- **Extended benchmarks**: TVBench, TOMATO, VCGBench (open-ended), LongVideoBench (long-form), Video-MME.
 
 ### Attention Knockout (§2.2)
 
-Per disabilitare il flusso di informazione da token sorgente `s` verso token target `t` al layer `l`, si setta `M^l[s,t] = −∞` nella softmax dello scaled dot-product attention (Eq. 1). Si misura la variazione percentuale relativa di probabilità della risposta `a`: `(p_knockout − p_base)/p_base × 100`. Le ablation usano una *window* `k=9` layer centrata su `l` (per evitare che residual connection bypassino l'intervento; sensitività in §G.6).
+To disable information flow from source token `s` to target token `t` at layer `l`, set `M^l[s,t] = −∞` in the scaled dot-product attention softmax (Eq. 1). The relative percentage change in the probability of answer `a` is measured: `(p_knockout − p_base)/p_base × 100`. The ablations use a *window* `k=9` layers centred on `l` (to prevent residual connections from bypassing the intervention; sensitivity in §G.6).
 
 ### Logit Lens (§3.3)
 
-Proiezione dei hidden state dei token video per ogni layer attraverso il language-model head, e conteggio della frequenza dei *keyword* spaziali e temporali estratti dal prompt. Visualizzazione delle posizioni patch dei token che attivano un dato concept (Fig. 5, Fig. F).
+Project the hidden states of video tokens at every layer through the language-model head, and count the frequency of spatial and temporal *keywords* extracted from the prompt. Visualise the patch positions of tokens activating a given concept (Fig. 5, Fig. F).
 
-### Pipeline trovata (Fig. 1, §3.2-3.4)
+### Discovered pipeline (Fig. 1, §3.2-3.4)
 
-1. **Cross-frame interactions** (layer 1-16, early-to-middle): i token video formano rappresentazioni spaziotemporali interagendo tra frame. Bloccare queste interazioni cala l'accuracy di 18-60.8 punti percentuali a seconda del task (Tab. 2).
-2. **Video-language integration sui temporal keyword** (layer 6-20): l'informazione video viene propagata selettivamente verso i token delle *option corrette* del prompt (Fig. 7-8). Pathway diretto vs indiretto (via non-option question) varia per task.
-3. **Concept emergence** (Logit Lens, §3.3): i concetti **spaziali** emergono già nei layer molto early sui token foreground; i concetti **temporali** ("eat", "sit", "hold", "up", "down") emergono solo nei layer middle, e su patch *residue* anziché sovrascrivere quelli spaziali stabilizzati (Fig. 5).
-4. **Answer generation** (layer 16-25, middle-to-late): la probabilità del true option al last-token *salta* attorno al layer 20, immediatamente dopo il completamento dell'integrazione (Fig. 9). Non c'è competizione graduale fra le option: la corretta domina rapidamente.
-5. **Failure case analysis** (§4): nei sample sbagliati il pattern di cross-modal integration è simile a quello dei successi, ma i sample sbagliati hanno due failure mode primari — (Case 1) cross-frame interaction spurie nei layer early che convogliano segnale errato, (Case 2) bias statico, cioè il modello collassa su evidenza static-scene in assenza di cross-frame attention efficace.
+1. **Cross-frame interactions** (layers 1-16, early-to-middle): video tokens form spatiotemporal representations by interacting across frames. Blocking these interactions drops accuracy by 18-60.8 percentage points depending on the task (Tab. 2).
+2. **Video-language integration on temporal keywords** (layers 6-20): video information is selectively propagated to the prompt's *correct-option* tokens (Fig. 7-8). The direct vs. indirect (via non-option question) pathway varies by task.
+3. **Concept emergence** (Logit Lens, §3.3): **spatial** concepts already emerge in very early layers on foreground tokens; **temporal** concepts ("eat", "sit", "hold", "up", "down") only emerge in middle layers, and on *residual* patches rather than overwriting the stabilised spatial ones (Fig. 5).
+4. **Answer generation** (layers 16-25, middle-to-late): the true-option probability at the last token *jumps* around layer 20, immediately after integration completes (Fig. 9). There is no gradual competition between options: the correct one dominates rapidly.
+5. **Failure case analysis** (§4): in wrong samples the cross-modal integration pattern is similar to that of successes, but wrong samples have two primary failure modes — (Case 1) spurious cross-frame interactions in early layers that channel wrong signal, (Case 2) static bias, i.e. the model collapses onto static-scene evidence in the absence of effective cross-frame attention.
 
-### Pruning strutturato di attention edge (§3.5)
+### Structured pruning of attention edges (§3.5)
 
-Si attiva l'attention **solo** dentro layer-range identificati come efficaci: cross-frame interaction L6-15, video→question L6-20, question→last L16-25; si **disabilitano** invece video→last, last→last globalmente e i flussi entranti in video/question nei layer tardivi. Si confronta con un baseline a *random blocking* dello stesso budget.
+Attention is enabled **only** inside the layer ranges identified as effective: cross-frame interaction L6-15, video→question L6-20, question→last L16-25; video→last, last→last globally and inflows into video/question in late layers are **disabled**. The result is compared to a *random blocking* baseline at the same budget.
 
-## Risultati chiave
+## Key results
 
 ### Cross-frame ablation (Fig. 2, Tab. 2)
 
-Bloccare cross-frame attention nei layer 1-16 causa accuracy drop su LLaVA-NeXT-7B-Video-FT:
+Blocking cross-frame attention in layers 1-16 causes accuracy drops on LLaVA-NeXT-7B-Video-FT:
 - Action Antonym **−24.1%**
 - Action Sequence **−20.2%**
 - Scene Transition **−18.0%**
 - Moving Direction **−44.8%**
 - Object Count **−60.8%**
 
-Il modello arriva a generare risposte *opposte* (es. "moves to the **left**" invece di "to the **right**"). Per LLaVA-NeXT-7B (image-only) la sensitività layer-wise è quasi piatta: il fine-tuning su video è il responsabile.
+The model goes as far as generating *opposite* answers (e.g. "moves to the **left**" instead of "to the **right**"). For LLaVA-NeXT-7B (image-only) the layer-wise sensitivity is almost flat: video fine-tuning is responsible.
 
-### Effective pathways vs random blocking (Tab. 3)
+### Effective pathways vs. random blocking (Tab. 3)
 
-| Modello | Edge totali | Pathway efficaci | TVBench | TOMATO |
+| Model | Total edges | Effective pathways | TVBench | TOMATO |
 |---|---|---|---|---|
-| LLaVA-NeXT-7B-Video-FT | 25.7M (100%) | full causal 51.5 / efficaci 51.2 / random 40.1 | (42% edge) | 30.2 / 29.2 / 23.1 |
+| LLaVA-NeXT-7B-Video-FT | 25.7M (100%) | full causal 51.5 / effective 51.2 / random 40.1 | (42% edges) | 30.2 / 29.2 / 23.1 |
 | LLaVA-NeXT-13B-Video-FT | 32.2M | 55.1 / 54.6 / 41.5 | (37%) | 27.2 / 27.4 / 23.8 |
 | Mini-InternVL-4B-Video-FT | 74.6M | 56.0 / 56.0 / 41.0 | (40%) | 32.2 / 31.2 / 25.9 |
 | VideoLLaMA3-7B | 19.9M | 55.2 / 57.2 / 22.2 | (58%) | 28.0 / 28.7 / 13.9 |
 
-VideoLLaMA3-7B addirittura **migliora** (TVBench 55.2 → 57.2, TOMATO 28.0 → 28.7) sopprimendo il 42% degli edge: i pathway non-efficaci agiscono come noise. Il random blocking dello stesso budget crolla a 22.2 TVBench e 13.9 TOMATO — drop di 33+ punti rispetto agli effective pathway.
+VideoLLaMA3-7B actually **improves** (TVBench 55.2 → 57.2, TOMATO 28.0 → 28.7) by suppressing 42% of the edges: non-effective pathways act as noise. Random blocking at the same budget crashes to 22.2 TVBench and 13.9 TOMATO — drops of 33+ points compared to the effective pathways.
 
 ### Long-form (Tab. A, Appendix G.1)
 
-Su LongVideoBench con LLaVA-NeXT-7B-Video-FT: full causal 46.1 → effective pathway (42% edge) 45.5 (−0.6 punti). Le pathway efficaci generalizzano al video lungo.
+On LongVideoBench with LLaVA-NeXT-7B-Video-FT: full causal 46.1 → effective pathway (42% edges) 45.5 (−0.6 points). Effective pathways generalise to long video.
 
 ### Open-ended (Appendix B)
 
-- Single-token: bloccando cross-frame layer 1-16 la probabilità del primo token risposta crolla in tutti e tre i task analizzati (Action Antonym, Moving Direction, Object Count). Senza option esplicite, è il **last token** stesso a fungere da checkpoint di integrazione (Fig. B).
-- Multi-token (VCGBench Temporal QA): i verbi generati nella risposta diventano *nuovi checkpoint* dinamici. All'aumentare degli anchor generati, il flusso video → last si sposta progressivamente verso video → response → last (Fig. D).
+- Single-token: blocking cross-frame in layers 1-16 collapses the first-answer-token probability in all three analysed tasks (Action Antonym, Moving Direction, Object Count). Without explicit options, the **last token** itself acts as integration checkpoint (Fig. B).
+- Multi-token (VCGBench Temporal QA): verbs generated in the response become *new dynamic checkpoints*. As more anchors are generated, the video → last flow progressively shifts towards video → response → last (Fig. D).
 
 ### Video-language alignment (Fig. 6)
 
-Quando il cross-frame è intatto, il token "begins" della query attende sui frame iniziali e "ends" sui finali (alignment semantico). Bloccando il cross-frame, l'attenzione collassa su prossimità posizionale, non semantica. Questa è la firma del fatto che i Video LLM imparano implicitamente ad **allineare** le rappresentazioni video con embedding linguistici di concetti temporali.
+When cross-frame is intact, the "begins" token in the query attends to the initial frames and "ends" to the final ones (semantic alignment). Blocking cross-frame, attention collapses onto positional proximity, not semantic. This is the signature of the fact that Video LLMs implicitly learn to **align** video representations with linguistic embeddings of temporal concepts.
 
-### Logit Lens visualization (Fig. 4, 5, F)
+### Logit Lens visualisation (Figs. 4, 5, F)
 
-I concetti spaziali (es. "floor", "paper", "person", "table") appaiono già nei layer 1-5 sui patch foreground; i concetti temporali (es. "eat", "sit", "hold") iniziano dai layer 11-15 in poi e si localizzano in patch *residui* — il modello stabilizza prima la spaziale e usa la capacità rimanente per la temporale.
+Spatial concepts (e.g. "floor", "paper", "person", "table") appear already in layers 1-5 on foreground patches; temporal concepts (e.g. "eat", "sit", "hold") start from layers 11-15 onwards and localise in *residual* patches — the model first stabilises the spatial pass and uses the remaining capacity for the temporal one.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- L'analisi è ristretta a sample **correttamente risposti** per validità del causal tracing: i pattern descritti potrebbero essere meno netti su sample borderline.
-- Tutti i Video LLM analizzati sono ottenuti da fine-tuning di MLLM image-based; comportamenti potrebbero differire in modelli pre-trained from scratch su video (non esistono ancora ad ampia scala).
-- Il framework usa 8 frame con 144/256 token per frame. Long-form (LongVideoBench) testato solo in Appendix.
-- Identificazione dei *temporal keyword* in open-ended si basa su POS-tagging (spaCy, verbi) — euristica, non oracolare.
+- Analysis is restricted to **correctly answered samples** for the validity of causal tracing: the described patterns may be less crisp on borderline samples.
+- All analysed Video LLMs are obtained by fine-tuning image-based MLLMs; behaviours may differ in models pre-trained from scratch on video (none exists at large scale yet).
+- The framework uses 8 frames with 144/256 tokens per frame. Long-form (LongVideoBench) is tested only in the Appendix.
+- Identification of *temporal keywords* in open-ended QA relies on POS-tagging (spaCy, verbs) — heuristic, not oracle.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- I "pathway efficaci" sono identificati empiricamente con layer-range fissi (Tab. E in appendice) per backbone: serve un metodo automatico per scoprire pathway model-specific senza grid search.
-- Connessione diretta con visual token pruning: il fatto che il 58% degli edge sia inutile suggerisce che **token pruning** (cfr. Kim et al. 2026, [[stsp]]) e **edge pruning** siano complementari. Si può combinare SToP-style suppression di sink token con attention-edge pruning strutturato?
-- Le failure mode "static bias" (Case 2 in §4) sono lo stesso fenomeno di [[attention-sink]] o "shortcut su language prior"? Non c'è quantificazione meccanicistica.
-- L'autore ipotizza early-exit (Schuster 2022, Bae 2023) come applicazione: ma il salto di probabilità avviene attorno al layer 20 su 32-40, quindi il guadagno teorico è ~40% di FLOPs LLM. Non riportano benchmark di latency.
-- Generalizzazione a **lunghi video con sampling adattivo di frame** o a *streaming inference* non esplorata.
+- The "effective pathways" are identified empirically with fixed layer ranges (Tab. E in the appendix) per backbone: an automatic method to discover model-specific pathways without grid search is needed.
+- Direct connection with visual token pruning: the fact that 58% of edges are useless suggests that **token pruning** (cf. Kim et al. 2026, [[stsp]]) and **edge pruning** are complementary. Can SToP-style sink-token suppression be combined with structured attention-edge pruning?
+- Are the "static bias" failure modes (Case 2 in §4) the same phenomenon as [[attention-sink]] or "shortcut on language prior"? No mechanistic quantification is given.
+- The authors hypothesise early-exit (Schuster 2022, Bae 2023) as an application: but the probability jump occurs around layer 20 of 32-40, so the theoretical FLOPs saving on the LLM is ~40%. They do not report latency benchmarks.
+- Generalisation to **long videos with adaptive frame sampling** or to *streaming inference* is not explored.
 
-## Concetti citati
+## Cited concepts
 
 - [[video-llm]]
 - [[video-qa]]
@@ -146,7 +146,7 @@ I concetti spaziali (es. "floor", "paper", "person", "table") appaiono già nei 
 - [[static-scene-bias]]
 - [[fine-grained-video-understanding]]
 
-## Citazioni dirette
+## Direct quotes
 
 > "temporal reasoning in VideoLLMs initiates with active cross-frame interactions in early-to-middle layers, … followed by progressive video-language integration in middle layers." (Abstract, p. 1)
 

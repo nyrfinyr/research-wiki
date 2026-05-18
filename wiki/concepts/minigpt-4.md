@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # MiniGPT-4
 
-MLLM open-source (Zhu et al., 2023, KAUST) che allinea un Q-Former pretrained su BLIP-2 con Vicuna tramite un singolo layer di proiezione, addestrato su un mix di image-text data. Uno dei primi modelli a dimostrare visual instruction following con costo minimale.
+Open-source MLLM (Zhu et al., 2023, KAUST) that aligns a Q-Former pretrained on BLIP-2 with Vicuna through a single projection layer, trained on a mix of image-text data. One of the first models to demonstrate visual instruction following at minimal cost.
 
 ## Sources
 
-- [[li-2024-mvbench]] — modello di confronto
+- [[li-2024-mvbench]] — comparison model
 
-## Concetti correlati
+## Related concepts
 
-- [[blip-2]] — sorgente del Q-Former
+- [[blip-2]] — source of the Q-Former
 - [[vicuna]] — LLM backbone
-- [[llava]] — alternativa contemporanea
+- [[llava]] — contemporary alternative

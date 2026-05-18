@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Grounding
 
-Il grounding multimodale è il task generale di collegare elementi linguistici a regioni o entità del segnale visivo: include referring expression comprehension ([[refcoco]]), pointing, bounding box prediction e, in versione estesa, 3D grounding. È una capacità di base sia per agenti GUI che per VQA spaziale.
+Multimodal grounding is the general task of linking linguistic elements to regions or entities of the visual signal: it includes referring expression comprehension ([[refcoco]]), pointing, bounding box prediction and, in its extended version, 3D grounding. It is a baseline capability for both GUI agents and spatial VQA.
 
-Nel wiki compare come asse di valutazione nei report di MLLM generalisti.
+In the wiki it appears as an evaluation axis in reports of generalist MLLMs.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra le capacità valutate del modello
+- [[qwen3-vl-2025-tech-report]] — among the evaluated capabilities of the model

@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Video Token Compression
 
-La video token compression è la famiglia di tecniche per ridurre il numero di token visivi prodotti da un video prima di passarli all'LLM, in modo da rendere trattabili sequenze lunghe senza esplodere il costo di attenzione. Include pruning, merging, pooling temporale, differential frame pruning e simili.
+Video token compression is the family of techniques for reducing the number of visual tokens produced by a video before passing them to the LLM, so as to make long sequences tractable without blowing up the attention cost. It includes pruning, merging, temporal pooling, differential frame pruning and similar approaches.
 
-Nel wiki è uno dei moduli centrali di [[videollama-3]] e si relaziona con [[visual-token-pruning]] e [[keyframe-sampling]].
+In the wiki it is one of the central modules of [[videollama-3]] and relates to [[visual-token-pruning]] and [[keyframe-sampling]].
 
 ## Sources
 
-- [[zhang-2025-videollama-3]] — componente architetturale del modello
+- [[zhang-2025-videollama-3]] — architectural component of the model

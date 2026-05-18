@@ -18,32 +18,32 @@ year: 2025
 
 ## TL;DR
 
-Pei et al. mostrano che la causal mask ereditata dagli LLM ("attendi solo al passato") è una scelta sub-ottimale per i visual token nei VLM: i visual token non hanno un ordine sequenziale intrinseco e bloccare il futuro impedisce di aggregare informazioni utili. Propongono tre **future-aware causal mask** che relasciano selettivamente la triangolare superiore solo per le query visive: $M^f$ (tutti i token futuri), $M^{v2v}$ (solo visual futuri), $M^{v2t}$ (solo text futuri). Versioni "lightweight" comprimono via 1D kernel pooling l'attention futura nei primi token (attention sink) durante il prefill, preservando il causal mask in decoding e ottenendo speedup 2–3× rispetto a quella senza merging. Esperimenti su 15 task multimodali (MILEBench) con LLaVA-7B/13B mostrano gain task-dipendenti: temporal multi-image ↑ con $M^f/M^{v2v}$, text-rich VQA ↑ con $M^{v2t}$, text-dominanti degradano [source: raw/papers/pei-2025-causal-mask-attention.pdf Abstract, §3].
+Pei et al. show that the causal mask inherited from LLMs ("attend only to the past") is a suboptimal choice for visual tokens in VLMs: visual tokens have no intrinsic sequential order and blocking the future prevents aggregation of useful information. They propose three **future-aware causal masks** that selectively relax the upper triangle only for visual queries: $M^f$ (all future tokens), $M^{v2v}$ (only future visual tokens), $M^{v2t}$ (only future text tokens). "Lightweight" versions compress the future attention via 1D kernel pooling into the first tokens (attention sinks) during prefill, preserving the causal mask during decoding and achieving 2–3× speedup over the non-merged version. Experiments on 15 multimodal tasks (MILEBench) with LLaVA-7B/13B show task-dependent gains: temporal multi-image ↑ with $M^f/M^{v2v}$, text-rich VQA ↑ with $M^{v2t}$, text-dominant tasks degrade [source: raw/papers/pei-2025-causal-mask-attention.pdf Abstract, §3].
 
-## Contributo principale
+## Main contribution
 
-- Analisi empirica della (mis)alignment fra causal masking text-only e visual token: rompere il masking fra textual token degrada, ma rompere il masking *fra* visual token può **migliorare** anche su modelli allenati causalmente (Fig.1, ALFRED) [source: raw/papers/pei-2025-causal-mask-attention.pdf §1, Fig.1].
-- Tre maschere future-aware formali con definizioni 3.1–3.3: $M^f$, $M^{v2v}$, $M^{v2t}$ — ciascuna mostra vantaggi su una categoria di task.
-- Famiglia **Light Future-Aware Attention**: compressione via 1D max-pool (kernel size $k$) dell'attention futura e merge nei token "sink" (prefix size = 1 sufficiente). Mantiene la struttura causale nel decoding ⇒ niente overhead a inference time [source: raw/papers/pei-2025-causal-mask-attention.pdf §4, Eq.11-14].
-- Insight: i token sink possono assorbire l'informazione futura senza violare l'autoregression; la prefill-decoding separation rende l'overhead trascurabile.
+- Empirical analysis of the (mis)alignment between text-only causal masking and visual tokens: breaking the masking between textual tokens degrades performance, but breaking the masking *between* visual tokens can **improve** it even on causally trained models (Fig.1, ALFRED) [source: raw/papers/pei-2025-causal-mask-attention.pdf §1, Fig.1].
+- Three formal future-aware masks with definitions 3.1–3.3: $M^f$, $M^{v2v}$, $M^{v2t}$ — each shows advantages on one category of task.
+- **Light Future-Aware Attention** family: compression via 1D max-pool (kernel size $k$) of the future attention and merge into the "sink" tokens (prefix size = 1 sufficient). Maintains causal structure during decoding ⇒ no inference-time overhead [source: raw/papers/pei-2025-causal-mask-attention.pdf §4, Eq.11-14].
+- Insight: sink tokens can absorb future information without violating autoregression; prefill-decoding separation makes the overhead negligible.
 
-## Metodo
+## Method
 
-**Setup (§2.1)**: input $X = X^v \oplus X^t \in \mathbb{R}^{B\times L\times H\times D}$, $L = m+n$ (m visual, n text). Causal mask standard $M^c_{i,j}=0$ se $j\le i$, $-\infty$ altrimenti.
+**Setup (§2.1)**: input $X = X^v \oplus X^t \in \mathbb{R}^{B\times L\times H\times D}$, $L = m+n$ (m visual, n text). Standard causal mask $M^c_{i,j}=0$ if $j\le i$, $-\infty$ otherwise.
 
-**Future-Aware Masks (§3.1)** — agiscono solo sulle righe $i \in \mathcal{V}$ (query visive):
+**Future-Aware Masks (§3.1)** — act only on rows $i \in \mathcal{V}$ (visual queries):
 
-- **$M^f$ (Full, Def.3.1)**: $M^f_{i,j}=0$ se $j\le i \lor (j>i \land i\in\mathcal{V})$ ⇒ tutta la triangolare superiore è visibile per query visive. Bene per task temporali multi-image (Action Prediction, Visual Navigation, State Change: +0.1 / +1.0 / +1.5 punti su MILEBench AP/VN/SC) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.1, Tab.1].
-- **$M^{v2v}$ (Visual-to-Visual, Def.3.2)**: visual query attende a visual futuri ma NON a text futuri. Bene per Visual Change Captioning, Visual Relation Expression (VCC 16.2→16.7, VRE 16.6→18.1) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.2, Tab.2].
-- **$M^{v2t}$ (Visual-to-Textual, Def.3.3)**: visual query attende a text futuri ma NON a visual futuri. Bene per Text-Rich VQA (OCR-VQA 22.5→23.0, TextVQA 32.0→38.5) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.3, Tab.3].
+- **$M^f$ (Full, Def.3.1)**: $M^f_{i,j}=0$ if $j\le i \lor (j>i \land i\in\mathcal{V})$ ⇒ the entire upper triangle is visible for visual queries. Good for temporal multi-image tasks (Action Prediction, Visual Navigation, State Change: +0.1 / +1.0 / +1.5 points on MILEBench AP/VN/SC) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.1, Tab.1].
+- **$M^{v2v}$ (Visual-to-Visual, Def.3.2)**: visual queries attend to future visual tokens but NOT future text. Good for Visual Change Captioning, Visual Relation Expression (VCC 16.2→16.7, VRE 16.6→18.1) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.2, Tab.2].
+- **$M^{v2t}$ (Visual-to-Textual, Def.3.3)**: visual queries attend to future text but NOT future visual tokens. Good for Text-Rich VQA (OCR-VQA 22.5→23.0, TextVQA 32.0→38.5) [source: raw/papers/pei-2025-causal-mask-attention.pdf §3.3, Tab.3].
 
-**Light Future-Aware Attention (§4)** — riduce il costo del prefill: si computa l'attention futura ammessa $A^f$, si applica 1D kernel pooling con kernel $k$ per aggregarla in un *summary score*, e si **somma** il summary nei primi token (sink) della stessa riga $A_i$ tramite le Eq.11-12. Il decoding rimane standard-causal. Mask finale lower-triangular pura.
+**Light Future-Aware Attention (§4)** — reduces prefill cost: compute the admitted future attention $A^f$, apply 1D kernel pooling with kernel $k$ to aggregate it into a *summary score*, and **sum** the summary into the first tokens (sinks) of the same row $A_i$ via Eq.11-12. Decoding remains standard-causal. Final mask is purely lower-triangular.
 
-**Aspetto training-free**: tutto è una modifica della causal mask in prefill — niente weight update. Si applica su LLaVA-1.5-7B/13B e Mistral-v1.6-7B/13B usando FlashAttention-2.6.3, context 4096, greedy decoding [source: raw/papers/pei-2025-causal-mask-attention.pdf Appendix A.1].
+**Training-free aspect**: everything is a modification of the causal mask in prefill — no weight updates. Applied to LLaVA-1.5-7B/13B and Mistral-v1.6-7B/13B using FlashAttention-2.6.3, context 4096, greedy decoding [source: raw/papers/pei-2025-causal-mask-attention.pdf Appendix A.1].
 
-## Risultati chiave
+## Key results
 
-**MILEBench multitask (Tab.4)** — LLaVA-7B / 13B, 13 task. Esempi (LLaVA-7B):
+**MILEBench multitask (Tab.4)** — LLaVA-7B / 13B, 13 tasks. Examples (LLaVA-7B):
 
 | Task | $M^c$ | $M^{v2t}$ | $M^{v2v}$ | $M^f$ |
 |---|---|---|---|---|
@@ -65,53 +65,53 @@ Pei et al. mostrano che la causal mask ereditata dagli LLM ("attendi solo al pas
 | $M^{v2t}$ | 43.04 |
 | $M^{v2t}$+merge | 26.11 |
 
-⇒ Speedup 2–3× con merge, performance preservata (Fig.7).
+⇒ 2–3× speedup with merge, performance preserved (Fig.7).
 
-**Prefix ratio (Fig.8)**: merge nel **primo token** è già sufficiente — singolo sink-token assorbe il future context.
+**Prefix ratio (Fig.8)**: merging into the **first token** is already sufficient — a single sink-token absorbs the future context.
 
-**Sintesi qualitativa (Tab.5)**:
-- Temporal multi-image (T-1..T-4) → ✓ con $M^f, M^{v2v}$
-- Semantic multi-image (S-2, S-3) → ✓ con $M^{v2v}, M^{v2t}$
-- Text-dominant (S-5, IR) → ✗ degrada con tutte le relaxed masks
+**Qualitative summary (Tab.5)**:
+- Temporal multi-image (T-1..T-4) → ✓ with $M^f, M^{v2v}$
+- Semantic multi-image (S-2, S-3) → ✓ with $M^{v2v}, M^{v2t}$
+- Text-dominant (S-5, IR) → ✗ degrades with all relaxed masks
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- Gain task-dipendenti: non esiste una maschera dominante universale; richiede selezione manuale a livello di task (no auto-routing).
-- Test focalizzati su LLaVA-1.5/1.6; modelli con M-RoPE o causal-mask già modificate (Qwen2-VL) non sono valutati.
-- Su task text-dominanti (IR, S-5) le maschere relaxate peggiorano — segno che la text autoregression è essenziale.
-- L'analisi quantitativa su tutti i 15 task è limitata a tabelle aggregate (no IC, no random seeds).
+- Task-dependent gains: no universally dominant mask exists; requires manual per-task selection (no auto-routing).
+- Tests focused on LLaVA-1.5/1.6; models with M-RoPE or already-modified causal masks (Qwen2-VL) are not evaluated.
+- On text-dominant tasks (IR, S-5) the relaxed masks worsen results — evidence that text autoregression is essential.
+- Quantitative analysis across all 15 tasks is limited to aggregate tables (no CI, no random seeds).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Esiste un meccanismo per **scegliere automaticamente** la maschera in base alla query? (Routing classifier sul prompt.) Sarebbe il passo naturale.
-- Confronto con [[liu-2026-adaptive-information-flow]] — AIF (Tab.8 di Liu) usa $M^{v2v}$ / $M^{v2t}$ come baseline e mostra che AIF è significativamente migliore su RealWorldQA/CountBench → suggerisce che relaxation indiscriminata è subottimale rispetto a mascheramento selettivo entropy-driven.
-- L'effetto su video lunghi (sequenze enormi di visual token) non è testato.
-- Il merging via 1D max-pool potrebbe essere generalizzato (attention-weighted pool, learnable kernel) — non esplorato.
+- Is there a mechanism to **automatically choose** the mask based on the query? (A routing classifier on the prompt.) That would be the natural next step.
+- Comparison with [[liu-2026-adaptive-information-flow]] — AIF (Liu's Tab.8) uses $M^{v2v}$ / $M^{v2t}$ as baselines and shows AIF is significantly better on RealWorldQA/CountBench → suggesting that indiscriminate relaxation is suboptimal compared to entropy-driven selective masking.
+- The effect on long videos (huge sequences of visual tokens) is untested.
+- 1D max-pool merging could be generalized (attention-weighted pool, learnable kernel) — not explored.
 
-## Concetti citati
+## Cited concepts
 
 - [[vision-language-model]]
 - [[causal-attention-mask]]
 - [[causal-mask-modulation]]
-- [[future-aware-causal-mask]] — concetto centrale del paper
-- [[attention-sink]] — meccanismo per assorbire future info
+- [[future-aware-causal-mask]] — central concept of the paper
+- [[attention-sink]] — mechanism for absorbing future info
 - [[prefill-decoding-separation]]
 - [[training-free-methods]]
-- [[kv-cache]] — discusso in §4 nota
-- [[milebench]] — benchmark suite multi-image
-- [[alfred]] — task agentic citato in Fig.1
+- [[kv-cache]] — discussed in §4 note
+- [[milebench]] — multi-image benchmark suite
+- [[alfred]] — agentic task cited in Fig.1
 - [[clevrer]] — temporal reasoning
 - [[ocrvqa]], [[textvqa]] — text-rich VQA
-- [[perception-test]] — citato
-- [[docvqa]] — citato
-- [[multimodalqa]] — citato
-- [[llava-1-5]], [[llava-1-6]] — backbone
-- [[flash-attention]] — implementazione
-- [[stablemask]] — lavoro correlato su mask refinement (Yin et al.)
+- [[perception-test]] — cited
+- [[docvqa]] — cited
+- [[multimodalqa]] — cited
+- [[llava-1-5]], [[llava-1-6]] — backbones
+- [[flash-attention]] — implementation
+- [[stablemask]] — related work on mask refinement (Yin et al.)
 - [[concentric-causal-attention]] — Xing et al., training-based
 - [[modality-mutual-attention]] — Wang et al.
 
-## Citazioni dirette
+## Direct quotes
 
 > "Strictly masking future positions for vision queries introduces overly rigid constraints, which hinder the model's ability to leverage future context that often contains essential semantic cues for accurate inference." [source: raw/papers/pei-2025-causal-mask-attention.pdf Abstract]
 

@@ -8,24 +8,24 @@ updated: 2026-05-15
 
 # Positional Encoding
 
-Tecnica per iniettare informazione di posizione in modelli che, come il [[transformer]], non hanno alcuna struttura ricorrente o convolutiva e quindi sarebbero permutation-invariant rispetto all'ordine dei token. In [[vaswani-2017-attention]] §3.5 si somma un encoding di posizione agli embedding di input ai piedi dello stack encoder e decoder; ha la stessa dimensione `d_model` degli embedding.
+Technique for injecting position information into models that, like the [[transformer]], have no recurrent or convolutional structure and would therefore be permutation-invariant with respect to token order. In [[vaswani-2017-attention]] §3.5 a position encoding is added to the input embeddings at the bottom of the encoder and decoder stacks; it has the same `d_model` dimension as the embeddings.
 
-## Versione sinusoidale (Vaswani 2017)
+## Sinusoidal version (Vaswani 2017)
 
 ```
 PE(pos, 2i)   = sin( pos / 10000^(2i/d_model) )
 PE(pos, 2i+1) = cos( pos / 10000^(2i/d_model) )
 ```
 
-Ogni dimensione dell'encoding corrisponde a una sinusoide; le lunghezze d'onda formano una progressione geometrica da `2π` a `10000·2π` [source: raw/papers/vaswani-2017-attention.pdf §3.5].
+Each dimension of the encoding corresponds to a sinusoid; the wavelengths form a geometric progression from `2π` to `10000·2π` [source: raw/papers/vaswani-2017-attention.pdf §3.5].
 
-### Motivazione
+### Motivation
 
-Per ogni offset fisso `k`, `PE(pos+k)` è una funzione lineare di `PE(pos)` — questo dovrebbe permettere al modello di apprendere facilmente ad attendere per posizioni relative. Inoltre la natura senza parametri lascia sperare in **estrapolazione a sequenze più lunghe** di quelle viste in training [source: raw/papers/vaswani-2017-attention.pdf §3.5].
+For each fixed offset `k`, `PE(pos+k)` is a linear function of `PE(pos)` — this should let the model easily learn to attend by relative positions. Moreover, the parameter-free nature leaves hope for **extrapolation to sequences longer** than those seen in training [source: raw/papers/vaswani-2017-attention.pdf §3.5].
 
-## Alternative
+## Alternatives
 
-- **Positional embedding apprese**: una matrice di embedding `[max_len × d_model]` appresa. In [[vaswani-2017-attention]] (Tab. 3 riga E) è sperimentalmente **equivalente** alla versione sinusoidale (BLEU 25.7 vs. 25.8, PPL 4.92 entrambe). Gli autori preferiscono la sinusoidale per la potenziale estrapolazione fuori dal range visto in training.
+- **Learned positional embeddings**: a `[max_len × d_model]` embedding matrix that is learned. In [[vaswani-2017-attention]] (Tab. 3 row E) it is experimentally **equivalent** to the sinusoidal version (BLEU 25.7 vs. 25.8, PPL 4.92 for both). The authors prefer sinusoidal for the potential extrapolation beyond the training range.
 
 ## Sources
 

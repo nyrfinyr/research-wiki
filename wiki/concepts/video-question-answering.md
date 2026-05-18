@@ -8,32 +8,32 @@ updated: 2026-05-15
 
 # Video Question Answering
 
-**Video Question Answering (Video-QA)** è il task di rispondere a una domanda in linguaggio naturale data come input un video. È il paradigma dominante per valutare i [[video-llm|video-LLM]] e i [[multimodal-large-language-model|MLLM]] video. Si distingue per:
+**Video Question Answering (Video-QA)** is the task of answering a natural-language question given a video as input. It is the dominant paradigm for evaluating [[video-llm|video-LLMs]] and video [[multimodal-large-language-model|MLLMs]]. It is characterized by:
 
-- **Formato della risposta**: [[multiple-choice-qa|multiple-choice]] (più comune: 4 o 5 opzioni) vs open-ended.
-- **Durata del video**: short-form (~10 s, es. [[next-qa]]), long-form (~10–60 s, classe LVU), very long-form (~3 min, [[egoschema]]), full-spectrum (11 s – 1 h, [[video-mme]]), extreme (~68 min, [[lvbench]]).
-- **Tipo di reasoning**: perception (recognition, OCR, counting), causal/temporal reasoning, summarization, temporal grounding.
-- **Modalità di input**: solo frame, frame + sottotitoli, frame + audio.
+- **Answer format**: [[multiple-choice-qa|multiple-choice]] (most common: 4 or 5 options) vs open-ended.
+- **Video duration**: short-form (~10 s, e.g. [[next-qa]]), long-form (~10–60 s, LVU class), very long-form (~3 min, [[egoschema]]), full-spectrum (11 s – 1 h, [[video-mme]]), extreme (~68 min, [[lvbench]]).
+- **Reasoning type**: perception (recognition, OCR, counting), causal/temporal reasoning, summarization, temporal grounding.
+- **Input modalities**: frames only, frames + subtitles, frames + audio.
 
-I benchmark nel wiki includono [[egoschema]], [[video-mme]], [[lvbench]], [[mvbench]], [[mlvu]], [[longvideobench]], [[next-qa]], [[activitynet-qa]], [[movieqa]], [[tvqa]], [[perception-test]], [[clevrer]], [[star-benchmark]], [[tempcompass]].
+The benchmarks in the wiki include [[egoschema]], [[video-mme]], [[lvbench]], [[mvbench]], [[mlvu]], [[longvideobench]], [[next-qa]], [[activitynet-qa]], [[movieqa]], [[tvqa]], [[perception-test]], [[clevrer]], [[star-benchmark]], [[tempcompass]].
 
 ## Sources
 
-Citato in praticamente tutti i source pages video del wiki, in particolare:
+Cited in essentially every video source page in the wiki, in particular:
 
-- [[mangalam-2023-egoschema]] — definisce il task come paradigma del long-form.
-- [[fu-2025-video-mme]] — paradigma del benchmark.
-- [[wang-2025-lvbench]] — paradigma del benchmark.
-- [[li-2024-mvbench]] — paradigma del benchmark.
-- [[zhang-2024-llovi]] — paradigma del framework caption-based.
-- [[arnab-2025-temporal-chain-of-thought]] — paradigma di TCoT.
-- [[tang-2025-adaptive-keyframe-sampling]] — paradigma dell'evaluazione di AKS.
+- [[mangalam-2023-egoschema]] — defines the task as the long-form paradigm.
+- [[fu-2025-video-mme]] — benchmark paradigm.
+- [[wang-2025-lvbench]] — benchmark paradigm.
+- [[li-2024-mvbench]] — benchmark paradigm.
+- [[zhang-2024-llovi]] — caption-based framework paradigm.
+- [[arnab-2025-temporal-chain-of-thought]] — TCoT paradigm.
+- [[tang-2025-adaptive-keyframe-sampling]] — AKS evaluation paradigm.
 
-## Concetti correlati
+## Related concepts
 
-- [[multimodal-large-language-model]] — modelli che lo risolvono.
-- [[video-llm]] — sub-famiglia.
-- [[multiple-choice-qa]] — formato dominante.
+- [[multimodal-large-language-model]] — models that solve it.
+- [[video-llm]] — sub-family.
+- [[multiple-choice-qa]] — dominant format.
 - [[long-video-understanding]] — task specialization.
-- [[caption-based-vqa]] — pipeline alternativa.
-- [[certificate-length]] — metrica di difficoltà.
+- [[caption-based-vqa]] — alternative pipeline.
+- [[certificate-length]] — difficulty metric.

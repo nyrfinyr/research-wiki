@@ -8,12 +8,12 @@ updated: 2026-05-15
 
 # CogVLM2
 
-Seconda iterazione della famiglia CogVLM di Zhipu AI / Tsinghua (2024). Adotta un "visual expert module" che inietta parametri specifici per visione in ogni layer del LLM. Supporta variante video; usato come baseline su long-video.
+Second iteration of Zhipu AI / Tsinghua's CogVLM family (2024). Adopts a "visual expert module" that injects vision-specific parameters into every layer of the LLM. Supports a video variant; used as a baseline on long-video.
 
 ## Sources
 
-- [[wang-2025-lvbench]] — modello valutato su LVBench
+- [[wang-2025-lvbench]] — model evaluated on LVBench
 
-## Concetti correlati
+## Related concepts
 
-- [[llava-onevision]], [[internvl2]] — competitor open-source
+- [[llava-onevision]], [[internvl2]] — open-source competitors

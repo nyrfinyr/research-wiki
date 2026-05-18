@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Visual Prompting
 
-Il visual prompting (o visual prompt engineering) è la pratica di modificare l'input visivo di un MLLM — sovrapponendo bounding box, cropping, tag numerici, panel layout — per guidare la risposta del modello senza alterarne i pesi. È un'alternativa training-free al fine-tuning per migliorare focus, grounding o capacità di long-video understanding.
+Visual prompting (or visual prompt engineering) is the practice of modifying the visual input of an MLLM — overlaying bounding boxes, cropping, numerical tags, panel layouts — to guide the model's response without altering its weights. It is a training-free alternative to fine-tuning for improving focus, grounding, or long-video understanding capability.
 
-Nel wiki è la categoria di metodo a cui appartiene il lavoro di Doorenbos 2026 sui video panels.
+In the wiki it is the method category to which the Doorenbos 2026 work on video panels belongs.
 
 ## Sources
 
-- [[doorenbos-2026-video-panels]] — categoria di metodo del lavoro
+- [[doorenbos-2026-video-panels]] — method category of the work

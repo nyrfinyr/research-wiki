@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # BLINK
 
-BLINK è un benchmark di percezione multimodale che raccoglie task "facili per l'uomo, difficili per gli MLLM": corrispondenze visive, relative depth, jigsaw, art style, IQ test visivi. Le domande sono a scelta multipla e mirano a misurare capacità percettive di base che i modelli generalisti tendono a saltare a favore di scorciatoie linguistiche.
+BLINK is a multimodal perception benchmark that collects tasks "easy for humans, hard for MLLMs": visual correspondences, relative depth, jigsaw, art style, visual IQ tests. The questions are multiple-choice and aim to measure basic perceptual abilities that generalist models tend to skip in favor of linguistic shortcuts.
 
-Nel wiki compare come bench di percezione visiva nei report tecnici dei modelli generalisti.
+In the wiki it appears as a visual-perception bench in tech reports of generalist models.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra i benchmark di perception/multi-image
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA
+- [[qwen3-vl-2025-tech-report]] — among the perception/multi-image benchmarks
+- [[zhang-2025-videollama-3]] — cited as an image-VQA benchmark

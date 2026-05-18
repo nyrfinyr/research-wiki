@@ -8,32 +8,32 @@ updated: 2026-05-15
 
 # Map the Flow
 
-**Map the Flow** è il framework di **interpretabilità meccanicistica** introdotto da Kim, Kim & Han (2025) per studiare *come* e *dove* i Video LLM eseguono ragionamento temporale durante la VideoQA. Combina **Attention Knockout** (Geva et al. 2023, disabilitazione del flusso `s→t` al layer `l` settando `M^l[s,t] = −∞`) e **Logit Lens** (nostalgebraist 2020, proiezione dei hidden state attraverso il LM head) su 4 Video LLM (LLaVA-NeXT-7B/13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B).
+**Map the Flow** is the **mechanistic interpretability** framework introduced by Kim, Kim & Han (2025) to study *how* and *where* Video LLMs perform temporal reasoning during VideoQA. It combines **Attention Knockout** (Geva et al. 2023, disabling the `s→t` flow at layer `l` by setting `M^l[s,t] = −∞`) and **Logit Lens** (nostalgebraist 2020, projection of hidden states through the LM head) on 4 Video LLMs (LLaVA-NeXT-7B/13B-Video-FT, Mini-InternVL-4B-Video-FT, VideoLLaMA3-7B).
 
-## Architettura
+## Architecture
 
-Identifica una **pipeline ricorrente a 4 stadi**:
+Identifies a **recurrent 4-stage pipeline**:
 
-1. **Cross-frame interactions** (layer 1-16, early-to-middle): token video formano rappresentazioni spaziotemporali interagendo tra frame. Bloccarle cala l'accuracy di 18-60.8 punti (TVBench).
-2. **Video-language integration su temporal keyword** (layer 6-20): l'informazione video propagata selettivamente verso i token delle option corrette del prompt.
-3. **Concept emergence**: concetti spaziali emergono nei layer early sui patch foreground; concetti temporali ("eat", "sit", "hold") solo nei layer middle, su patch residui.
-4. **Answer generation** (layer 16-25): probabilità del true option salta al last-token attorno al layer 20.
+1. **Cross-frame interactions** (layers 1-16, early-to-middle): video tokens form spatiotemporal representations by interacting across frames. Blocking them drops accuracy by 18-60.8 points (TVBench).
+2. **Video-language integration on temporal keywords** (layers 6-20): video information selectively propagated toward the tokens of the correct options in the prompt.
+3. **Concept emergence**: spatial concepts emerge in early layers on foreground patches; temporal concepts ("eat", "sit", "hold") only in middle layers, on residual patches.
+4. **Answer generation** (layers 16-25): the probability of the true option jumps at the last-token around layer 20.
 
-Il fine-tuning su VideoQA induce **specificamente** la dipendenza cross-frame nei layer early-middle, assente nel solo ImageLLM precursore.
+Fine-tuning on VideoQA **specifically** induces the cross-frame dependency in the early-middle layers, absent in the image-only LLM precursor.
 
-## Numeri di riferimento
+## Reference numbers
 
-Mantenendo solo i pathway efficaci si conserva la performance sopprimendo fino al **58% degli edge di attenzione** (LLaVA-NeXT-7B-Video-FT). VideoLLaMA3-7B addirittura **migliora** (TVBench 55.2 → 57.2) eliminando il 42% degli edge: i pathway non-efficaci agiscono come noise. Random blocking dello stesso budget crolla di 33+ punti. Validato anche su TOMATO, LongVideoBench, VCGBench.
+Keeping only the effective pathways preserves performance while suppressing up to **58% of the attention edges** (LLaVA-NeXT-7B-Video-FT). VideoLLaMA3-7B even **improves** (TVBench 55.2 → 57.2) eliminating 42% of the edges: non-effective pathways act as noise. Random blocking of the same budget crashes by 33+ points. Also validated on TOMATO, LongVideoBench, VCGBench.
 
 ## Sources
 
-- [[kim-2025-map-the-flow]] — paper introduttivo
-- [[morini-2026-look-twice]] — coerenza con "deep layers know"
-- [[liu-2025-selfelicit]] — analogia layer-wise sul flusso informazione
+- [[kim-2025-map-the-flow]] — introductory paper
+- [[morini-2026-look-twice]] — consistency with "deep layers know"
+- [[liu-2025-selfelicit]] — layer-wise analogy on information flow
 
-## Concetti correlati
+## Related concepts
 
 - [[video-llm]], [[mechanistic-interpretability]]
 - [[attention-knockout]], [[logit-lens]]
 - [[early-exit]], [[temporal-reasoning]]
-- [[llava-next]], [[videollama-3]] — backbone analizzati
+- [[llava-next]], [[videollama-3]] — analyzed backbones

@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # STSP
 
-STSP (Sink-Token-aware Spatial Pruning, Kim 2026) è il modulo di pruning spaziale di token visivi nei video-LLM che usa uno "sink-score" per identificare i token che si comportano da attention sink — tipicamente sullo sfondo della scena — e li rimuove, preservando i token salienti. È accoppiato a STTP, la sua controparte temporale.
+STSP (Sink-Token-aware Spatial Pruning, Kim 2026) is the spatial pruning module for visual tokens in video-LLMs that uses a "sink-score" to identify tokens behaving as attention sinks — typically in the scene background — and removes them, preserving salient tokens. It is paired with STTP, its temporal counterpart.
 
-Nel wiki è il nome specifico del modulo introdotto dal paper Kim 2026 e citato in Map-the-Flow come direzione complementare al edge pruning.
+In the wiki it is the specific name of the module introduced by the Kim 2026 paper and cited in Map-the-Flow as a complementary direction to edge pruning.
 
 ## Sources
 
-- [[kim-2026-sink-token-aware-pruning]] — modulo introdotto dal paper
-- [[kim-2025-map-the-flow]] — citato come direzione complementare
+- [[kim-2026-sink-token-aware-pruning]] — module introduced by the paper
+- [[kim-2025-map-the-flow]] — cited as a complementary direction

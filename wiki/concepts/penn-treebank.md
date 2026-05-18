@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Penn Treebank (WSJ)
 
-Corpus annotato sintatticamente sul Wall Street Journal — benchmark storico per parsing di constituency in inglese.
+Syntactically annotated corpus on the Wall Street Journal — historical benchmark for English constituency parsing.
 
-In [[vaswani-2017-attention]] §6.3 il [[transformer]] è applicato al constituency parsing:
-- Setup WSJ-only: ~40k frasi di training, vocabolario 16k → **91.3 F1** su Section 23.
-- Setup semi-supervisionato: aggiunti BerkeleyParser high-confidence corpora (~17M frasi), vocabolario 32k → **92.7 F1**.
+In [[vaswani-2017-attention]] §6.3 the [[transformer]] is applied to constituency parsing:
+- WSJ-only setup: ~40k training sentences, vocabulary 16k → **91.3 F1** on Section 23.
+- Semi-supervised setup: adds BerkeleyParser high-confidence corpora (~17M sentences), vocabulary 32k → **92.7 F1**.
 
-Transformer usato: 4 layer, `d_model = 1024`. Inference con beam=21 e α=0.3, output massimo `input_len + 300` [source: raw/papers/vaswani-2017-attention.pdf §6.3].
+Transformer used: 4 layers, `d_model = 1024`. Inference with beam=21 and α=0.3, maximum output `input_len + 300` [source: raw/papers/vaswani-2017-attention.pdf §6.3].
 
 ## Sources
 

@@ -18,80 +18,80 @@ year: 2022
 
 ## TL;DR
 
-FlashAttention è un algoritmo **IO-aware** ed **esatto** (non approssimato) per calcolare la self-attention dei [[transformer]] su GPU. La tesi centrale: il collo di bottiglia non sono i FLOPs ma i **letti/scritti tra HBM (GPU memory) e SRAM on-chip**. Combinando tiling della softmax e recomputation in backward in un singolo kernel CUDA fuso, FlashAttention riduce gli accessi a HBM da `Θ(Nd + N²)` a `Θ(N²·d²/M)` (dove `M` è la dimensione di SRAM), con memoria `O(N)` invece di `O(N²)`. Risultati end-to-end: BERT-large 15% più veloce del record MLPerf 1.1, GPT-2 fino a 3× più veloce di Megatron/HuggingFace, LRA 2.4×, e il **primo Transformer** a battere il caso a riferimento su Path-X (seq 16K) e — in variante block-sparse — su Path-256 (seq 64K) [source: raw/papers/dao-2022-flashattention.pdf §1, §4].
+FlashAttention is an **IO-aware**, **exact** (non-approximate) algorithm for computing self-attention in [[transformer]] models on GPUs. The central thesis: the bottleneck is not FLOPs but **reads/writes between HBM (GPU memory) and on-chip SRAM**. By combining softmax tiling and backward-pass recomputation in a single fused CUDA kernel, FlashAttention reduces HBM accesses from `Θ(Nd + N²)` to `Θ(N²·d²/M)` (where `M` is the SRAM size), with `O(N)` memory instead of `O(N²)`. End-to-end results: BERT-large 15% faster than the MLPerf 1.1 record, GPT-2 up to 3× faster than Megatron/HuggingFace, LRA 2.4×, and the **first Transformer** to beat the chance baseline on Path-X (seq 16K) and — in a block-sparse variant — on Path-256 (seq 64K) [source: raw/papers/dao-2022-flashattention.pdf §1, §4].
 
-## Contributo principale
+## Main contribution
 
-- **Principio IO-aware**: rendere esplicita la gerarchia di memoria GPU (HBM lenta/grande vs SRAM veloce/piccola) e ottimizzare gli accessi, non i FLOPs (§1, §2.1).
-- Algoritmo **esatto** che calcola la softmax di blocchi mantenendo statistiche (max `m`, denominatore `ℓ`) per ricostruire il risultato globale ⇒ niente materializzazione della matrice `S = QKᵀ` né di `P = softmax(S)` su HBM (§3.1).
-- **Lower bound IO**: `Ω(N²·d²/M⁻¹)` per qualunque algoritmo di attention esatta nell'intervallo `M ∈ [d, Nd]` ⇒ FlashAttention è ottimo a meno di costanti (§3.2, Prop. 3).
-- Estensione **block-sparse FlashAttention** che applica lo stesso schema solo ai blocchi non-zero di una maschera ⇒ IO complexity scalata di un fattore `s` (sparsity), 2-4× più veloce di FlashAttention denso (§3.3).
+- **IO-aware principle**: make the GPU memory hierarchy explicit (slow/large HBM vs. fast/small SRAM) and optimise memory accesses, not FLOPs (§1, §2.1).
+- **Exact** algorithm that computes block softmax while keeping statistics (max `m`, denominator `ℓ`) to reconstruct the global result ⇒ no need to materialise `S = QKᵀ` or `P = softmax(S)` in HBM (§3.1).
+- **IO lower bound**: `Ω(N²·d²/M⁻¹)` for any exact attention algorithm in the range `M ∈ [d, Nd]` ⇒ FlashAttention is optimal up to constants (§3.2, Prop. 3).
+- **Block-sparse FlashAttention** extension that applies the same scheme only to non-zero blocks of a mask ⇒ IO complexity scaled by a sparsity factor `s`, 2-4× faster than dense FlashAttention (§3.3).
 
-## Metodo
+## Method
 
-### Gerarchia di memoria GPU (§2.1)
+### GPU memory hierarchy (§2.1)
 
-Esempio A100 (Fig. 1): HBM 40-80 GB a 1.5-2.0 TB/s; SRAM on-chip ~192 KB per SM (108 SM) a ~19 TB/s. SRAM è ~10× più veloce e ~10⁵× più piccola. Le operazioni di attention (softmax, dropout, mask) sono **memory-bound**: arithmetic intensity bassa ⇒ il tempo è dominato dagli accessi a HBM.
+A100 example (Fig. 1): HBM 40-80 GB at 1.5-2.0 TB/s; on-chip SRAM ~192 KB per SM (108 SMs) at ~19 TB/s. SRAM is ~10× faster and ~10⁵× smaller. Attention operations (softmax, dropout, mask) are **memory-bound**: low arithmetic intensity ⇒ runtime is dominated by HBM accesses.
 
-### Attention standard (Alg. 0, §2.2)
+### Standard attention (Alg. 0, §2.2)
 
-Tre passi che ciascuno scrive/legge `O(N²)` su HBM:
+Three passes each writing/reading `O(N²)` to HBM:
 1. `S = QKᵀ` (write `S`).
 2. `P = softmax(S)` (read `S`, write `P`).
 3. `O = PV` (read `P`).
 
-Su GPT-2 con `N=1024, d=64`: 40.3 GB di HBM R/W per attention vs 66.6 GFLOPs ⇒ il run è dominato dalla memoria.
+On GPT-2 with `N=1024, d=64`: 40.3 GB of HBM R/W for attention vs. 66.6 GFLOPs ⇒ the run is memory-dominated.
 
-### Tiling della softmax (§3.1)
+### Softmax tiling (§3.1)
 
-La softmax accoppia colonne (richiede il max e la somma su tutta la riga). Si usa la **decomposizione algebrica**: per due blocchi `x⁽¹⁾, x⁽²⁾`,
+Softmax couples columns (requires the max and sum over the entire row). The **algebraic decomposition** is used: for two blocks `x⁽¹⁾, x⁽²⁾`,
 - `m(x) = max(m(x⁽¹⁾), m(x⁽²⁾))`,
 - `f(x⁽ⁱ⁾) = e^(m(x⁽ⁱ⁾) − m(x)) · f(x⁽ⁱ⁾)`,
 - `ℓ(x) = e^(m(x⁽¹⁾)−m(x))·ℓ(x⁽¹⁾) + e^(m(x⁽²⁾)−m(x))·ℓ(x⁽²⁾)`.
 
-Mantenendo `(m_i, ℓ_i)` per ogni blocco di righe, si **aggregano i contributi** dei blocchi colonna mano a mano, ricalibrando l'output con `diag(ℓ_new)⁻¹`. Questa aggregazione è chiamata "algebraic aggregation" (§3.1, footnote 2).
+Keeping `(m_i, ℓ_i)` for each row block, the contributions of the column blocks are **aggregated incrementally**, rescaling the output with `diag(ℓ_new)⁻¹`. This aggregation is called "algebraic aggregation" (§3.1, footnote 2).
 
-### Algoritmo 1 (forward) (§3.1)
+### Algorithm 1 (forward) (§3.1)
 
 - Block sizes `B_c = ⌈M/(4d)⌉`, `B_r = min(B_c, d)`.
-- Outer loop su `j = 1..T_c` (blocchi di `K, V` caricati in SRAM).
-- Inner loop su `i = 1..T_r` (blocchi di `Q, O, ℓ, m` caricati in SRAM).
+- Outer loop over `j = 1..T_c` (blocks of `K, V` loaded into SRAM).
+- Inner loop over `i = 1..T_r` (blocks of `Q, O, ℓ, m` loaded into SRAM).
 - On-chip: `S_ij = Q_i K_jᵀ`, `m̃_ij = rowmax(S_ij)`, `P̃_ij = exp(S_ij − m̃_ij)`, `ℓ̃_ij = rowsum(P̃_ij)`.
-- Aggiornamento: `m_new = max(m_i, m̃_ij)`, `ℓ_new = e^(m_i−m_new)·ℓ_i + e^(m̃_ij−m_new)·ℓ̃_ij`.
+- Update: `m_new = max(m_i, m̃_ij)`, `ℓ_new = e^(m_i−m_new)·ℓ_i + e^(m̃_ij−m_new)·ℓ̃_ij`.
 - Write back `O_i = diag(ℓ_new)⁻¹ (diag(ℓ_i)·e^(m_i−m_new)·O_i + e^(m̃_ij−m_new)·P̃_ij·V_j)`.
 
-Tutto è eseguito in **un singolo kernel CUDA fuso** (kernel fusion), inclusi mask e dropout (Appendix B).
+Everything runs in a **single fused CUDA kernel** (kernel fusion), including mask and dropout (Appendix B).
 
-### Backward con recomputation (§3.1)
+### Backward with recomputation (§3.1)
 
-Invece di salvare `S, P ∈ R^(N×N)` su HBM per il backward, si salvano solo `O` e le statistiche `(m, ℓ)` (totale `O(N)`). Nel backward `S, P` sono **ricomputate** in SRAM blocco per blocco. Questo è una forma di gradient checkpointing selettivo. I FLOPs aumentano, ma il backward è comunque più veloce per via dei minori accessi HBM (§3.1, Fig. 2 left).
+Instead of saving `S, P ∈ R^(N×N)` to HBM for the backward pass, only `O` and the statistics `(m, ℓ)` are saved (total `O(N)`). In backward, `S, P` are **recomputed** in SRAM block by block. This is a form of selective gradient checkpointing. FLOPs increase, but the backward pass is still faster thanks to fewer HBM accesses (§3.1, Fig. 2 left).
 
-### Teorema 1 e 2 — IO complexity (§3.2)
+### Theorems 1 and 2 — IO complexity (§3.2)
 
-- **Theorem 1**: l'algoritmo restituisce `O = softmax(QKᵀ)V` con `O(N²d)` FLOPs e `O(N)` memoria extra (oltre input/output).
-- **Theorem 2**: per `d ≤ M ≤ Nd`, FlashAttention richiede `Θ(N²d²/M)` accessi a HBM contro `Θ(Nd + N²)` di standard attention.
+- **Theorem 1**: the algorithm returns `O = softmax(QKᵀ)V` with `O(N²d)` FLOPs and `O(N)` extra memory (beyond input/output).
+- **Theorem 2**: for `d ≤ M ≤ Nd`, FlashAttention needs `Θ(N²d²/M)` HBM accesses against `Θ(Nd + N²)` for standard attention.
 
-Per `d ∈ {64, 128}` e `M ≈ 100 KB`, `d²/M ≪ 1` ⇒ fino a **9× meno** HBM accessi (Fig. 2). 
+For `d ∈ {64, 128}` and `M ≈ 100 KB`, `d²/M ≪ 1` ⇒ up to **9× fewer** HBM accesses (Fig. 2).
 
-- **Proposition 3 (lower bound)**: nessun algoritmo esatto può fare `o(N²d²/M)` accessi HBM per tutti gli `M ∈ [d, Nd]` ⇒ FlashAttention è ottimo asintoticamente.
+- **Proposition 3 (lower bound)**: no exact algorithm can do `o(N²d²/M)` HBM accesses for all `M ∈ [d, Nd]` ⇒ FlashAttention is asymptotically optimal.
 
 ### Block-sparse FlashAttention (§3.3)
 
-Data una maschera block-sparse `M̃ ∈ {0,1}^(N/B_r × N/B_c)` con frazione `s` di blocchi non-zero, si salta il calcolo dei blocchi zero ⇒ IO complexity `Θ(Nd + N²d²/M · s)` (Prop. 4). Per pattern butterfly `s = O(1/√N)` o `s = O(log N / N)` ⇒ `Θ(N√N)` o `Θ(N log N)`.
+Given a block-sparse mask `M̃ ∈ {0,1}^(N/B_r × N/B_c)` with a fraction `s` of non-zero blocks, computation of zero blocks is skipped ⇒ IO complexity `Θ(Nd + N²d²/M · s)` (Prop. 4). For butterfly patterns `s = O(1/√N)` or `s = O(log N / N)` ⇒ `Θ(N√N)` or `Θ(N log N)`.
 
-## Risultati chiave
+## Key results
 
 ### BERT-large (Tab. 1, §4.1)
 
-Training a target 72.0% MLM accuracy su Wikipedia, 8×A100:
+Training to a target 72.0% MLM accuracy on Wikipedia, 8×A100:
 - Nvidia MLPerf 1.1: 20.0 ± 1.5 min.
-- FlashAttention: **17.4 ± 1.4 min** (15% più veloce).
+- FlashAttention: **17.4 ± 1.4 min** (15% faster).
 
-### GPT-2 su OpenWebText (Tab. 2, §4.1)
+### GPT-2 on OpenWebText (Tab. 2, §4.1)
 
-8×A100, perplexity identica (no quality regression):
+8×A100, identical perplexity (no quality regression):
 
-| Modello | Implementazione | Tempo (giorni) | Speedup |
+| Model | Implementation | Time (days) | Speedup |
 |---|---|---|---|
 | GPT-2 small | HuggingFace | 9.5 | 1.0× |
 | GPT-2 small | Megatron-LM | 4.7 | 2.0× |
@@ -102,42 +102,42 @@ Training a target 72.0% MLM accuracy su Wikipedia, 8×A100:
 
 ### Long-Range Arena (Tab. 3, §4.1)
 
-Speedup 2.4× rispetto allo standard Transformer, mantenendo o migliorando l'accuracy media (59.8 vs 59.3). Block-sparse FlashAttention 2.8× speedup, batte tutte le baseline approssimate (Linformer, Performer, Reformer, Linear Attention, Local, Smyrf).
+2.4× speedup over the standard Transformer while maintaining or improving the average accuracy (59.8 vs. 59.3). Block-sparse FlashAttention reaches 2.8× speedup and beats all approximate baselines (Linformer, Performer, Reformer, Linear Attention, Local, Smyrf).
 
-### Contesti lunghi (Tab. 4-6, §4.2)
+### Long contexts (Tab. 4-6, §4.2)
 
-- **GPT-2 small a 4K** con FlashAttention è ancora **30% più veloce** di Megatron a 1K, con **0.7 ppl** migliore (17.5 vs 18.2).
-- **Long-doc classification** (MIMIC-III, ECtHR): seq 16K vs 512 → +4.3 punti F1 su MIMIC, +8.5 su ECtHR (Tab. 5).
-- **Path-X (seq 16K)**: primo Transformer a superare il caso casuale (61.4% accuracy). **Path-256 (seq 64K)**: solo block-sparse FlashAttention ci riesce (63.1%) — Tab. 6.
+- **GPT-2 small at 4K** with FlashAttention is still **30% faster** than Megatron at 1K, with **0.7 ppl** better (17.5 vs. 18.2).
+- **Long-doc classification** (MIMIC-III, ECtHR): seq 16K vs. 512 → +4.3 F1 points on MIMIC, +8.5 on ECtHR (Tab. 5).
+- **Path-X (seq 16K)**: first Transformer to beat chance (61.4% accuracy). **Path-256 (seq 64K)**: only block-sparse FlashAttention succeeds (63.1%) — Tab. 6.
 
-### Benchmark runtime/memoria (Fig. 3, §4.3)
+### Runtime/memory benchmark (Fig. 3, §4.3)
 
-- Runtime: fino a **3×** più veloce dell'attention PyTorch su seq 128-2K, **fino a 20×** più memory-efficient.
-- Memoria: lineare in `N` (vs `N²`). Crossover con approximate attention (Linformer) intorno a `N=512-1024`; block-sparse FlashAttention è più veloce di **qualunque** attention sparsa o approssimata testata, su tutte le lunghezze.
+- Runtime: up to **3×** faster than PyTorch attention on seq 128-2K, **up to 20×** more memory-efficient.
+- Memory: linear in `N` (vs. `N²`). Crossover with approximate attention (Linformer) around `N=512-1024`; block-sparse FlashAttention is faster than **any** sparse or approximate attention tested, across all lengths.
 
-### Effetto block size (Fig. 2 middle)
+### Block size effect (Fig. 2 middle)
 
-Crescere `B_c` da 64 a 256 riduce HBM accesses e runtime; oltre 256 il guadagno satura (compute-bound) e il blocco non entra più in SRAM.
+Growing `B_c` from 64 to 256 reduces HBM accesses and runtime; beyond 256 the gain saturates (compute-bound) and the block no longer fits in SRAM.
 
-## Limitazioni dichiarate dagli autori
+## Stated limitations
 
-- **CUDA hand-written**: ogni nuova variante (mask, dropout, ALiBi, RoPE, ecc.) richiede un nuovo kernel; codice low-level e non sempre portabile tra architetture GPU (§5).
-- Implementazione **single-GPU**: l'analisi non copre la comunicazione inter-GPU su multi-node (§5).
-- Il bound IO è ottimale **asintotico**, non parametrizzato finemente in `M` ⇒ migliorabile (§3.2, future work).
+- **Hand-written CUDA**: every new variant (mask, dropout, ALiBi, RoPE, etc.) requires a new kernel; low-level code and not always portable across GPU architectures (§5).
+- **Single-GPU** implementation: the analysis does not cover inter-GPU communication in multi-node settings (§5).
+- The IO bound is asymptotically optimal but **not finely parameterised in `M`** ⇒ improvable (§3.2, future work).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Generalizzazione del principio IO-aware ad **altri moduli** (FFN, LayerNorm, conv) è solo accennata (Appendix D, §5).
-- Il paper precede FlashAttention-2 (Dao 2023) e FlashAttention-3 (Shah et al. 2024); molte ottimizzazioni rimaste implicite (warp-level scheduling, FP8, async copy) sono lì.
-- Comparazione con strategie **multi-query / GQA** assente — il vantaggio relativo dipende dal rapporto `d_kv / d_model`.
-- Il design assume softmax classica; non discute interazione con **sigmoid attention** o varianti senza normalizzazione (cfr. [[attention-sink]]).
-- Recomputation aumenta i FLOPs ma il paper dichiara solo `O(N²d)` totale; non viene fornito un breakdown FLOPs forward vs backward specifico.
+- Generalisation of the IO-aware principle to **other modules** (FFN, LayerNorm, conv) is only hinted at (Appendix D, §5).
+- The paper predates FlashAttention-2 (Dao 2023) and FlashAttention-3 (Shah et al. 2024); many optimisations left implicit (warp-level scheduling, FP8, async copy) live there.
+- Comparison with **multi-query / GQA** strategies is missing — the relative advantage depends on the `d_kv / d_model` ratio.
+- The design assumes classical softmax; it does not discuss interaction with **sigmoid attention** or variants without normalisation (cf. [[attention-sink]]).
+- Recomputation increases FLOPs but the paper only reports `O(N²d)` total; no specific forward vs. backward FLOPs breakdown is provided.
 
-## Concetti citati
+## Cited concepts
 
 [[flash-attention]], [[scaled-dot-product-attention]], [[self-attention]], [[transformer]], [[kernel-fusion]], [[tiling-softmax]], [[gradient-checkpointing]], [[hbm-sram-memory-hierarchy]], [[io-complexity]], [[block-sparse-attention]], [[long-range-arena]], [[path-x-path-256]], [[multi-head-attention]], [[layer-normalization]].
 
-## Citazioni dirette rilevanti
+## Relevant direct quotes
 
 > "We argue that a missing principle is making attention algorithms IO-aware—accounting for reads and writes between levels of GPU memory." (Abstract)
 

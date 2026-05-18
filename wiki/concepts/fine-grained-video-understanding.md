@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Fine-grained Video Understanding
 
-Il fine-grained video understanding è la capacità di rispondere su dettagli che cambiano frame a frame — direzione di movimento, ordine preciso di sub-azioni, conteggio di oggetti che entrano/escono — invece di limitarsi al "gist" della scena. È la dimensione su cui i video-LLM mostrano i deficit maggiori a causa di static-scene bias.
+Fine-grained video understanding is the ability to answer questions about details that change frame by frame — direction of motion, precise ordering of sub-actions, counting of objects entering/leaving — rather than being limited to the "gist" of the scene. It is the dimension on which video-LLMs show the largest deficits due to static-scene bias.
 
-Nel wiki è la motivazione esplicita dei lavori di Kim su attention pathway e sink-token pruning.
+In the wiki it is the explicit motivation behind Kim's work on attention pathway and sink-token pruning.
 
 ## Sources
 
-- [[kim-2025-map-the-flow]] — task target dell'analisi pathway
-- [[kim-2026-sink-token-aware-pruning]] — capacità preservata dal pruning
+- [[kim-2025-map-the-flow]] — target task of the pathway analysis
+- [[kim-2026-sink-token-aware-pruning]] — capability preserved by pruning

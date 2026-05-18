@@ -8,17 +8,17 @@ updated: 2026-05-15
 
 # VNBench
 
-**VNBench (Video Needle-in-Benchmark)** è un benchmark long-video di tipo **needle-in-a-haystack** per MLLM: una piccola "needle" (frame, evento, oggetto) è inserita in un video lungo "haystack" e il modello deve recuperarla o ragionare su di essa. È pensato per stressare la capacità di retrieval temporale in long-context.
+**VNBench (Video Needle-in-Benchmark)** is a long-video **needle-in-a-haystack** benchmark for MLLMs: a small "needle" (frame, event, object) is inserted into a long "haystack" video and the model must retrieve it or reason about it. It is designed to stress temporal retrieval capability under long-context.
 
-Nel wiki appare come uno dei 5 benchmark di valutazione di [[doorenbos-2026-video-panels|Video Panels]], dove il paneling brilla proprio sui task di tipo needle-in-haystack [source: raw/papers/doorenbos-2026-video-panels.pdf §1].
+In the wiki it appears as one of the 5 evaluation benchmarks of [[doorenbos-2026-video-panels|Video Panels]], where paneling shines precisely on needle-in-haystack tasks [source: raw/papers/doorenbos-2026-video-panels.pdf §1].
 
 ## Sources
 
-- [[doorenbos-2026-video-panels]] — usa VNBench come uno dei 5 benchmark; categoria "needle-in-a-haystack".
+- [[doorenbos-2026-video-panels]] — uses VNBench as one of the 5 benchmarks; "needle-in-a-haystack" category.
 
-## Concetti correlati
+## Related concepts
 
-- [[needle-in-a-haystack]] — paradigma.
-- [[long-video-understanding]] — task target.
-- [[long-context]] — esigenza modellistica.
-- [[video-mme]], [[mlvu]], [[lvbench]], [[timescope]] — benchmark long-video adiacenti.
+- [[needle-in-a-haystack]] — paradigm.
+- [[long-video-understanding]] — target task.
+- [[long-context]] — modeling requirement.
+- [[video-mme]], [[mlvu]], [[lvbench]], [[timescope]] — adjacent long-video benchmarks.

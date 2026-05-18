@@ -8,39 +8,39 @@ updated: 2026-05-15
 
 # Transformer
 
-Architettura encoder-decoder per sequence transduction introdotta in [[vaswani-2017-attention]]. Sostituisce completamente ricorrenza e convoluzione con [[self-attention]] e feed-forward position-wise, ottenendo path length O(1) tra posizioni arbitrarie e training massicciamente parallelo.
+Encoder-decoder architecture for sequence transduction introduced in [[vaswani-2017-attention]]. It entirely replaces recurrence and convolution with [[self-attention]] and position-wise feed-forward layers, obtaining O(1) path length between arbitrary positions and massively parallel training.
 
-## Composizione
+## Composition
 
-- **Encoder**: stack di N=6 layer identici. Ogni layer ha due sub-layer — multi-head self-attention + FFN position-wise — entrambi avvolti da residual connection e [[layer-normalization]] `LayerNorm(x + Sublayer(x))` [source: raw/papers/vaswani-2017-attention.pdf §3.1].
-- **Decoder**: stack di N=6 layer; ogni layer aggiunge un terzo sub-layer di **encoder-decoder attention**. La self-attention del decoder è **mascherata** (le posizioni `> i` sono settate a −∞ prima della softmax) per preservare l'auto-regressività [source: raw/papers/vaswani-2017-attention.pdf §3.1].
-- Tutti i sub-layer e gli embedding producono vettori di dimensione `d_model = 512`.
-- Embedding di input/output e proiezione pre-softmax **condividono** la matrice dei pesi; nei layer di embedding i pesi sono moltiplicati per `√d_model` [source: raw/papers/vaswani-2017-attention.pdf §3.4].
+- **Encoder**: stack of N=6 identical layers. Each layer has two sub-layers — multi-head self-attention + position-wise FFN — both wrapped by residual connection and [[layer-normalization]] `LayerNorm(x + Sublayer(x))` [source: raw/papers/vaswani-2017-attention.pdf §3.1].
+- **Decoder**: stack of N=6 layers; each layer adds a third **encoder-decoder attention** sub-layer. The decoder's self-attention is **masked** (positions `> i` are set to −∞ before softmax) to preserve auto-regressiveness [source: raw/papers/vaswani-2017-attention.pdf §3.1].
+- All sub-layers and embeddings produce vectors of dimension `d_model = 512`.
+- Input/output embeddings and the pre-softmax projection **share** the weight matrix; in embedding layers the weights are multiplied by `√d_model` [source: raw/papers/vaswani-2017-attention.pdf §3.4].
 
-## Iperparametri del modello base
+## Base model hyperparameters
 
-| Iperparametro | Valore |
+| Hyperparameter | Value |
 |---|---|
-| N (depth encoder/decoder) | 6 |
+| N (encoder/decoder depth) | 6 |
 | d_model | 512 |
 | d_ff | 2048 |
-| h (teste) | 8 |
+| h (heads) | 8 |
 | d_k = d_v | 64 |
 | P_drop | 0.1 |
 | ε_ls (label smoothing) | 0.1 |
-| Parametri | ~65M |
+| Parameters | ~65M |
 
-Modello "big": `d_model=1024`, `d_ff=4096`, `h=16`, `P_drop=0.3`, 213M parametri [source: raw/papers/vaswani-2017-attention.pdf Tab. 3].
+"Big" model: `d_model=1024`, `d_ff=4096`, `h=16`, `P_drop=0.3`, 213M parameters [source: raw/papers/vaswani-2017-attention.pdf Tab. 3].
 
-## Vantaggi rispetto a RNN/CNN
+## Advantages over RNN/CNN
 
-Da Tab. 1 di [[vaswani-2017-attention]]:
+From Tab. 1 of [[vaswani-2017-attention]]:
 
-- Path length **O(1)** vs. O(n) di un RNN ⇒ dipendenze a lungo raggio più facili da apprendere.
-- Operazioni sequenziali **O(1)** vs. O(n) di un RNN ⇒ parallelizzazione completa lungo la sequenza.
-- Più veloce di un RNN quando `n < d` (caso tipico per BPE/word-piece).
+- Path length **O(1)** vs. O(n) for an RNN ⇒ long-range dependencies easier to learn.
+- Sequential operations **O(1)** vs. O(n) for an RNN ⇒ full parallelization along the sequence.
+- Faster than an RNN when `n < d` (typical case for BPE/word-piece).
 
-## Componenti
+## Components
 
 - [[self-attention]]
 - [[scaled-dot-product-attention]]
@@ -49,11 +49,11 @@ Da Tab. 1 di [[vaswani-2017-attention]]:
 - [[layer-normalization]]
 - [[encoder-decoder-architecture]]
 
-## Domande aperte
+## Open questions
 
-- Costo **O(n²·d)** della self-attention ⇒ inefficiente per sequenze molto lunghe (gli autori propongono self-attention ristretta come future work).
-- Generazione ancora sequenziale (auto-regressiva) — limita la parallelizzazione a inference.
-- Estensione a modalità non testuali (immagini, audio, video) è citata come future work.
+- Self-attention's **O(n²·d)** cost ⇒ inefficient for very long sequences (the authors propose restricted self-attention as future work).
+- Generation is still sequential (auto-regressive) — limits parallelization at inference.
+- Extension to non-textual modalities (images, audio, video) is cited as future work.
 
 ## Sources
 

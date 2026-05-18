@@ -18,76 +18,76 @@ year: 2025
 
 ## TL;DR
 
-LVBench è un benchmark di video-QA pensato per stress-testare gli MLLM su video *estremamente lunghi*: 103 video YouTube totalmente di **117 ore**, durata media **4101 s ≈ 68 min** (≈ 4× più lungo dei benchmark precedenti come Video-MME, MovieChat-1K, MoVQA). Le 1.549 domande a 4 opzioni coprono 6 capacità core (Temporal Grounding, Summarization, Reasoning, Entity Recognition, Event Understanding, Key Information Retrieval) che possono essere combinate in 26 task type. Anche i top closed-source soffrono: Gemini 2.5 Pro 67.4 %, Seed1.5-VL-Thinking 64.6 %; gli open-source top (Qwen2.5-VL-72B, mPLUG-Owl3) restano sotto 45 %; gli umani fanno **94.4 %**, lasciando un gap di ~27 punti rispetto allo SOTA [source: raw/papers/wang-2025-lvbench.pdf §1, §4.2, Tab. 2–3].
+LVBench is a video-QA benchmark designed to stress-test MLLMs on *extremely long* videos: 103 YouTube videos totaling **117 hours**, average duration **4101 s ≈ 68 min** (≈ 4× longer than prior benchmarks such as Video-MME, MovieChat-1K, MoVQA). The 1,549 4-option questions cover 6 core capabilities (Temporal Grounding, Summarization, Reasoning, Entity Recognition, Event Understanding, Key Information Retrieval) that can be combined into 26 task types. Even top closed-source models struggle: Gemini 2.5 Pro 67.4%, Seed1.5-VL-Thinking 64.6%; the top open-source ones (Qwen2.5-VL-72B, mPLUG-Owl3) stay below 45%; humans score **94.4%**, leaving a ~27-point gap to SOTA [source: raw/papers/wang-2025-lvbench.pdf §1, §4.2, Tab. 2–3].
 
-## Contributo principale
+## Main contribution
 
-- **Durata media 4×** più lunga rispetto al benchmark long-video più ambizioso precedente (Video-MME 1018 s → LVBench 4101 s); definizione esplicita di "long video" come ≥ 30 min con contenuto ricco e multipli eventi (§3.1).
-- Tassonomia di **6 capacità core composizionali** (TG, Sum, Rea, ER, EU, KIR) → 26 sotto-categorie combinatoriali; le combinazioni assicurano che ogni domanda richieda più skill insieme.
-- Annotazione completamente manuale + filtro dual-LLM (GLM-4 ∩ GPT-4 entrambi corretti ⇒ scarta) per garantire che ogni domanda richieda davvero il contenuto visivo.
-- Evidenza empirica che (i) i modelli "native long-video" possono performare peggio dei non-native (LLaMA-VID, MovieChat, LWM crollano per scarsa instruction following), (ii) dense sampling (1 fps) è critico — il salto 50 frame → 1 fps è il più grande osservato.
+- **Average duration 4×** longer than the most ambitious previous long-video benchmark (Video-MME 1018 s → LVBench 4101 s); explicit definition of "long video" as ≥ 30 min with rich content and multiple events (§3.1).
+- Taxonomy of **6 compositional core capabilities** (TG, Sum, Rea, ER, EU, KIR) → 26 combinatorial sub-categories; the combinations ensure each question requires multiple skills together.
+- Fully manual annotation + dual-LLM filter (GLM-4 ∩ GPT-4 both correct ⇒ discard) to ensure each question genuinely requires the visual content.
+- Empirical evidence that (i) "native long-video" models can perform worse than non-native ones (LLaMA-VID, MovieChat, LWM collapse due to poor instruction following), (ii) dense sampling (1 fps) is critical — the 50-frame → 1-fps jump is the largest observed.
 
-## Metodo
+## Method
 
-### Definizione di "long video" e raccolta (§3.1)
+### "Long video" definition and collection (§3.1)
 
-Definizione operativa: video ≥ 30 min, con eventi multipli, transizioni di scena e contenuto visivamente ricco.
+Operational definition: video ≥ 30 min, with multiple events, scene transitions, and visually rich content.
 
 Pipeline:
 
-1. Pool iniziale: 500 video YouTube via search/recommendation, parole chiave selezionate manualmente.
-2. Filtro qualità su 5 criteri:
-   - **Clear Protagonist Presence**: protagonista identificabile e ricorrente (umano o virtuale).
-   - **Structural Coherence**: struttura narrativa coerente (inizio-sviluppo-conclusione, eventi causalmente connessi).
-   - **Event Density**: ≥ 1 evento significativo ogni 5 minuti.
-   - **Visual Clarity**: minimo 720p, camerawork stabile, no cut eccessivi.
-   - **Modality Independence**: tutta l'informazione critica trasmessa visivamente — l'audio è scartato (vedi limitazioni).
-3. Dopo filtro: **103 video, 117 ore di contenuto totale**, 6 categorie tematiche: Sports Competitions, Documentary Films, Event Records, Lifestyle and Daily Activities, TV Shows and Drama Series, Cartoon Videos.
+1. Initial pool: 500 YouTube videos via search/recommendation, manually selected keywords.
+2. Quality filter on 5 criteria:
+   - **Clear Protagonist Presence**: identifiable, recurring protagonist (human or virtual).
+   - **Structural Coherence**: coherent narrative structure (beginning-development-conclusion, causally connected events).
+   - **Event Density**: ≥ 1 significant event every 5 minutes.
+   - **Visual Clarity**: minimum 720p, stable camerawork, no excessive cuts.
+   - **Modality Independence**: all critical information conveyed visually — audio is discarded (see limitations).
+3. After filtering: **103 videos, 117 hours of total content**, 6 thematic categories: Sports Competitions, Documentary Films, Event Records, Lifestyle and Daily Activities, TV Shows and Drama Series, Cartoon Videos.
 
-### Tassonomia delle skill (§3.2)
+### Skill taxonomy (§3.2)
 
-| Skill | Cosa misura | Esempio |
+| Skill | What it measures | Example |
 |---|---|---|
-| **Temporal Grounding (TG)** | Localizzare eventi nel tempo | "What happened at 29:30?" |
-| **Summarization (Sum)** | Sintesi globale del contenuto | "Identify key developments" |
-| **Reasoning (Rea)** | Cause, intenzioni, predizioni | "Why did the experiment fail?" |
-| **Entity Recognition (ER)** | Identificare e tracciare entità | Tracking persone/oggetti |
-| **Event Understanding (EU)** | Classificare eventi e transizioni | Classificare tipo di video |
-| **Key Information Retrieval (KIR)** | Estrarre numeri / testo specifici | "What revenue growth did the firm report?" |
+| **Temporal Grounding (TG)** | Localizing events in time | "What happened at 29:30?" |
+| **Summarization (Sum)** | Global content synthesis | "Identify key developments" |
+| **Reasoning (Rea)** | Causes, intents, predictions | "Why did the experiment fail?" |
+| **Entity Recognition (ER)** | Identifying and tracking entities | Tracking people/objects |
+| **Event Understanding (EU)** | Classifying events and transitions | Classifying video type |
+| **Key Information Retrieval (KIR)** | Extracting specific numbers / text | "What revenue growth did the firm report?" |
 
-Le domande sono spesso ibridi (es. una domanda di Reasoning richiede ER + EU implicitamente). Distribuzione: ER e EU dominano per natura intrinseca dei video (Fig. 2). 26 combinazioni di skill totali (Fig. 5).
+Questions are often hybrid (e.g. a Reasoning question implicitly requires ER + EU). Distribution: ER and EU dominate due to the intrinsic nature of the videos (Fig. 2). 26 total skill combinations (Fig. 5).
 
-### Annotazione (§3.3)
+### Annotation (§3.3)
 
-Pipeline a 3 stadi, annotatori professionisti pagati ~30 USD per video:
+Three-stage pipeline, professional annotators paid ~30 USD per video:
 
-1. **Video Analysis**: l'annotatore guarda il video intero, marca eventi salienti, transizioni, entità chiave, dipendenze temporali/causali.
-2. **Question Generation**: ~24 domande/ora di video, distribuite lungo tutto il timeline; ogni video copre tutte e 6 le skill; domande costruite con principio di **specificità** (riferimenti unici e non ambigui).
-3. **Answer Construction**: 4 opzioni per domanda (1 corretta + 3 distrattori plausibili e di lunghezza simile); l'annotatore marca anche la **clue duration** — il minimo intervallo temporale necessario per rispondere (analogo della certificate length di [[egoschema]]).
+1. **Video Analysis**: the annotator watches the full video, marks salient events, transitions, key entities, temporal/causal dependencies.
+2. **Question Generation**: ~24 questions per hour of video, distributed along the entire timeline; each video covers all 6 skills; questions built with the **specificity** principle (unique, unambiguous references).
+3. **Answer Construction**: 4 options per question (1 correct + 3 plausible distractors of similar length); the annotator also marks the **clue duration** — the minimum temporal interval needed to answer (analog of [[egoschema]]'s certificate length).
 
 ### Data Quality Control (§3.4)
 
-Due interventi:
+Two interventions:
 
-- **Riduzione domande "temporal grounding-friendly"**: gli annotatori tendevano a iniettare un range temporale in molte domande (es. "around 15:00…"). Questo rendeva le domande troppo facili e penalizzava modelli senza temporal sense → si è chiesto di minimizzare tali formulazioni.
-- **Dual-LLM blind filter**: GLM-4 e GPT-4 rispondono testualmente senza video; se *entrambi* concordano con la ground truth → la domanda è risolvibile senza visione → scartata. Risultato finale: **1.549 QA pairs** dopo filtraggio.
+- **Reduction of "temporal grounding-friendly" questions**: annotators tended to inject a temporal range into many questions (e.g. "around 15:00…"). This made questions too easy and penalized models without temporal sense → annotators were asked to minimize such phrasings.
+- **Dual-LLM blind filter**: GLM-4 and GPT-4 answer textually without the video; if *both* agree with the ground truth → the question is solvable without vision → discarded. Final result: **1,549 QA pairs** after filtering.
 
-### Protocollo di valutazione (§4.1)
+### Evaluation protocol (§4.1)
 
-Prompt minimale:
+Minimal prompt:
 
 > Question (A) Option1 (B) Option2 (C) Option3 (D) Option4. Please select the best answer from the options above and directly provide the letter representing your choice without giving any explanation.
 
-Estrazione risposta via regex; fallback LLM solo se regex fallisce. Frame sampling:
+Answer extraction via regex; LLM fallback only if regex fails. Frame sampling:
 
-- **Native long-video models**: 1 fps; downsample solo se eccede la finestra di contesto.
-- **Non-native long-video models**: numero fisso di frame (32 o 96 secondo training).
+- **Native long-video models**: 1 fps; downsample only if it exceeds the context window.
+- **Non-native long-video models**: fixed number of frames (32 or 96 depending on training).
 
-## Risultati chiave
+## Key results
 
-### Performance per capacità core (Tab. 2)
+### Performance per core capability (Tab. 2)
 
-Selezione dei principali risultati (overall %):
+Selection of the main results (overall %):
 
 | Model | ER | EU | KIR | TG | Rea | Sum | **Overall** |
 |---|---|---|---|---|---|---|---|
@@ -117,19 +117,19 @@ Selezione dei principali risultati (overall %):
 
 Findings:
 
-- Top performer: **Gemini-2.5-Pro 67.4 %** (best in 5/6 task: EU, KIR, TG, Rea, Sum).
-- Gap proprietary ↔ open-source ~20 punti: il miglior open-source non-native è VideoLLaMA3-7B 45.3 %, il miglior open-source native è Qwen2.5-VL-72B 44.0 %.
-- Alcuni modelli "native long-video" (MovieChat, LLaMA-VID, LWM, persino Gemini-1.5-Pro) sono sorprendentemente più deboli dei non-native — ipotesi: scarsità di dati instruction-tuning per long video.
+- Top performer: **Gemini-2.5-Pro 67.4%** (best in 5/6 tasks: EU, KIR, TG, Rea, Sum).
+- Proprietary ↔ open-source gap ~20 points: the best non-native open-source is VideoLLaMA3-7B 45.3%, the best native open-source is Qwen2.5-VL-72B 44.0%.
+- Some "native long-video" models (MovieChat, LLaMA-VID, LWM, even Gemini-1.5-Pro) are surprisingly weaker than non-native ones — hypothesis: scarcity of long-video instruction-tuning data.
 
 ### Failure modes (§4.3, Fig. 3)
 
-- **Gemini-1.5-Pro** genera output fuori dalle 4 opzioni nel **20.9 %** dei casi (es. "I cannot answer this question") nonostante il prompt vincoli.
-- **MovieChat** e **LWM** mostrano forte bias verso l'opzione A indipendentemente dalla domanda.
-- L'ipotesi degli autori: assenza di instruction-tuning su long video → instruction-following compromesso.
+- **Gemini-1.5-Pro** generates output outside the 4 options **20.9%** of the time (e.g. "I cannot answer this question") despite the prompt constraint.
+- **MovieChat** and **LWM** show strong bias toward option A regardless of the question.
+- Authors' hypothesis: lack of long-video instruction tuning → compromised instruction following.
 
-### Performance per categoria di video (Tab. 3)
+### Performance per video category (Tab. 3)
 
-| Categoria | Human | Seed1.5-VL | Gemini-2.5-Pro |
+| Category | Human | Seed1.5-VL | Gemini-2.5-Pro |
 |---|---|---|---|
 | Sports | 96.3 | 63.3 | 71.3 |
 | Documentary | 89.8 | 67.5 | 54.3 |
@@ -139,72 +139,72 @@ Findings:
 | Cartoon | 95.8 | 65.0 | 66.1 |
 | **Overall** | **94.4** | **64.0** | **67.4** |
 
-Gemini-2.5-Pro è bravo su Event Record e Sports ma crolla su Documentary (54.3); Seed1.5-VL è più uniforme. **Gap umano-macchina ~27 punti.**
+Gemini-2.5-Pro is strong on Event Record and Sports but collapses on Documentary (54.3); Seed1.5-VL is more uniform. **Human-machine gap ~27 points.**
 
-### Ablation frame density (§4.5, Fig. 4)
+### Frame-density ablation (§4.5, Fig. 4)
 
-Su Seed1.5-VL, Gemini-2.5-Pro, Qwen2.5-VL-72B testati con 0, 1, 4, 8, 50 frame e 1 fps:
+Seed1.5-VL, Gemini-2.5-Pro, Qwen2.5-VL-72B tested with 0, 1, 4, 8, 50 frames and 1 fps:
 
-- "0 frames" → tutti vicini a random guess (validazione: il benchmark non è risolvibile da pure LLM).
-- 1 → 8 frame: guadagno modesto.
-- 50 → 1 fps: **salto grande**. Suggerisce che la dense sampling è necessaria per catturare segnali transitori critici.
+- "0 frames" → all near random guess (validation: the benchmark is not solvable by pure LLMs).
+- 1 → 8 frames: modest gain.
+- 50 → 1 fps: **big jump**. Suggests dense sampling is necessary to catch critical transient signals.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- **Niente audio**: gli autori escludono volutamente l'audio perché molti modelli non lo supportano (§5 *Limitations*). Decisione che limita il realismo del benchmark.
-- Bias annotatore: alcuni QA possono comunque essere lievemente di bassa qualità anche dopo filtro.
-- Dipendenza dai video YouTube → degrado nel tempo (link rotti, rimozioni).
-- Nessuna divisione train/val/test: dataset interamente di valutazione.
+- **No audio**: the authors deliberately exclude audio because many models do not support it (§5 *Limitations*). A decision that limits the benchmark's realism.
+- Annotator bias: some QAs may still be of slightly low quality even after filtering.
+- Dependence on YouTube videos → degradation over time (broken links, takedowns).
+- No train/val/test split: dataset is purely for evaluation.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- L'esclusione dell'audio rende LVBench *meno* multimodale di Video-MME (dove l'audio è una colonna chiave). Per molti video lunghi (es. documentari, TV show) l'audio è fortemente informativo: si valuta un setting artificiale.
-- La filtro dual-LLM (GLM-4 ∩ GPT-4) è più robusto del filtro single-LLM di Video-MME, ma rimane biased verso ciò che GLM-4 e GPT-4 *non sanno*. Modelli non-LLM ben addestrati su Wikipedia potrebbero comunque rispondere senza video.
-- Lo schema di valutazione mostra che 5 dei 6 task vengono dominati da Gemini-2.5-Pro, ma con metriche aggregate (one number per skill). Manca un breakdown di varianza / intervallo di confidenza.
-- I confronti tra "native" e "non-native long-video" sono confusi dalla diversità del backbone LLM (Vicuna-7B vs Qwen2.5-72B vs Gemini): difficile attribuire le differenze al supporto nativo per il long-video.
-- Le 1.549 domande sono molte ma su soli 103 video — alta correlazione tra QA dello stesso video, dimensione efficace minore di quanto sembri.
-- "Modality Independence" come criterio di filtro è soggettivo: chi decide se un'informazione è davvero solo visuale? Probabili leak di informazione audio in domande Sport/TV.
+- Excluding audio makes LVBench *less* multimodal than Video-MME (where audio is a key column). For many long videos (e.g. documentaries, TV shows) audio is highly informative: an artificial setting is being evaluated.
+- The dual-LLM filter (GLM-4 ∩ GPT-4) is more robust than Video-MME's single-LLM filter, but remains biased toward what GLM-4 and GPT-4 *do not know*. Non-LLM models well-trained on Wikipedia could still answer without video.
+- The evaluation scheme shows that 5 of 6 tasks are dominated by Gemini-2.5-Pro, but with aggregated metrics (one number per skill). Variance / confidence interval breakdown is missing.
+- "Native" vs "non-native long-video" comparisons are confounded by LLM backbone diversity (Vicuna-7B vs Qwen2.5-72B vs Gemini): hard to attribute the differences to native long-video support.
+- 1,549 questions are many but over only 103 videos — high correlation among QAs from the same video, effective size smaller than it seems.
+- "Modality Independence" as a filtering criterion is subjective: who decides whether information is truly visual-only? Likely audio-information leaks in Sport/TV questions.
 
-## Concetti citati
+## Cited concepts
 
-- [[multimodal-large-language-model]] — oggetto di valutazione.
-- [[long-video-understanding]] — task target del benchmark.
-- [[temporal-grounding]] — una delle 6 skill core.
-- [[video-summarization]] — skill Sum.
-- [[video-reasoning]] — skill Rea.
-- [[key-information-retrieval]] — skill KIR.
-- [[entity-recognition]] — skill ER.
-- [[event-understanding]] — skill EU.
-- [[clue-duration]] — concetto analogo a certificate length, di [[egoschema]].
-- [[certificate-length]] — non usato esplicitamente ma concettualmente vicino.
-- [[multiple-choice-qa]] — formato.
-- [[ring-attention]] — citato per LWM.
-- [[q-former]] — usato da Video-LLaMA.
-- [[3d-rope]] — introdotta da Qwen2-VL per long-video.
-- [[ego4d]] — non usato direttamente ma menzionato come dominio di EgoSchema.
-- [[video-mme]] — confronto in Tab. 1.
-- [[mvbench]] — citato in Tab. 1.
-- [[egoschema]] — citato in Tab. 1.
-- [[movieqa]] — citato in Tab. 1.
-- [[longvideobench]] — citato in Tab. 1.
-- [[moviechat-benchmark]] — citato in Tab. 1.
-- [[gemini-1-5-pro]] — modello valutato (sorprendentemente debole, 33.1 %).
+- [[multimodal-large-language-model]] — object of evaluation.
+- [[long-video-understanding]] — target task of the benchmark.
+- [[temporal-grounding]] — one of the 6 core skills.
+- [[video-summarization]] — Sum skill.
+- [[video-reasoning]] — Rea skill.
+- [[key-information-retrieval]] — KIR skill.
+- [[entity-recognition]] — ER skill.
+- [[event-understanding]] — EU skill.
+- [[clue-duration]] — concept analogous to certificate length, from [[egoschema]].
+- [[certificate-length]] — not explicitly used but conceptually close.
+- [[multiple-choice-qa]] — format.
+- [[ring-attention]] — cited for LWM.
+- [[q-former]] — used by Video-LLaMA.
+- [[3d-rope]] — introduced by Qwen2-VL for long video.
+- [[ego4d]] — not used directly but mentioned as the EgoSchema domain.
+- [[video-mme]] — comparison in Tab. 1.
+- [[mvbench]] — cited in Tab. 1.
+- [[egoschema]] — cited in Tab. 1.
+- [[movieqa]] — cited in Tab. 1.
+- [[longvideobench]] — cited in Tab. 1.
+- [[moviechat-benchmark]] — cited in Tab. 1.
+- [[gemini-1-5-pro]] — evaluated model (surprisingly weak, 33.1%).
 - [[gemini-2-5-pro]] — top performer.
-- [[gpt-4o]] — modello valutato.
-- [[gpt-4-1]] — modello valutato.
-- [[qwen2-vl]] — modello valutato.
-- [[qwen2-5-vl]] — modello valutato.
-- [[mplug-owl3]] — modello valutato.
-- [[videollama-3]] — modello valutato.
-- [[seed1-5-vl]] — secondo top performer.
-- [[llava-onevision]] — modello valutato.
-- [[internvl2]] — modello valutato.
-- [[cogvlm2]] — modello valutato.
-- [[mr-video]] — modello "MapReduce" per long video.
-- [[adaretake]] — modello con adaptive redundancy reduction.
-- [[mm-star]] — citato come motivazione per il dual-LLM blind filter.
+- [[gpt-4o]] — evaluated model.
+- [[gpt-4-1]] — evaluated model.
+- [[qwen2-vl]] — evaluated model.
+- [[qwen2-5-vl]] — evaluated model.
+- [[mplug-owl3]] — evaluated model.
+- [[videollama-3]] — evaluated model.
+- [[seed1-5-vl]] — second top performer.
+- [[llava-onevision]] — evaluated model.
+- [[internvl2]] — evaluated model.
+- [[cogvlm2]] — evaluated model.
+- [[mr-video]] — "MapReduce" model for long video.
+- [[adaretake]] — model with adaptive redundancy reduction.
+- [[mm-star]] — cited as motivation for the dual-LLM blind filter.
 
-## Citazioni dirette
+## Direct quotes
 
 > "We define long videos as those having a minimum duration of 30 minutes and containing rich, dynamic visual information with multiple events and scene transitions." (§3.1, p. 3)
 

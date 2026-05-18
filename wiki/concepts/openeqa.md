@@ -8,17 +8,17 @@ updated: 2026-05-15
 
 # OpenEQA
 
-**OpenEQA** è un benchmark di **embodied question answering**: un agente percorre un ambiente reale (registrato come video first-person), e deve rispondere a domande open-ended sulla scena percepita (oggetti, attributi, spaziale, memoria). Misura la capacità di un MLLM di ragionare su video egocentrico in setting embodied.
+**OpenEQA** is an **embodied question answering** benchmark: an agent traverses a real environment (recorded as first-person video) and must answer open-ended questions about the perceived scene (objects, attributes, spatial, memory). It measures the ability of an MLLM to reason over egocentric video in an embodied setting.
 
-Nel wiki appare come uno dei 4 benchmark valutati da [[arnab-2025-temporal-chain-of-thought]] (TCoT): TCoT (Gemini Flash) = 69.2 vs baseline 68.0 (+1.2). Marginale rispetto al guadagno su LVBench (+11.4) — segno che il task embodied OpenEQA è già ben gestito dalla baseline Gemini.
+In the wiki it appears as one of the 4 benchmarks evaluated by [[arnab-2025-temporal-chain-of-thought]] (TCoT): TCoT (Gemini Flash) = 69.2 vs. baseline 68.0 (+1.2). Marginal compared to the gain on LVBench (+11.4) — a sign that the embodied OpenEQA task is already well handled by the Gemini baseline.
 
 ## Sources
 
-- [[arnab-2025-temporal-chain-of-thought]] — uno dei 4 benchmark di valutazione.
+- [[arnab-2025-temporal-chain-of-thought]] — one of the 4 evaluation benchmarks.
 
-## Concetti correlati
+## Related concepts
 
-- [[video-question-answering]] — task imparentato.
-- [[ego4d]] — dataset di video egocentrici simili.
-- [[video-llm]] — modelli valutati.
-- [[long-video-understanding]] — task adiacente.
+- [[video-question-answering]] — related task.
+- [[ego4d]] — similar egocentric video dataset.
+- [[video-llm]] — evaluated models.
+- [[long-video-understanding]] — adjacent task.

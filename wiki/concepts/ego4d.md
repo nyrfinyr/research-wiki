@@ -8,25 +8,25 @@ updated: 2026-05-15
 
 # Ego4D
 
-Ego4D è il dataset egocentrico large-scale di riferimento per la ricerca video: **3.670 ore** di video RGB egocentrici raccolti da centinaia di partecipanti, con **3.85 M narrazioni dense** (1772 verbi, 4336 sostantivi unici) timestamped. È al tempo stesso un corpus di training (per video encoder e MLLM) e la base diretta di [[egoschema]] (clip di 3 min con ≥ 30 narrazioni → 5.063 QA), oltre a essere usato come fonte di dati instruction-tuning ("EgoQA") in VideoChat2 e come dominio di valutazione in [[longvideobench]], [[lvbench]], etc.
+Ego4D is the reference large-scale egocentric dataset for video research: **3,670 hours** of egocentric RGB video collected from hundreds of participants, with **3.85 M dense narrations** (1772 verbs, 4336 unique nouns) timestamped. It is at once a training corpus (for video encoders and MLLMs) and the direct basis of [[egoschema]] (3-min clips with ≥ 30 narrations → 5,063 QAs), as well as a source of instruction-tuning data ("EgoQA") in VideoChat2 and an evaluation domain in [[longvideobench]], [[lvbench]], etc.
 
-## Ruolo nel wiki
+## Role in the wiki
 
-- **Sorgente per EgoSchema**: lo Stage I della pipeline di [[mangalam-2023-egoschema]] filtra clip non-overlapping di 3 minuti con ≥ 30 narrazioni timestamped, ottenendo ~250 h di video filtrato [source: raw/papers/mangalam-2023-egoschema.pdf §3.1].
-- **Training data per MLLM**: usato come EgoQA in instruction-tuning di [[li-2024-mvbench|VideoChat2]] e come parte del corpus video di [[zhang-2025-videollama-3|VideoLLaMA 3]].
-- **Pre-training di captioner**: LaViLa e EgoVLP, usati in [[zhang-2024-llovi]], sono pre-trained su Ego4D.
+- **Source for EgoSchema**: Stage I of the [[mangalam-2023-egoschema]] pipeline filters non-overlapping 3-minute clips with ≥ 30 timestamped narrations, yielding ~250 h of filtered video [source: raw/papers/mangalam-2023-egoschema.pdf §3.1].
+- **Training data for MLLMs**: used as EgoQA in instruction-tuning of [[li-2024-mvbench|VideoChat2]] and as part of the video corpus of [[zhang-2025-videollama-3|VideoLLaMA 3]].
+- **Captioner pre-training**: LaViLa and EgoVLP, used in [[zhang-2024-llovi]], are pre-trained on Ego4D.
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — usa Ego4D come video pool per EgoSchema.
-- [[li-2024-mvbench]] — usa Ego4D come sorgente EgoQA in instruction tuning di VideoChat2.
-- [[zhang-2024-llovi]] — il captioner LaViLa è pre-trained su Ego4D.
-- [[zhang-2025-videollama-3]] — Ego4D citato come parte del corpus video.
-- [[wang-2025-lvbench]] — citato come dominio di video-understanding.
+- [[mangalam-2023-egoschema]] — uses Ego4D as the video pool for EgoSchema.
+- [[li-2024-mvbench]] — uses Ego4D as the EgoQA source in VideoChat2 instruction tuning.
+- [[zhang-2024-llovi]] — the LaViLa captioner is pre-trained on Ego4D.
+- [[zhang-2025-videollama-3]] — Ego4D cited as part of the video corpus.
+- [[wang-2025-lvbench]] — cited as a video-understanding domain.
 
-## Concetti correlati
+## Related concepts
 
-- [[egoschema]] — benchmark derivato.
-- [[long-video-understanding]] — task supportato.
-- [[video-llm]] — famiglia di modelli che lo usa in training.
-- [[multimodal-large-language-model]] — oggetto downstream.
+- [[egoschema]] — derived benchmark.
+- [[long-video-understanding]] — supported task.
+- [[video-llm]] — family of models that uses it in training.
+- [[multimodal-large-language-model]] — downstream target.

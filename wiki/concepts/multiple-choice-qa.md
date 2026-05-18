@@ -8,25 +8,25 @@ updated: 2026-05-15
 
 # Multiple-Choice QA
 
-**Multiple-choice question answering (MCQA)** è la formulazione del task QA in cui il modello sceglie una lettera fra N opzioni (tipicamente 4 o 5). È il formato dominante nei benchmark MLLM video del wiki perché elimina la variabilità della valutazione di output open-ended e permette accuracy diretta via regex match.
+**Multiple-choice question answering (MCQA)** is the QA task formulation in which the model picks one letter out of N options (typically 4 or 5). It is the dominant format in the video MLLM benchmarks of the wiki because it eliminates the variability of evaluating open-ended outputs and enables direct accuracy via regex match.
 
-Convenzioni nel wiki:
-- **4 opzioni** (random baseline 25 %): [[video-mme]], [[lvbench]], [[mvbench]], [[longvideobench]], [[next-qa]].
-- **5 opzioni** (random baseline 20 %): [[egoschema]].
-- **Estrazione**: regex sulla lettera; fallback LLM judge solo se il regex fallisce; il prompt design "Best Option: (" introdotto da [[li-2024-mvbench]] porta l'extraction rate al 100 %.
+Conventions in the wiki:
+- **4 options** (random baseline 25%): [[video-mme]], [[lvbench]], [[mvbench]], [[longvideobench]], [[next-qa]].
+- **5 options** (random baseline 20%): [[egoschema]].
+- **Extraction**: regex on the letter; LLM judge fallback only if regex fails; the "Best Option: (" prompt design introduced by [[li-2024-mvbench]] brings the extraction rate to 100%.
 
-Limite riconosciuto: MCQA può nascondere debolezze del modello (allucinazioni, shortcut linguistici, mancanza di comprensione visiva fine-grained) che emergono solo con setup open-ended o fine-grained. Vedi [[kim-2026-sink-token-aware-pruning]] che mostra come metodi training-free di token pruning si comportino bene su MCQA ma collassino su task fine-grained (hallucination su EventHallusion).
+Acknowledged limitation: MCQA can hide model weaknesses (hallucinations, linguistic shortcuts, lack of fine-grained visual understanding) that surface only with open-ended or fine-grained setups. See [[kim-2026-sink-token-aware-pruning]], which shows that training-free token pruning methods perform well on MCQA but collapse on fine-grained tasks (hallucination on EventHallusion).
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — 5-MCQ formato.
-- [[fu-2025-video-mme]] — 4-MCQ formato.
-- [[wang-2025-lvbench]] — 4-MCQ formato.
-- [[li-2024-mvbench]] — 4-MCQ formato + prompt design.
-- [[kim-2026-sink-token-aware-pruning]] — critica del MCQA come nascondino di debolezze.
+- [[mangalam-2023-egoschema]] — 5-MCQ format.
+- [[fu-2025-video-mme]] — 4-MCQ format.
+- [[wang-2025-lvbench]] — 4-MCQ format.
+- [[li-2024-mvbench]] — 4-MCQ format + prompt design.
+- [[kim-2026-sink-token-aware-pruning]] — critique of MCQA as a hiding place for weaknesses.
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[evaluation-metrics]] / accuracy — metrica.
-- [[egoschema]], [[video-mme]], [[lvbench]], [[mvbench]] — benchmark che lo adottano.
+- [[evaluation-metrics]] / accuracy — metric.
+- [[egoschema]], [[video-mme]], [[lvbench]], [[mvbench]] — benchmarks that adopt it.

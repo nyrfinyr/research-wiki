@@ -8,15 +8,15 @@ updated: 2026-05-15
 
 # Charades-STA
 
-**Charades-STA** è un benchmark di **temporal grounding / moment retrieval**: dato un video e una descrizione testuale, localizzare il segmento temporale (start, end) corrispondente. Metrica principale: **mIoU** (mean Intersection-over-Union). È uno dei test standard per misurare la capacità di un MLLM di ragionare al secondo sulla timeline.
+**Charades-STA** is a **temporal grounding / moment retrieval** benchmark: given a video and a textual description, localize the corresponding temporal segment (start, end). Main metric: **mIoU** (mean Intersection-over-Union). It is one of the standard tests for measuring an MLLM's ability to reason on the timeline at second-level granularity.
 
-Nel wiki appare come sorgente del task "Action Localization" di [[mvbench]] [source: raw/papers/li-2024-mvbench.pdf §3.2] e come benchmark di valutazione nei tech report Qwen.
+In the wiki it appears as the source of MVBench's "Action Localization" task in [[mvbench]] [source: raw/papers/li-2024-mvbench.pdf §3.2] and as an evaluation benchmark in the Qwen tech reports.
 
-## Numeri di riferimento
+## Reference numbers
 
-Risultati di temporal grounding mIoU:
+Temporal grounding mIoU results:
 
-| Modello | Charades-STA mIoU | Fonte |
+| Model | Charades-STA mIoU | Source |
 |---|---|---|
 | GPT-4o | 35.7 | [[qwen2-5-vl-2025-tech-report]] |
 | Qwen2.5-VL-3B | 38.8 | [[qwen2-5-vl-2025-tech-report]] |
@@ -26,18 +26,18 @@ Risultati di temporal grounding mIoU:
 | VideoLLaMA 3-7B | 60.7 | [[zhang-2025-videollama-3]] |
 | Qwen3-VL-235B-A22B inst | 64.8 | [[qwen3-vl-2025-tech-report]] |
 
-Qwen2.5-VL motiva la T-RoPE absolute-time aligned proprio dal salto su Charades-STA, dove temporal grounding al secondo è critico.
+Qwen2.5-VL motivates the absolute-time aligned T-RoPE precisely from the jump on Charades-STA, where second-level temporal grounding is critical.
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — valuta e motiva T-RoPE.
-- [[qwen3-vl-2025-tech-report]] — valuta Qwen3-VL.
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3.
-- [[li-2024-mvbench]] — sorgente di Action Localization.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates and motivates T-RoPE.
+- [[qwen3-vl-2025-tech-report]] — evaluates Qwen3-VL.
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3.
+- [[li-2024-mvbench]] — source of Action Localization.
 
-## Concetti correlati
+## Related concepts
 
 - [[temporal-grounding]] — task.
-- [[mvbench]] — benchmark che lo usa come sorgente.
-- [[video-llm]] — modelli valutati.
-- [[mrope]] / T-RoPE — meccanismo che lo motiva.
+- [[mvbench]] — benchmark that uses it as source.
+- [[video-llm]] — evaluated models.
+- [[mrope]] / T-RoPE — mechanism it motivates.

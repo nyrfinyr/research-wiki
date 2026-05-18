@@ -8,17 +8,17 @@ updated: 2026-05-15
 
 # LLaVA-Video
 
-Variante video-tuned della famiglia LLaVA (Zhang et al., 2024): vision encoder SigLIP + LLM Qwen2 con dataset video instruction tuning (LLaVA-Video-178K). Backbone ampiamente usato in lavori su token pruning, keyframe selection e prompt-based aggregation.
+Video-tuned variant of the LLaVA family (Zhang et al., 2024): SigLIP vision encoder + Qwen2 LLM with video instruction tuning dataset (LLaVA-Video-178K). Widely used backbone in work on token pruning, keyframe selection and prompt-based aggregation.
 
 ## Sources
 
-- [[doorenbos-2026-video-panels]] — backbone per video paneling
-- [[kim-2026-sink-token-aware-pruning]] — backbone per token pruning
-- [[tang-2025-adaptive-keyframe-sampling]] — backbone, usa SigLIP come vision encoder
+- [[doorenbos-2026-video-panels]] — backbone for video paneling
+- [[kim-2026-sink-token-aware-pruning]] — backbone for token pruning
+- [[tang-2025-adaptive-keyframe-sampling]] — backbone, uses SigLIP as vision encoder
 
-## Concetti correlati
+## Related concepts
 
-- [[llava]] — famiglia
-- [[llava-onevision]] — pari/precursore
+- [[llava]] — family
+- [[llava-onevision]] — peer/precursor
 - [[siglip]] — vision encoder
 - [[qwen]] — LLM backbone

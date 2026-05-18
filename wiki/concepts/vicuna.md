@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # Vicuna
 
-LLM open-source ottenuto da LMSYS (Chiang et al., 2023) tramite fine-tuning di LLaMA su ~70k conversazioni di ShareGPT. Disponibile in 7B/13B/33B con versioni v0, v1.3, v1.5. Backbone LLM standard nei primi MLLM open-source (LLaVA, MiniGPT-4, Video-LLaMA, VideoChat2).
+Open-source LLM produced by LMSYS (Chiang et al., 2023) by fine-tuning LLaMA on ~70k ShareGPT conversations. Available in 7B/13B/33B with v0, v1.3, v1.5 versions. Standard LLM backbone in early open-source MLLMs (LLaVA, MiniGPT-4, Video-LLaMA, VideoChat2).
 
 ## Sources
 
-- [[li-2024-mvbench]] — LLM backbone di VideoChat2 (Vicuna-7B v0 default, Vicuna-13B, Vicuna-7B v1.5)
+- [[li-2024-mvbench]] — LLM backbone of VideoChat2 (Vicuna-7B v0 default, Vicuna-13B, Vicuna-7B v1.5)
 
-## Concetti correlati
+## Related concepts
 
-- [[llama]] — modello base
-- [[mistral]] — backbone alternativo
-- [[llava]], [[videochat2]] — MLLM che lo usano
+- [[llama]] — base model
+- [[mistral]] — alternative backbone
+- [[llava]], [[videochat2]] — MLLMs that use it

@@ -8,21 +8,21 @@ updated: 2026-05-15
 
 # Vision-Language Model (VLM)
 
-Un **Vision-Language Model** (VLM) è un modello che integra encoding visivo (tipicamente immagini) con linguaggio naturale. Nel wiki la dicitura si sovrappone in larga parte a [[multimodal-large-language-model]] ma è usata in modo più ristretto per indicare modelli **image-first** (con o senza estensione video): es. la famiglia [[qwen2-5-vl-2025-tech-report|Qwen2.5-VL]] è esplicitamente descritta come "vision-language model" dal proprio tech report, anche se supporta video. [[qwen3-vl-2025-tech-report|Qwen3-VL]] continua questa convenzione con varianti dense e MoE.
+A **Vision-Language Model** (VLM) is a model that integrates visual encoding (typically of images) with natural language. In the wiki the term largely overlaps with [[multimodal-large-language-model]] but is used more narrowly to refer to **image-first** models (with or without a video extension): e.g. the [[qwen2-5-vl-2025-tech-report|Qwen2.5-VL]] family is explicitly described as a "vision-language model" by its own tech report, even though it supports video. [[qwen3-vl-2025-tech-report|Qwen3-VL]] continues this convention with dense and MoE variants.
 
-I VLM moderni hanno tipicamente: vision encoder ([[vision-transformer|ViT]], spesso [[siglip|SigLIP-2]] o CLIP), un projector / merger MLP, e un LLM backbone. La distinzione tra "VLM" e "video-LLM" è sfumata: un VLM image-first (es. Qwen2.5-VL) può essere applicato al video con frame sampling, mentre un [[video-llm|video-LLM]] è nativamente progettato per la dimensione temporale.
+Modern VLMs typically have: a vision encoder ([[vision-transformer|ViT]], often [[siglip|SigLIP-2]] or CLIP), an MLP projector / merger, and an LLM backbone. The distinction between "VLM" and "video-LLM" is blurred: an image-first VLM (e.g. Qwen2.5-VL) can be applied to video via frame sampling, while a [[video-llm|video-LLM]] is natively designed for the temporal dimension.
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — esempio di VLM image+video con architettura "vision-language model".
-- [[qwen3-vl-2025-tech-report]] — versione successiva con MoE e 256K context.
-- [[zhang-2025-videollama-3]] — usa la dicitura VLM per la categoria.
-- [[doorenbos-2026-video-panels]] — testa il metodo su 8 "VLM" inclusi GPT-4o-mini/4.1.
+- [[qwen2-5-vl-2025-tech-report]] — example of an image+video VLM with a "vision-language model" architecture.
+- [[qwen3-vl-2025-tech-report]] — successor version with MoE and 256K context.
+- [[zhang-2025-videollama-3]] — uses the VLM label for the category.
+- [[doorenbos-2026-video-panels]] — tests the method on 8 "VLMs" including GPT-4o-mini/4.1.
 
-## Concetti correlati
+## Related concepts
 
-- [[multimodal-large-language-model]] — categoria più generale.
-- [[video-llm]] — sub-famiglia video-native.
+- [[multimodal-large-language-model]] — more general category.
+- [[video-llm]] — video-native sub-family.
 - [[vision-transformer]] — encoder.
-- [[siglip]] — vision encoder ricorrente.
-- [[long-video-understanding]] — task downstream.
+- [[siglip]] — recurring vision encoder.
+- [[long-video-understanding]] — downstream task.

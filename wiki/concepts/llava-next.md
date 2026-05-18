@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # LLaVA-NeXT
 
-Versione image-only di LLaVA-1.6 (gennaio 2024): introduce tiling any-resolution per migliorare OCR e dettagli fine-grained, training data ampliato. Backbone testato in analisi mechanistic interpretability sul flow di informazione visiva.
+Image-only version of LLaVA-1.6 (January 2024): introduces any-resolution tiling to improve OCR and fine-grained details, with expanded training data. Backbone tested in mechanistic interpretability analyses of visual information flow.
 
 ## Sources
 
-- [[kim-2025-map-the-flow]] — backbone analizzato dal framework Map-the-Flow
+- [[kim-2025-map-the-flow]] — backbone analyzed by the Map-the-Flow framework
 
-## Concetti correlati
+## Related concepts
 
-- [[llava-1-6]] — stesso modello
-- [[llava-next-video]] — variante video-tuned
-- [[llava]] — famiglia
+- [[llava-1-6]] — same model
+- [[llava-next-video]] — video-tuned variant
+- [[llava]] — family

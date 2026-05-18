@@ -8,18 +8,18 @@ updated: 2026-05-15
 
 # MLVU
 
-MLVU (Multi-task Long Video Understanding) è un benchmark di video-QA long-form multi-task, ampiamente usato come complemento di [[video-mme]] e [[longvideobench]] nelle valutazioni dei moderni MLLM video. Misura comprensione su durate medio-lunghe con un mix di task (holistic, perception, ordering, summarization) e una metrica aggregata "M-Avg".
+MLVU (Multi-task Long Video Understanding) is a multi-task long-form video-QA benchmark, widely used as a complement to [[video-mme]] and [[longvideobench]] in evaluations of modern video MLLMs. It measures comprehension on medium-long durations with a mix of tasks (holistic, perception, ordering, summarization) and an aggregate "M-Avg" metric.
 
-## Composizione / Protocollo
+## Composition / Protocol
 
-- Long-form video QA multi-task; durate tipicamente nell'intervallo decine-di-minuti.
-- Metrica principale **M-Avg** (multiple-choice average).
+- Multi-task long-form video QA; durations typically in the tens-of-minutes range.
+- Main metric **M-Avg** (multiple-choice average).
 
-## Numeri di riferimento
+## Reference numbers
 
-Risultati selezionati dai source pages del wiki:
+Selected results from wiki source pages:
 
-| Modello | MLVU M-Avg | Fonte |
+| Model | MLVU M-Avg | Source |
 |---|---|---|
 | Qwen2.5-VL-3B | 68.2 | [[qwen2-5-vl-2025-tech-report]] |
 | Qwen2.5-VL-7B | 70.2 | [[qwen2-5-vl-2025-tech-report]] |
@@ -36,16 +36,16 @@ Risultati selezionati dai source pages del wiki:
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — valuta Qwen2.5-VL.
-- [[qwen3-vl-2025-tech-report]] — valuta Qwen3-VL; Qwen3-VL-235B "attains or even surpasses Gemini-2.5-Pro" su MLVU [§5.9].
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3.
-- [[doorenbos-2026-video-panels]] — usa MLVU come uno dei 5 benchmark di valutazione (con perdita lieve sul task ordering, −1.2 %).
-- [[kim-2026-sink-token-aware-pruning]] — valuta SToP su MLVU.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates Qwen2.5-VL.
+- [[qwen3-vl-2025-tech-report]] — evaluates Qwen3-VL; Qwen3-VL-235B "attains or even surpasses Gemini-2.5-Pro" on MLVU [§5.9].
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3.
+- [[doorenbos-2026-video-panels]] — uses MLVU as one of the 5 evaluation benchmarks (with a slight loss on the ordering task, −1.2%).
+- [[kim-2026-sink-token-aware-pruning]] — evaluates SToP on MLVU.
 
-## Concetti correlati
+## Related concepts
 
 - [[long-video-understanding]] — task.
-- [[video-mme]] — benchmark complementare.
-- [[longvideobench]] — benchmark complementare.
-- [[lvbench]] — benchmark long-video extreme.
-- [[video-llm]] — modelli valutati.
+- [[video-mme]] — complementary benchmark.
+- [[longvideobench]] — complementary benchmark.
+- [[lvbench]] — extreme long-video benchmark.
+- [[video-llm]] — evaluated models.

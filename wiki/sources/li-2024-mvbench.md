@@ -18,29 +18,29 @@ year: 2024
 
 ## TL;DR
 
-MVBench è un benchmark per video-MLLM costruito con un metodo **static-to-dynamic**: per ognuno dei 9 task statici comuni nei benchmark immagine (Action, Object, Position, Scene, Count, Attribute, Pose, Character, Cognition) gli autori derivano 20 versioni dinamiche che richiedono comprensione temporale (es. Position → Moving Direction, Count → Action Count). Le 4.000 domande multiple-choice (200 per task) sono generate automaticamente da 11 dataset video pubblici esistenti tramite ChatGPT, mantenendo la ground-truth dei dataset originali. Gli autori introducono inoltre **VideoChat2**, una baseline MLLM video allenata con un mix di 2M campioni instruction-tuning da 34 dataset, che supera VideoChat di **+15.6 %** e GPT-4V di **+16.9 %** su MVBench. Findings principali: tutti gli MLLM precedenti sono vicino al chance level su molti task temporali, ma con instruction-tuning massiccio + buon visual encoder (UMT-L) il gap si chiude considerevolmente [source: raw/papers/li-2024-mvbench.pdf §1, §5.1, Tab. 2].
+MVBench is a video-MLLM benchmark built with a **static-to-dynamic** method: for each of 9 static tasks common to image benchmarks (Action, Object, Position, Scene, Count, Attribute, Pose, Character, Cognition) the authors derive 20 dynamic versions that require temporal understanding (e.g. Position → Moving Direction, Count → Action Count). The 4,000 multiple-choice questions (200 per task) are automatically generated from 11 existing public video datasets via ChatGPT, preserving the original datasets' ground truth. The authors also introduce **VideoChat2**, a video MLLM baseline trained on a 2M-sample instruction-tuning mix from 34 datasets, which surpasses VideoChat by **+15.6%** and GPT-4V by **+16.9%** on MVBench. Main findings: all previous MLLMs are near chance level on many temporal tasks, but with massive instruction-tuning + a good visual encoder (UMT-L) the gap closes considerably [source: raw/papers/li-2024-mvbench.pdf §1, §5.1, Tab. 2].
 
-## Contributo principale
+## Main contribution
 
-- **Static-to-dynamic taxonomy** (Fig. 1): metodo sistematico per derivare task video da task immagine — 9 task spatial → 20 task temporal che non possono essere risolti da un singolo frame.
-- **Pipeline automatica di generazione QA** che riusa annotazioni esistenti (STAR, PAXION, MiT V1, FunQA, CLEVRER, Perception Test, Charades-STA, MoVQA, NTU RGB+D, VLN-CE, TVQA): 200 QA × 20 task = **4.000** multiple-choice QA pairs.
-- **VideoChat2**: MLLM video con visual encoder UMT-L, Q-Former a 64+32 query, training a 3 stadi (alignment / connection / instruction-tuning) su 2M sample da 34 sorgenti. Supera VideoChat di +15.6 %, GPT-4V di +16.9 % su MVBench; raggiunge SOTA su NExT-QA, STAR, EgoSchema (Fullset 54.4 %), IntentQA, MSVD/MSRVTT/ActivityNet-QA zero-shot.
-- **Prompt design** "Best Option: (" che porta l'option-extraction rate al **100 %** vs 64–87 % delle metodologie precedenti (Tab. 9).
+- **Static-to-dynamic taxonomy** (Fig. 1): a systematic method to derive video tasks from image tasks — 9 spatial tasks → 20 temporal tasks that cannot be solved by a single frame.
+- **Automatic QA generation pipeline** that reuses existing annotations (STAR, PAXION, MiT V1, FunQA, CLEVRER, Perception Test, Charades-STA, MoVQA, NTU RGB+D, VLN-CE, TVQA): 200 QA × 20 tasks = **4,000** multiple-choice QA pairs.
+- **VideoChat2**: video MLLM with UMT-L visual encoder, Q-Former with 64+32 queries, 3-stage training (alignment / connection / instruction-tuning) on 2M samples from 34 sources. Surpasses VideoChat by +15.6%, GPT-4V by +16.9% on MVBench; reaches SOTA on NExT-QA, STAR, EgoSchema (Fullset 54.4%), IntentQA, MSVD/MSRVTT/ActivityNet-QA zero-shot.
+- **Prompt design** "Best Option: (" that raises the option-extraction rate to **100%** vs. 64–87% for prior methodologies (Tab. 9).
 
-## Metodo
+## Method
 
 ### Static-to-dynamic task design (§3.1)
 
-L'idea chiave: partire da 9 task statici dei benchmark immagine (MME, MMBench) e introdurre evoluzione temporale per generare task video. Esempi:
+The key idea: start from 9 static tasks of image benchmarks (MME, MMBench) and introduce temporal evolution to generate video tasks. Examples:
 
 - Image Position ("Is the man on the stage?") → Video Moving Direction ("What direction is the man moving?")
 - Image Action → Video Action Sequence / Prediction / Antonym / Fine-grained / Unexpected
 - Image Count → Action Count / Moving Count
 - Image Attribute → Moving Attribute / State Change
 
-I 20 task finali coprono **6 famiglie spatial × dimensione temporal**:
+The 20 final tasks cover **6 spatial families × temporal dimension**:
 
-| Famiglia | Task derivati |
+| Family | Derived tasks |
 |---|---|
 | **Action** | (1) Action Sequence, (2) Action Prediction, (3) Action Antonym, (4) Fine-grained Action, (5) Unexpected Action |
 | **Object** | (6) Object Existence, (7) Object Interaction, (8) Object Shuffle |
@@ -52,60 +52,60 @@ I 20 task finali coprono **6 famiglie spatial × dimensione temporal**:
 | **Character** | (17) Character Order |
 | **Cognition** | (18) Egocentric Navigation, (19) Episodic Reasoning, (20) Counterfactual Inference |
 
-### Pipeline automatica di generazione QA (§3.2, Fig. 2)
+### Automatic QA generation pipeline (§3.2, Fig. 2)
 
-Tre passaggi:
+Three steps:
 
-1. **Data Filtration** su 11 dataset pubblici:
-   - *Video Diversity*: prima/terza persona, indoor/outdoor.
-   - *Temporal Sensitivity*: esclude clip troppo brevi (motion trascurabile) o troppo lunghi (contesto troppo complesso); range tipico **5–35 s**.
-   - *Question Difficulty*: per STAR si shifta randomicamente start/end per aumentare difficoltà; per CLEVRER si scartano domande con > 10 condizioni descrittive (riduce difficoltà eccessiva).
+1. **Data Filtration** on 11 public datasets:
+   - *Video Diversity*: first/third person, indoor/outdoor.
+   - *Temporal Sensitivity*: exclude clips too short (negligible motion) or too long (excessively complex context); typical range **5–35 s**.
+   - *Question Difficulty*: for STAR start/end are randomly shifted to raise difficulty; for CLEVRER questions with > 10 descriptive conditions are dropped (reduces excessive difficulty).
 2. **QA Generation**:
-   - *Template-based*: per task come Action Antonym e Moving Direction le opzioni sono direttamente i candidati template (azione corretta, antonimo, "not sure"; direzioni up/down/left/right + stationary).
-   - *LLM-based*: per Unexpected Action si usa ChatGPT per convertire open-ended QA originale in MCQ. Le 3–5 opzioni vengono shufflate e si forza similarità di lunghezza tra opzioni per evitare leak.
-3. **Answer Option Processing**: shuffle + bilanciamento di lunghezza via LLM.
+   - *Template-based*: for tasks such as Action Antonym and Moving Direction the options are directly the template candidates (correct action, antonym, "not sure"; directions up/down/left/right + stationary).
+   - *LLM-based*: for Unexpected Action, ChatGPT is used to convert the original open-ended QA into MCQ. The 3–5 options are shuffled and option length is forced to be similar to avoid leaks.
+3. **Answer Option Processing**: shuffle + length balancing via LLM.
 
-Risultato: 200 QA per ognuno dei 20 task = **4.000 QA totali**.
+Result: 200 QA for each of the 20 tasks = **4,000 total QA**.
 
-### Prompt design per la valutazione (§3.3)
+### Prompt design for evaluation (§3.3)
 
-Si definisce un **system prompt** che enfatizza la temporal evolution:
+A **system prompt** is defined that emphasises temporal evolution:
 
 > Carefully watch the video and pay attention to the cause and sequence of events, the detail and movement of objects and the action and pose of persons. Based on your observations, select the best option that accurately addresses the question.
 
-E un **answer prompt** che rende l'option extraction deterministica:
+And an **answer prompt** that makes option extraction deterministic:
 
 > Best Option: (
 
-L'extraction-rate sale al **100 %** vs 78–96 % delle baseline (Tab. 9), permettendo accuracy come metrica affidabile senza usare LLM judge (a differenza di MMBench [49] e VideoChatGPT).
+The extraction rate climbs to **100%** vs. 78–96% of the baselines (Tab. 9), allowing accuracy as a reliable metric without using an LLM judge (unlike MMBench [49] and VideoChatGPT).
 
 ### VideoChat2 (§4)
 
-**Architettura**:
+**Architecture**:
 
-- Visual encoder: [[umt-l]] (Unified Masked Transformer Large) — scelta motivata dalla forte capacità spatial-temporal vs EVA-CLIP-g (Tab. 6).
-- Q-Former (BERT-base): 32 query in Stage 1, +64 query random-initialized in Stage 2/3 → 96 query totali.
-- LLM: Vicuna-7B v0 di default; varianti con Vicuna-13B, Vicuna-7B v1.5, e infine **Mistral-7B** che dà i migliori risultati.
-- LoRA r=16, α=32, dropout 0.1 sulla LLM in Stage 3.
+- Visual encoder: [[umt-l]] (Unified Masked Transformer Large) — chosen for its strong spatial-temporal capability vs. EVA-CLIP-g (Tab. 6).
+- Q-Former (BERT-base): 32 queries in Stage 1, +64 randomly initialised queries in Stage 2/3 → 96 total queries.
+- LLM: Vicuna-7B v0 by default; variants with Vicuna-13B, Vicuna-7B v1.5, and finally **Mistral-7B** which gives the best results.
+- LoRA r=16, α=32, dropout 0.1 on the LLM in Stage 3.
 
-**Training progressivo a 3 stadi (Fig. 4)**:
+**Progressive 3-stage training (Fig. 4)**:
 
-- **Stage 1 — Vision-Language Alignment**: freeze visual encoder, train Q-Former con loss VTC + VTM + VTG su 15M image caption (CC3M, CC12M) + 10M video caption (WebVid-10M); 4-frame, 10 epoch.
-- **Stage 2 — Vision-Language Connection**: linear projection + connect to LLM (frozen); unfreeze visual encoder; aggiunge 2M image caption (COCO, Visual Genome, SBU) + 10M video caption (InternVid). 1 epoch.
-- **Stage 3 — Instruction Tuning**: 2M campioni instruction-tuning da **34 dataset** in 6 categorie:
+- **Stage 1 — Vision-Language Alignment**: freeze visual encoder, train Q-Former with VTC + VTM + VTG loss on 15M image captions (CC3M, CC12M) + 10M video captions (WebVid-10M); 4-frame, 10 epochs.
+- **Stage 2 — Vision-Language Connection**: linear projection + connect to LLM (frozen); unfreeze visual encoder; add 2M image captions (COCO, Visual Genome, SBU) + 10M video captions (InternVid). 1 epoch.
+- **Stage 3 — Instruction Tuning**: 2M instruction-tuning samples from **34 datasets** in 6 categories:
   1. *Conversation* (LLaVA, VideoChat, VideoChatGPT)
   2. *Simple Caption* (COCO Caption, WebVid, YouCook2)
   3. *Detailed Caption* (MiniGPT-4, LLaVA, VideoChat, Paragraph Captioning, TextCaps, TextVR)
   4. *VQA* (VQAv2, GQA, TGIF-QA, WebVidQA, OK-VQA, AOK-VQA, ViQuAE, OCR-VQA, TextVQA, ST-VQA, DocVQA, Ego4D EgoQA)
   5. *Reasoning* (LLaVA-reasoning, CLEVR, VisualMRC, NExT-QA, CLEVRER)
   6. *Classification* (ImageNet, COCO-ITM, Kinetics-710, SthSthV2)
-  - 8-frame, 3 epoch, LoRA su LLM, instruction (non question) inserita anche nel Q-Former.
+  - 8-frame, 3 epochs, LoRA on the LLM, instruction (not question) also injected in the Q-Former.
 
-**Inferenza**: 16-frame, 224×224.
+**Inference**: 16-frame, 224×224.
 
-## Risultati chiave
+## Key results
 
-### Benchmark MVBench (Tab. 2, accuracy media su 20 task)
+### MVBench (Tab. 2, average accuracy over 20 tasks)
 
 | Model | LLM | Avg |
 |---|---|---|
@@ -123,109 +123,109 @@ L'extraction-rate sale al **100 %** vs 78–96 % delle baseline (Tab. 9), permet
 | VideoChat | Vicuna-7B | 35.5 |
 | **VideoChat2text** (text-only) | Vicuna-7B | 34.7 |
 | **VideoChat2** | Vicuna-7B | **51.1** |
-| GPT-4V (16 frame, 512×512) | GPT-4 | 43.5 |
+| GPT-4V (16 frames, 512×512) | GPT-4 | 43.5 |
 | **VideoChat2 + Mistral-7B** | Mistral-7B | **60.4** |
 
 Findings:
 
-- **Quasi tutti gli MLLM pre-VideoChat2 sono vicini a random** (27.3) su molti task; VideoChat e VideoChatGPT non superano significativamente VideoChat2text (text-only) → segno che molti MLLM non sfruttano davvero la temporal information.
-- VideoChat2 supera VideoChat di **+15.6 punti** (51.1 vs 35.5).
-- Con Mistral come backbone, supera GPT-4V di **+16.9 punti** (60.4 vs 43.5).
-- VideoChat2 è forte su action, object, scene, attribute, pose; **debole su position, count, character** (peggio di VideoChat2text), attribuito alla mancanza di esposizione a questi task durante l'instruction tuning.
+- **Almost all pre-VideoChat2 MLLMs are near random** (27.3) on many tasks; VideoChat and VideoChatGPT do not significantly exceed VideoChat2text (text-only) → a sign that many MLLMs do not really exploit temporal information.
+- VideoChat2 surpasses VideoChat by **+15.6 points** (51.1 vs. 35.5).
+- With Mistral as backbone, it beats GPT-4V by **+16.9 points** (60.4 vs. 43.5).
+- VideoChat2 is strong on action, object, scene, attribute, pose; **weak on position, count, character** (worse than VideoChat2text), attributed to lack of exposure to those tasks during instruction tuning.
 
-### Cross-benchmark (Tab. 4, 15–18)
+### Cross-benchmark (Tabs. 4, 15–18)
 
-- **MSVD-QA / MSRVTT-QA / ActivityNet-QA** (zero-shot acc): VideoChat2 70.0 / 54.1 / 49.1 vs precedente SOTA VideoChatGPT 64.9 / 49.3 / 35.2.
-- **NExT-QA**: VideoChat2 zero-shot 61.7 % (Temp 57.4 / Caus 61.9 / Desc 69.9); in-domain Mistral version 78.6.
+- **MSVD-QA / MSRVTT-QA / ActivityNet-QA** (zero-shot acc): VideoChat2 70.0 / 54.1 / 49.1 vs. previous SOTA VideoChatGPT 64.9 / 49.3 / 35.2.
+- **NExT-QA**: VideoChat2 zero-shot 61.7% (Temp 57.4 / Caus 61.9 / Desc 69.9); in-domain Mistral version 78.6.
 - **STAR** (zero-shot): VideoChat2 59.0 avg (Mistral: 63.8).
-- **TVQA** (zero-shot, no subtitles): VideoChat2 40.6 (Mistral: 46.4) vs precedente SOTA SeViLA 38.2.
-- **EgoSchema Fullset zero-shot**: VideoChat2-Mistral 54.4 % (16 frame) vs InternVideo 32.1 (90 frame), mPLUG-Owl 31.1 (5 frame).
-- **IntentQA**: VideoChat2-Mistral 83.4 (testing) — supera tutti i baseline ma resta sotto l'umano (78.5).
+- **TVQA** (zero-shot, no subtitles): VideoChat2 40.6 (Mistral: 46.4) vs. previous SOTA SeViLA 38.2.
+- **EgoSchema Fullset zero-shot**: VideoChat2-Mistral 54.4% (16 frames) vs. InternVideo 32.1 (90 frames), mPLUG-Owl 31.1 (5 frames).
+- **IntentQA**: VideoChat2-Mistral 83.4 (testing) — surpasses every baseline but stays below human (78.5).
 
-### Ablation (Tab. 5–14)
+### Ablation (Tabs. 5–14)
 
-- **Instruction data scaling** (Tab. 5): più dati → meglio; image+video > solo video > solo image; 2M campioni → 51.1.
-- **Visual encoder** (Tab. 6): UMT-L > EVA-CLIP-g di +6.2 punti.
-- **LLM size**: Vicuna-7B v0 vs 13B → solo +0.3 punti. *MVBench dipende più dall'encoder visivo che dalla LLM.*
-- **LoRA**: +2.5–3.1 punti consistenti.
-- **Training method** (Tab. 7): unfreezing progressivo di Q-Former poi visual encoder → +12.6 punti totali.
-- **Frame count** (Tab. 12): 16-frame ≥ 32 ≥ 64 ≥ 8; aumentare risoluzione **danneggia** (384×384 < 224×224).
-- **Question prompt** (Tab. 14): "Let's think step by step" è dannoso (-0.6).
-- **Q-Former queries** (Tab. 11): 32+64 query ottimo; inserire instruction (no question) nel Q-Former è utile.
+- **Instruction data scaling** (Tab. 5): more data → better; image+video > video only > image only; 2M samples → 51.1.
+- **Visual encoder** (Tab. 6): UMT-L > EVA-CLIP-g by +6.2 points.
+- **LLM size**: Vicuna-7B v0 vs. 13B → only +0.3 points. *MVBench depends more on the visual encoder than on the LLM.*
+- **LoRA**: +2.5–3.1 consistent points.
+- **Training method** (Tab. 7): progressive unfreezing of Q-Former then visual encoder → +12.6 total points.
+- **Frame count** (Tab. 12): 16-frame ≥ 32 ≥ 64 ≥ 8; raising resolution **hurts** (384×384 < 224×224).
+- **Question prompt** (Tab. 14): "Let's think step by step" is harmful (-0.6).
+- **Q-Former queries** (Tab. 11): 32+64 queries optimal; inserting instruction (no question) in the Q-Former is useful.
 
-### Failure analysis sui task hard
+### Failure analysis on hard tasks
 
-- **Position (Moving Direction, Action Localization)**: ~23 % — vicino a chance — nessun modello risolve bene.
-- **Count (Action Count, Moving Count)**: anche VideoChat2 < 45 %; bottleneck riconosciuto come comune (vedi anche Video-MME §4.2 dove counting è "joint bottleneck").
-- **Character Order**: stesso scenario.
+- **Position (Moving Direction, Action Localization)**: ~23% — near chance — no model performs well.
+- **Count (Action Count, Moving Count)**: even VideoChat2 < 45%; bottleneck acknowledged as common (see also Video-MME §4.2 where counting is a "joint bottleneck").
+- **Character Order**: same situation.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- VideoChat2 è debole su position, counting, character order — attribuito a limitata esposizione a tali task nell'instruction-tuning.
-- "Minimal source gap" tra instruction data e MVBench: CLEVRER e SthSthV2 sono sia in instruction tuning *sia* sorgenti delle domande Moving Attribute, Counterfactual Inference, Action Antonym → la valutazione non è strettamente *out-of-domain*. Quantificato in Tab. 13: rimuovere CLEVRER fa scendere accuracy di 1.8 punti.
-- Generazione automatica via ChatGPT può introdurre bias (anche se l'option-shuffle e length-balancing mitigano).
-- Il benchmark esclude video troppo brevi o troppo lunghi (5–35 s) → non valuta long-video understanding.
+- VideoChat2 is weak on position, counting, character order — attributed to limited exposure to such tasks in instruction tuning.
+- "Minimal source gap" between instruction data and MVBench: CLEVRER and SthSthV2 appear both in instruction tuning *and* as sources of Moving Attribute, Counterfactual Inference, Action Antonym questions → the evaluation is not strictly *out-of-domain*. Quantified in Tab. 13: removing CLEVRER drops accuracy by 1.8 points.
+- Automatic generation via ChatGPT may introduce bias (though option shuffling and length balancing mitigate it).
+- The benchmark excludes overly short or overly long videos (5–35 s) → it does not evaluate long-video understanding.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- **Range temporale ristretto (5–35 s)**: MVBench non è long-video. Per long-video understanding cfr. [[egoschema]] (3 min), [[video-mme]] (fino a 1 h), [[lvbench]] (fino a multi-ora). Il benchmark misura "temporal understanding" su clip brevi, non "long-form".
-- L'**overlap tra training set di VideoChat2 e MVBench** (CLEVRER, SthSthV2) compromette in parte la fairness della baseline: VideoChat2 è ottimizzata praticamente per il proprio benchmark.
-- I 20 task non sono ortogonali: Action Sequence richiede Action Recognition + Temporal Reasoning; Action Localization è in pratica anche Temporal Grounding. La tassonomia 9-spatial × dynamics è elegante ma alcune cellule si sovrappongono.
-- Generazione automatica via ChatGPT: scarsa controllo sui distrattori plausibili — alcuni task (Counterfactual Inference su CLEVRER) potrebbero essere risolti con shortcut testuali.
-- Solo 200 QA per task: stima dell'accuracy ha intervallo di confidenza ~±3.5 % su singolo task (a 50% baseline). I gap di < 3 punti tra modelli su singoli task non sono statisticamente significativi.
-- L'option-extraction "Best Option: (" è ottimo per accuracy ma forza il modello in una modalità rigida — è opinabile se aiuti la valutazione di reasoning complesso.
-- L'audio non è considerato — confronto interessante con [[video-mme]] che invece lo include.
+- **Narrow temporal range (5–35 s)**: MVBench is not long-video. For long-video understanding cf. [[egoschema]] (3 min), [[video-mme]] (up to 1 h), [[lvbench]] (up to multi-hour). The benchmark measures "temporal understanding" on short clips, not "long-form".
+- The **overlap between VideoChat2's training set and MVBench** (CLEVRER, SthSthV2) partly compromises the baseline's fairness: VideoChat2 is effectively optimised for its own benchmark.
+- The 20 tasks are not orthogonal: Action Sequence requires Action Recognition + Temporal Reasoning; Action Localization is essentially Temporal Grounding too. The 9-spatial × dynamics taxonomy is elegant but some cells overlap.
+- Automatic generation via ChatGPT: little control over plausible distractors — some tasks (Counterfactual Inference on CLEVRER) could be solved with textual shortcuts.
+- Only 200 QA per task: the accuracy estimate has ~±3.5% confidence interval per task (at 50% baseline). Per-task gaps of < 3 points between models are not statistically significant.
+- The "Best Option: (" option extraction is great for accuracy but forces the model into a rigid mode — debatable whether it helps the evaluation of complex reasoning.
+- Audio is not considered — an interesting contrast with [[video-mme]] which does include it.
 
-## Concetti citati
+## Cited concepts
 
-- [[multimodal-large-language-model]] — oggetto di valutazione.
+- [[multimodal-large-language-model]] — object of evaluation.
 - [[video-question-answering]] — task.
-- [[multiple-choice-qa]] — formato.
-- [[temporal-understanding]] — competenza misurata.
-- [[static-to-dynamic-taxonomy]] — metodologia introdotta.
-- [[videochat2]] — baseline MLLM proposta.
-- [[videochat]] — predecessore.
-- [[videochatgpt]] — predecessore.
-- [[video-llama]] — confronto.
-- [[mplug-owl]] — confronto.
-- [[llama-adapter]] — confronto.
-- [[blip-2]] — confronto.
-- [[otter]] — confronto.
-- [[instructblip]] — confronto.
-- [[minigpt-4]] — confronto.
-- [[llava]] — confronto.
-- [[gpt-4v]] — confronto.
-- [[umt-l]] — visual encoder usato da VideoChat2.
-- [[q-former]] — compressore token visivi.
+- [[multiple-choice-qa]] — format.
+- [[temporal-understanding]] — measured competence.
+- [[static-to-dynamic-taxonomy]] — introduced methodology.
+- [[videochat2]] — proposed MLLM baseline.
+- [[videochat]] — predecessor.
+- [[videochatgpt]] — predecessor.
+- [[video-llama]] — comparison.
+- [[mplug-owl]] — comparison.
+- [[llama-adapter]] — comparison.
+- [[blip-2]] — comparison.
+- [[otter]] — comparison.
+- [[instructblip]] — comparison.
+- [[minigpt-4]] — comparison.
+- [[llava]] — comparison.
+- [[gpt-4v]] — comparison.
+- [[umt-l]] — visual encoder used by VideoChat2.
+- [[q-former]] — visual-token compressor.
 - [[vicuna]] — LLM backbone.
-- [[mistral]] — LLM backbone (variante migliore).
-- [[lora]] — fine-tuning parameter-efficient.
-- [[flash-attention]] — usata per training efficiente.
-- [[clevrer]] — sorgente per Moving Attribute, Counterfactual Inference, Moving Count, Moving Direction, Object Existence.
-- [[star-benchmark]] — sorgente per Action Sequence/Prediction, Object Interaction.
-- [[perception-test]] — sorgente per Object Shuffle, Action Count, State Change, Character Order.
-- [[charades-sta]] — sorgente per Action Localization.
-- [[moments-in-time]] — sorgente per Fine-grained Action.
-- [[ntu-rgbd]] — sorgente per Fine-grained Pose.
-- [[funqa]] — sorgente per Unexpected Action.
-- [[vln-ce]] — sorgente per Egocentric Navigation.
-- [[tvqa]] — sorgente per Episodic Reasoning.
-- [[movqa]] — sorgente per Scene Transition.
-- [[paxion]] — sorgente per Action Antonym.
-- [[ego4d]] — usato come sorgente di EgoQA in instruction-tuning.
+- [[mistral]] — LLM backbone (best variant).
+- [[lora]] — parameter-efficient fine-tuning.
+- [[flash-attention]] — used for efficient training.
+- [[clevrer]] — source for Moving Attribute, Counterfactual Inference, Moving Count, Moving Direction, Object Existence.
+- [[star-benchmark]] — source for Action Sequence/Prediction, Object Interaction.
+- [[perception-test]] — source for Object Shuffle, Action Count, State Change, Character Order.
+- [[charades-sta]] — source for Action Localization.
+- [[moments-in-time]] — source for Fine-grained Action.
+- [[ntu-rgbd]] — source for Fine-grained Pose.
+- [[funqa]] — source for Unexpected Action.
+- [[vln-ce]] — source for Egocentric Navigation.
+- [[tvqa]] — source for Episodic Reasoning.
+- [[movqa]] — source for Scene Transition.
+- [[paxion]] — source for Action Antonym.
+- [[ego4d]] — used as EgoQA source in instruction tuning.
 - [[webvid]] — caption training data.
-- [[internvid]] — caption training data Stage 2.
+- [[internvid]] — Stage-2 caption training data.
 - [[kinetics-710]] — classification data.
-- [[egoschema]] — citato come benchmark di confronto e zero-shot eval.
-- [[next-qa]] — confronto zero-shot e in-domain.
-- [[intentqa]] — confronto.
-- [[seek-vila]] — SeViLA citato come precedente SOTA.
-- [[chain-of-thought]] — testato nei prompt (peggiorativo, Tab. 14).
-- [[mme]] — citato come reference image benchmark.
-- [[mmbench]] — citato come benchmark di confronto.
-- [[seed-bench]] — confronto.
+- [[egoschema]] — cited as comparison benchmark and zero-shot eval.
+- [[next-qa]] — zero-shot and in-domain comparison.
+- [[intentqa]] — comparison.
+- [[seek-vila]] — SeViLA cited as previous SOTA.
+- [[chain-of-thought]] — tested in prompts (worse, Tab. 14).
+- [[mme]] — cited as image-benchmark reference.
+- [[mmbench]] — cited as comparison benchmark.
+- [[seed-bench]] — comparison.
 
-## Citazioni dirette
+## Direct quotes
 
 > "We introduce a comprehensive Multi-modal Video understanding Benchmark, namely MVBench, which covers 20 challenging video tasks that cannot be effectively solved with a single frame." (Abstract, p. 1)
 

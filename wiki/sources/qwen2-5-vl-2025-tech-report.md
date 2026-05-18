@@ -18,31 +18,31 @@ year: 2025
 
 ## TL;DR
 
-Qwen2.5-VL è la versione 2.5 della famiglia di [[vision-language-model|vision-language model]] di Alibaba, rilasciata in tre taglie open-weight (**3B / 7B / 72B**) ed addestrata su circa **4.1 T token** (vs 1.2 T per Qwen2-VL). Quattro contributi tecnici principali rispetto al predecessore Qwen2-VL: (1) **vision encoder ridisegnato** — un [[vision-transformer|ViT]] da 675 M (32 layer, hidden 1280) addestrato *from scratch* con **window attention** in 28 layer su 32 (full attention solo nei layer {7, 15, 23, 31}, window size 112×112) per ridurre la complessità da quadratica a lineare; (2) **dynamic FPS sampling** che estende dynamic resolution alla dimensione temporale, permettendo video di durata fino a ore (fino a 768 frame e ≤24 576 token visivi); (3) **MRoPE allineata al tempo assoluto** — il temporal ID nella [[mrope]] non si lega più al frame index ma al timestamp reale, abilitando temporal grounding al secondo su Charades-STA (mIoU 50.9, batte GPT-4o a 35.7); (4) **MLP-based vision-language merger** che raggruppa 4 patch ViT adiacenti prima di proiettarle nello spazio LLM. Il flagship 72B "matches state-of-the-art models like GPT-4o and Claude 3.5 Sonnet, particularly excelling in document and diagram understanding" [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf abstract]. Posiziona la linea Qwen-VL tra Qwen2-VL (2024) e [[qwen3-vl-2025-tech-report|Qwen3-VL]] (dicembre 2025, MoE + interleaved MRoPE + DeepStack).
+Qwen2.5-VL is the 2.5 release of Alibaba's [[vision-language-model|vision-language model]] family, shipped in three open-weight sizes (**3B / 7B / 72B**) and trained on roughly **4.1 T tokens** (vs 1.2 T for Qwen2-VL). Four main technical contributions over its predecessor Qwen2-VL: (1) **redesigned vision encoder** — a 675 M [[vision-transformer|ViT]] (32 layers, hidden 1280) trained *from scratch* with **window attention** in 28 of 32 layers (full attention only in layers {7, 15, 23, 31}, window size 112×112) to reduce complexity from quadratic to linear; (2) **dynamic FPS sampling** that extends dynamic resolution to the temporal axis, enabling videos up to hours long (up to 768 frames and ≤24 576 visual tokens); (3) **MRoPE aligned with absolute time** — the temporal ID in [[mrope]] is no longer tied to frame index but to real timestamp, enabling second-level temporal grounding on Charades-STA (mIoU 50.9, beating GPT-4o at 35.7); (4) **MLP-based vision-language merger** that groups 4 adjacent ViT patches before projecting them into the LLM space. The flagship 72B "matches state-of-the-art models like GPT-4o and Claude 3.5 Sonnet, particularly excelling in document and diagram understanding" [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf abstract]. It positions the Qwen-VL line between Qwen2-VL (2024) and [[qwen3-vl-2025-tech-report|Qwen3-VL]] (December 2025, MoE + interleaved MRoPE + DeepStack).
 
-## Contributo principale
+## Main contribution
 
-- **Window-attention ViT nativo a risoluzione dinamica**: ViT da 32 layer in cui solo 4 fanno self-attention completa, gli altri 28 usano window attention 112×112 (8×8 patch da 14×14). Le regioni più piccole del window vengono processate *senza padding*, preservando la risoluzione originale. Risultato: costo lineare nel numero di patch, latenza bassa anche su input ad alta risoluzione [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.1].
-- **Dynamic FPS sampling + dynamic resolution temporale**: il ViT raggruppa **due frame consecutivi** come unità temporale 3D, dimezzando i token visivi. Durante training l'FPS viene campionato dinamicamente per coprire una distribuzione ampia di velocità video. Permette di gestire video di durata fino a ore [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.2, §2.2.1].
-- **Time-aligned MRoPE (T-RoPE)**: la temporal ID della MRoPE viene **agganciata all'orologio assoluto del video** invece che all'indice frame. Permette al modello di apprendere "la cadenza del tempo through the intervals between temporal dimension IDs" senza overhead computazionale [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3]. → Limite poi superato da Qwen3-VL (textual timestamp tokens).
-- **Pretraining 4.1 T token in tre fasi**: ViT-only (1.5T), full multimodal (2T), long-context 32K (0.6T). Scale length da 8 192 a 32 768 nella terza fase [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.2, Table 2].
-- **QwenVL HTML format per document parsing**: un formato unificato HTML con tag custom (`<table>`, `<div class="chart">`, `<div class="music sheet">`, `<div class="chemical formula">`, ecc.) che inserisce bounding box (`data-bbox="x1 y1 x2 y2"`) per *ogni* elemento. Sostituisce le pipeline modulari layout+OCR+chart+illustrations con un unico modello generalista [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1, p. 6-7].
-- **Bounding box e point grounding in coordinate assolute** (non normalizzate), addestrato su oltre 10 000 categorie open-vocabulary, con augmentation copy-paste e syn data via Grounding-DINO + SAM [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1, p. 6].
-- **Post-training in due fasi (SFT + DPO)** con ViT congelato; SFT su ~2 M esempi (50% testo puro, 50% multimodale) seguito da **rejection sampling** per migliorare il [[chain-of-thought|CoT]] su task di reasoning [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3].
+- **Native dynamic-resolution window-attention ViT**: 32-layer ViT in which only 4 layers do full self-attention, the other 28 use 112×112 window attention (8×8 patches of 14×14). Regions smaller than the window are processed *without padding*, preserving the native resolution. Result: linear cost in the number of patches, low latency even on high-resolution input [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.1].
+- **Dynamic FPS sampling + temporal dynamic resolution**: the ViT groups **two consecutive frames** as a 3D temporal unit, halving the visual tokens. During training the FPS is sampled dynamically to cover a wide distribution of video speeds. Enables handling of videos up to hours long [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.2, §2.2.1].
+- **Time-aligned MRoPE (T-RoPE)**: the temporal ID of MRoPE is **anchored to the absolute video clock** instead of the frame index. Lets the model learn "the pace of time through the intervals between temporal dimension IDs" without computational overhead [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3]. → Limitation later overcome by Qwen3-VL (textual timestamp tokens).
+- **4.1T-token pretraining in three phases**: ViT-only (1.5T), full multimodal (2T), long-context 32K (0.6T). Scale length from 8 192 to 32 768 in the third phase [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.2, Table 2].
+- **QwenVL HTML format for document parsing**: a unified HTML format with custom tags (`<table>`, `<div class="chart">`, `<div class="music sheet">`, `<div class="chemical formula">`, etc.) that inserts bounding boxes (`data-bbox="x1 y1 x2 y2"`) for *every* element. Replaces modular layout+OCR+chart+illustrations pipelines with a single generalist model [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1, p. 6-7].
+- **Bounding box and point grounding in absolute coordinates** (not normalized), trained on over 10,000 open-vocabulary categories, with copy-paste augmentation and syn data via Grounding-DINO + SAM [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1, p. 6].
+- **Two-phase post-training (SFT + DPO)** with frozen ViT; SFT on ~2 M examples (50% pure text, 50% multimodal) followed by **rejection sampling** to improve [[chain-of-thought|CoT]] on reasoning tasks [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3].
 
-## Metodo
+## Method
 
-### Architettura generale
+### Overall architecture
 
-Tre moduli (Fig. 1) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1]:
+Three modules (Fig. 1) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1]:
 
-1. **Vision encoder** — ViT ridisegnato con 2D-RoPE, window attention, RMSNorm e SwiGLU (allineato ai design choice degli LLM). Patch size 14, input ridimensionato a multipli di 28.
-2. **MLP-based vision-language merger** — raggruppa 4 patch spazialmente adiacenti, le concatena e le proietta in 2 MLP layer fino alla dimensione dell'LLM. Compressione esplicita dei token visivi.
-3. **LLM backbone** — pretrained [[qwen|Qwen2.5]] LLM, con 1D-RoPE sostituita da [[mrope|MRoPE]] aligned to absolute time.
+1. **Vision encoder** — redesigned ViT with 2D-RoPE, window attention, RMSNorm and SwiGLU (aligned with LLM design choices). Patch size 14, input resized to multiples of 28.
+2. **MLP-based vision-language merger** — groups 4 spatially adjacent patches, concatenates them and projects through 2 MLP layers to the LLM dimension. Explicit compression of visual tokens.
+3. **LLM backbone** — pretrained [[qwen|Qwen2.5]] LLM, with 1D-RoPE replaced by [[mrope|MRoPE]] aligned to absolute time.
 
-### Configurazione (Table 1, §2.1)
+### Configuration (Table 1, §2.1)
 
-| Componente | Qwen2.5-VL-3B | Qwen2.5-VL-7B | Qwen2.5-VL-72B |
+| Component | Qwen2.5-VL-3B | Qwen2.5-VL-7B | Qwen2.5-VL-72B |
 |---|---|---|---|
 | ViT Hidden Size | 1280 | 1280 | 1280 |
 | ViT Layers | 32 | 32 | 32 |
@@ -57,36 +57,36 @@ Tre moduli (Fig. 1) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1]:
 | LLM KV Heads | 2 | 4 | 8 |
 | LLM Head Size | 128 | 128 | 128 |
 | LLM Intermediate Size | 4864 | 18 944 | 29 568 |
-| Embedding Tying | sì | no | no |
+| Embedding Tying | yes | no | no |
 | Vocab Size | 151 646 | 151 646 | 151 646 |
 | Trained Tokens | 4.1 T | 4.1 T | 4.1 T |
 
-### Vision encoder dettagliato (§2.1.1)
+### Detailed vision encoder (§2.1.1)
 
-- **Window attention**: 28 layer su 32 usano window 112×112 (= 8×8 patch da 14). Le regioni più piccole non sono paddate.
-- **Full attention** solo nei 4 layer "stitch" {7, 15, 23, 31}.
-- **Positional encoding 2D-RoPE** per catturare relazioni spaziali; **3D patch partitioning** per video (2 frame consecutivi grouped come una stessa unità).
-- **RMSNorm + SwiGLU** per allineare design con LLM.
-- **Training in tre stage**: CLIP-style pretraining → vision-language alignment → end-to-end fine-tuning. Dynamic sampling at native resolutions; rapporti d'aspetto preservati.
+- **Window attention**: 28 of 32 layers use a 112×112 window (= 8×8 patches of 14). Smaller regions are not padded.
+- **Full attention** only in the 4 "stitch" layers {7, 15, 23, 31}.
+- **2D-RoPE positional encoding** to capture spatial relations; **3D patch partitioning** for video (2 consecutive frames grouped as one unit).
+- **RMSNorm + SwiGLU** to align design with LLMs.
+- **Three-stage training**: CLIP-style pretraining → vision-language alignment → end-to-end fine-tuning. Dynamic sampling at native resolutions; aspect ratios preserved.
 
-### Native dynamic resolution e dynamic FPS (§2.1.2)
+### Native dynamic resolution and dynamic FPS (§2.1.2)
 
-- **Spaziale**: nessuna normalizzazione di coordinate; bounding box e punti vivono nelle dimensioni reali dell'input. Il modello apprende intrinsecamente la scala fisica.
-- **Temporale**: FPS sampling dinamico durante training (distribuzione uniforme sui possibili FPS). Per inferenza il numero massimo di frame per video è 768 e i token visivi totali ≤ 24 576 [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
+- **Spatial**: no coordinate normalization; bounding boxes and points live in the actual input dimensions. The model intrinsically learns physical scale.
+- **Temporal**: dynamic FPS sampling during training (uniform distribution over possible FPS). At inference time the maximum number of frames per video is 768 and total visual tokens ≤ 24 576 [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
 
-### MRoPE allineata al tempo assoluto (§2.1.3)
+### MRoPE aligned to absolute time (§2.1.3)
 
-- La MRoPE di Qwen2-VL aveva tre componenti (temporal, height, width). Per testo tutti tre uguali (≡ 1D-RoPE); per immagini temporal costante e h/w spaziali; per video temporal incrementato a ogni frame.
-- **Problema in Qwen2-VL**: i temporal ID erano legati all'indice frame, non alla velocità di cambio scena né al tempo reale.
-- **Soluzione Qwen2.5-VL**: il temporal ID è proporzionale al **tempo assoluto** (in secondi). Gli intervalli tra ID rappresentano la cadenza reale. Niente token in più, niente head dedicate. → Migliora temporal grounding e generalizza tra FPS diversi.
+- The Qwen2-VL MRoPE had three components (temporal, height, width). For text all three are equal (≡ 1D-RoPE); for images temporal is constant and h/w are spatial; for video temporal is incremented at each frame.
+- **Problem in Qwen2-VL**: temporal IDs were tied to the frame index, not to the rate of scene change nor to real time.
+- **Qwen2.5-VL solution**: temporal ID is proportional to **absolute time** (in seconds). Intervals between IDs represent the real pace. No extra tokens, no dedicated heads. → Improves temporal grounding and generalizes across different FPS.
 
 ### Pre-training data (§2.2.1)
 
-Dataset totale: **~4 T token** (vs 1.2 T per Qwen2-VL). Composizione: image caption, interleaved image-text, OCR (multilingua: francese, tedesco, italiano, spagnolo, portoghese, arabo, russo, giapponese, coreano, vietnamita + cinese/inglese), document parsing in **QwenVL HTML**, knowledge (celebrity, landmark, flora, fauna), grounding (10 000+ categorie, BBox + point), video (caption + temporal grounding in sec o `HH:MM:SS`+frame), agent data (mobile/web/desktop screenshot con UI grounding + multi-step trajectories da Aguvis-like agent framework).
+Total dataset: **~4 T tokens** (vs 1.2 T for Qwen2-VL). Composition: image caption, interleaved image-text, OCR (multilingual: French, German, Italian, Spanish, Portuguese, Arabic, Russian, Japanese, Korean, Vietnamese + Chinese/English), document parsing in **QwenVL HTML**, knowledge (celebrity, landmark, flora, fauna), grounding (10,000+ categories, BBox + point), video (caption + temporal grounding in sec or `HH:MM:SS`+frame), agent data (mobile/web/desktop screenshots with UI grounding + multi-step trajectories from an Aguvis-like agent framework).
 
-Pipeline di scoring per interleaved data: 4 criteri (text-only quality, image-text relevance, image-text complementarity, info density balance). Document data sintetizzata con HTML structure e bounding box per elemento (paragrafi, tabelle, chart, formule, immagini, OCR-on-image, music sheet ABC notation, chemical formula SMILES) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1].
+Scoring pipeline for interleaved data: 4 criteria (text-only quality, image-text relevance, image-text complementarity, info density balance). Document data synthesized with HTML structure and per-element bounding boxes (paragraphs, tables, charts, formulas, images, OCR-on-image, music sheet ABC notation, chemical formula SMILES) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.2.1].
 
-### Training recipe pre-training (§2.2.2, Table 2)
+### Pre-training recipe (§2.2.2, Table 2)
 
 | Stage | Visual Pre-Training | Multimodal Pre-Training | Long-Context Pre-Training |
 |---|---|---|---|
@@ -95,23 +95,23 @@ Pipeline di scoring per interleaved data: 4 criteri (text-only quality, image-te
 | Sequence length | 8 192 | 8 192 | **32 768** |
 | Training | ViT only | ViT + LLM | ViT + LLM |
 
-ViT inizializzato da DataComp + dataset interni; LLM inizializzato da Qwen2.5. Packing dinamico dei sample per bilanciare il carico computazionale tra GPU.
+ViT initialized from DataComp + internal datasets; LLM initialized from Qwen2.5. Dynamic sample packing to balance computational load across GPUs.
 
 ### Post-training (§2.3)
 
-Due fasi, **ViT congelato**:
+Two phases, **frozen ViT**:
 
-1. **SFT** su ~2 M entry (50% testo puro, 50% multimodale, formato ChatML). Dialog single- e multi-turn, single- e multi-image. Subset specializzati: VQA, captioning, math, code, security, Doc/OCR, Grounding, Video, Agent.
-2. **DPO** ([[dpo|Direct Preference Optimization]]) solo su image-text e pure text; ogni sample processato una sola volta.
+1. **SFT** on ~2 M entries (50% pure text, 50% multimodal, ChatML format). Single- and multi-turn, single- and multi-image dialog. Specialized subsets: VQA, captioning, math, code, security, Doc/OCR, Grounding, Video, Agent.
+2. **DPO** ([[dpo|Direct Preference Optimization]]) only on image-text and pure text; each sample processed only once.
 
-**Pipeline di filtraggio dati a due stage**:
+**Two-stage data filtering pipeline**:
 
-- **Stage 1**: classificazione gerarchica via Qwen2-VL-Instag in 8 domini × 30 sotto-categorie (es. Coding → Code_Debugging, Code_Generation, Code_Translation, Code_Understanding).
-- **Stage 2**: filtering rule-based (heuristics anti-repetition, anti-truncation, anti-harm) + model-based (reward model multidimensionale su correctness, completeness, clarity, relevance, helpfulness, visual grounding accuracy).
+- **Stage 1**: hierarchical classification via Qwen2-VL-Instag into 8 domains × 30 sub-categories (e.g. Coding → Code_Debugging, Code_Generation, Code_Translation, Code_Understanding).
+- **Stage 2**: rule-based filtering (anti-repetition, anti-truncation, anti-harm heuristics) + model-based filtering (multidimensional reward model over correctness, completeness, clarity, relevance, helpfulness, visual grounding accuracy).
 
-**Rejection sampling** per [[chain-of-thought|CoT]] (math, code, domain VQA): si genera con un checkpoint intermedio, si valida contro ground truth, si scartano output con code-switching, eccessiva lunghezza, pattern ripetitivi, o CoT che ignora/misinterpreta info visive [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3.3].
+**Rejection sampling** for [[chain-of-thought|CoT]] (math, code, domain VQA): generate with an intermediate checkpoint, validate against ground truth, discard outputs with code-switching, excessive length, repetitive patterns, or CoT that ignores/misinterprets visual info [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3.3].
 
-## Risultati chiave
+## Key results
 
 ### Image — General Visual QA, College, Math (Table 3, §3.1)
 
@@ -155,7 +155,7 @@ Due fasi, **ViT congelato**:
 | VCR En-Hard-EM | 41.7 | 28.1 | 73.2 | – | 79.8 | **80.5** | 37.5 |
 | OCRBench_v2 en/zh | 45.2/39.6 | 51.9/43.1 | 46.5/32.2 | 49.8/52.1 | **61.5/63.7** | 56.3/57.2 | 54.3/52.1 |
 
-OCRBench_v2 mostra il gap più netto: Qwen2.5-VL-72B supera Gemini 1.5 Pro di **+9.6 punti (en)** e **+20.6 punti (zh)** [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.2].
+OCRBench_v2 shows the sharpest gap: Qwen2.5-VL-72B beats Gemini 1.5 Pro by **+9.6 points (en)** and **+20.6 points (zh)** [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.2].
 
 ### Grounding (Table 6, §3.3.3)
 
@@ -173,7 +173,7 @@ OCRBench_v2 mostra il gap più netto: Qwen2.5-VL-72B supera Gemini 1.5 Pro di **
 | PointGrounding | – | – | **69.2** | – | 67.5 | 67.3 | 58.3 |
 | CountBench | 85.5 | – | 91.2 | 72.1 | **93.6** | – | – |
 
-InternVL2.5-78B resta leader sulle RefCOCO; il vantaggio di Qwen2.5-VL è la **versatilità** (BBox + point + count + open-vocabulary fino a 10k+ classi) e l'uso di coordinate assolute.
+InternVL2.5-78B remains the RefCOCO leader; Qwen2.5-VL's advantage is **versatility** (BBox + point + count + open-vocabulary up to 10k+ classes) and the use of absolute coordinates.
 
 ### Video (Table 8, §3.3.4)
 
@@ -193,7 +193,7 @@ InternVL2.5-78B resta leader sulle RefCOCO; il vantaggio di Qwen2.5-VL è la **v
 | TempCompass Avg | 67.1 | 73.8 | **74.8** | 71.7 | 64.4 |
 | Charades-STA mIoU | – | 35.7 | **50.9** | 43.6 | 38.8 |
 
-**Punti chiave**: Qwen2.5-VL-72B vince su LVBench (+14.2 vs Gemini 1.5 Pro, +16.5 vs GPT-4o), MLVU (+10), Charades-STA temporal grounding (+15.2 vs GPT-4o), MVBench, EgoSchema, TempCompass. Resta dietro Gemini 1.5 Pro su Video-MME e LongVideoBench. Su tutti i benchmark video: max 768 frame, max 24 576 visual token [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
+**Key points**: Qwen2.5-VL-72B wins on LVBench (+14.2 vs Gemini 1.5 Pro, +16.5 vs GPT-4o), MLVU (+10), Charades-STA temporal grounding (+15.2 vs GPT-4o), MVBench, EgoSchema, TempCompass. Still behind Gemini 1.5 Pro on Video-MME and LongVideoBench. Across all video benchmarks: max 768 frames, max 24 576 visual tokens [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
 
 ### Agent / GUI (Table 9, §3.3.5)
 
@@ -207,57 +207,57 @@ InternVL2.5-78B resta leader sulle RefCOCO; il vantaggio di Qwen2.5-VL è la **v
 | MobileMiniWob++ SR | 61% | 42% (SoM) | 61% (SoM) | 66% | 50% (SoM) | **68%** |
 | OSWorld | 5.03 | 4.70 | **14.90** | 10.26 | 2.42 | 8.83 |
 
-ScreenSpot Pro è il salto più drammatico: da 1.6 (Qwen2-VL) a 43.6 (Qwen2.5-VL), **+42 punti**. OSWorld resta sotto Claude Computer Use.
+ScreenSpot Pro is the most dramatic jump: from 1.6 (Qwen2-VL) to 43.6 (Qwen2.5-VL), **+42 points**. OSWorld remains below Claude Computer Use.
 
 ### Pure text (Table 4, §3.2)
 
-Qwen2.5-VL-72B preserva le capacità linguistiche di Qwen2.5-72B base: MMLU-Pro 71.2 vs 71.1, MMLU-redux 85.9 vs 86.8, MATH 83.0 vs 83.1, HumanEval 87.8 vs 86.6, MultiPL-E **79.5 vs 75.1**, LiveBench-0831 **57.0 vs 52.3**, IFEval **86.3 vs 84.1**. Non c'è quindi la regression text-only tipica delle estensioni multimodali [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.2, Table 4].
+Qwen2.5-VL-72B preserves the language capabilities of base Qwen2.5-72B: MMLU-Pro 71.2 vs 71.1, MMLU-redux 85.9 vs 86.8, MATH 83.0 vs 83.1, HumanEval 87.8 vs 86.6, MultiPL-E **79.5 vs 75.1**, LiveBench-0831 **57.0 vs 52.3**, IFEval **86.3 vs 84.1**. There is therefore no text-only regression typical of multimodal extensions [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.2, Table 4].
 
-## Limitazioni dichiarate
+## Stated limitations
 
-Gli autori non hanno una sezione "Limitations" esplicita; le limitazioni emergono in modo diffuso:
+The authors do not have an explicit "Limitations" section; limitations emerge diffusely:
 
-- **CoT visivo è ancora un problema aperto**: gli intermediate reasoning step possono ignorare o misinterpretare i cue visivi. "achieving optimal modality alignment remains an ongoing challenge that requires further advancements" [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3.3, p. 10].
-- **OSWorld 8.83 vs Claude 14.90**: il gap su computer-use più realistico non è chiuso [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.5, Table 9].
-- **Cap a 768 frame / 24 576 visual token** per video → video davvero lunghi richiedono sampling che può perdere eventi sub-secondo [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
-- **Temporal ID legati al tempo assoluto** in T-RoPE: su video molto lunghi gli ID diventano grandi/sparsi, problema poi diagnosticato e risolto in [[qwen3-vl-2025-tech-report|Qwen3-VL]] con textual timestamp token [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3, riportato come limite di Qwen2.5-VL].
-- **HallBench 55.2** sotto Qwen2-VL-72B (58.1) e InternVL2.5-78B (57.4) → l'aumento di scala dati ha un costo in hallucination [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.1, Table 3].
-- **RealWorldQA**: resta dietro InternVL2.5 e Qwen2-VL.
+- **Visual CoT is still an open problem**: intermediate reasoning steps can ignore or misinterpret visual cues. "achieving optimal modality alignment remains an ongoing challenge that requires further advancements" [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3.3, p. 10].
+- **OSWorld 8.83 vs Claude 14.90**: the gap on more realistic computer-use is not closed [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.5, Table 9].
+- **Cap at 768 frames / 24 576 visual tokens** for video → truly long videos require sampling that can miss sub-second events [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.4].
+- **Temporal IDs tied to absolute time** in T-RoPE: on very long videos the IDs become large/sparse, a problem later diagnosed and solved in [[qwen3-vl-2025-tech-report|Qwen3-VL]] with textual timestamp tokens [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3, reported as a Qwen2.5-VL limitation].
+- **HallBench 55.2** below Qwen2-VL-72B (58.1) and InternVL2.5-78B (57.4) → the data scale-up has a cost in hallucination [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §3.3.1, Table 3].
+- **RealWorldQA**: still behind InternVL2.5 and Qwen2-VL.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Il T-RoPE absolute-time-aligned è davvero il design ottimale per long video, o i textual timestamp token introdotti da [[qwen3-vl-2025-tech-report|Qwen3-VL]] funzionano meglio strutturalmente? Il report di Qwen3-VL diagnostica entrambi i limiti — vale la pena rileggere i risultati di Qwen2.5-VL alla luce di quella diagnosi.
-- Quanto del miglioramento su long-video viene dalla T-RoPE vs dal dataset (long video captions sintetizzate via multi-frame pipeline)?
-- Window attention sui 28 layer del ViT: si è confrontato esplicitamente con [[flash-attention]] su full attention, o sono complementari?
-- Il merger MLP che raggruppa 4 patch è una compressione fissa: serve adattare il fattore di merge a immagini ad alta risoluzione o documenti densi?
-- Rejection sampling per CoT visivo: come si valida quantitativamente che l'intermediate reasoning *usi* i visual cue invece di ignorarli? Il paper menziona "rule-based + model-driven" filtering ma non riporta metriche.
-- Curriculum dati: non c'è una tabella di ablation sui contributi di interleaved data / OCR / document / agent. Quanto pesa ciascun ingrediente?
-- Per il flagship 72B serve un confronto open vs closed (Claude 3.7, GPT-4.5, Gemini 2.0/2.5) — il report usa Claude 3.5 Sonnet (giugno 2024) e GPT-4o-0513, ormai entrambi datati.
+- Is absolute-time-aligned T-RoPE truly the optimal design for long video, or do the textual timestamp tokens introduced by [[qwen3-vl-2025-tech-report|Qwen3-VL]] work better structurally? The Qwen3-VL report diagnoses both limits — it is worth re-reading the Qwen2.5-VL results in light of that diagnosis.
+- How much of the long-video improvement comes from T-RoPE vs from the dataset (long-video captions synthesized via multi-frame pipeline)?
+- Window attention on the 28 ViT layers: has it been explicitly compared with [[flash-attention]] on full attention, or are they complementary?
+- The MLP merger that groups 4 patches is a fixed compression: does the merge factor need to adapt to high-resolution images or dense documents?
+- Rejection sampling for visual CoT: how is it quantitatively validated that intermediate reasoning *uses* the visual cues rather than ignoring them? The paper mentions "rule-based + model-driven" filtering but does not report metrics.
+- Data curriculum: no ablation table on the contributions of interleaved data / OCR / document / agent. How much does each ingredient weigh?
+- For the flagship 72B an open vs closed comparison is needed (Claude 3.7, GPT-4.5, Gemini 2.0/2.5) — the report uses Claude 3.5 Sonnet (June 2024) and GPT-4o-0513, both now dated.
 
-## Concetti citati
+## Cited concepts
 
 - [[vision-transformer]], [[vision-language-model]], [[multimodal-large-language-model]], [[video-llm]]
-- [[mrope]] (estesa a time-aligned), 2D-RoPE (per il ViT)
-- window attention, [[flash-attention]] (per confronto)
-- [[siglip]] / [[clip]] (CLIP pretraining è una delle stage del ViT)
+- [[mrope]] (extended to time-aligned), 2D-RoPE (for the ViT)
+- window attention, [[flash-attention]] (for comparison)
+- [[siglip]] / [[clip]] (CLIP pretraining is one of the ViT stages)
 - [[chain-of-thought]] (rejection sampling)
 - [[direct-preference-optimization]], [[instruction-tuning]] (ChatML), SFT
-- [[video-mme]], [[mvbench]], [[egoschema]], [[lvbench]], [[mlvu]], [[longvideobench]] (benchmark video)
-- [[qwen3-vl-2025-tech-report]] (successore della famiglia)
+- [[video-mme]], [[mvbench]], [[egoschema]], [[lvbench]], [[mlvu]], [[longvideobench]] (video benchmarks)
+- [[qwen3-vl-2025-tech-report]] (successor in the family)
 
-### Nuovi slug di concetto suggeriti (non creati qui)
+### Suggested new concept slugs (not created here)
 
-- `qwen2-5-vl` — il modello stesso, da promuovere a pagina di concetto se viene linkato da altri source.
-- `qwen` — famiglia di LLM Alibaba (Qwen2.5 / Qwen3 LLM backbone).
-- `qwen2-vl` — predecessore, già implicitamente richiamato come `[[qwen2-vl|Qwen2-VL]]` in qwen3-vl-2025-tech-report.
-- `window-attention` — pattern attentivo a finestra usato nel ViT.
-- `dynamic-resolution` / `dynamic-fps-sampling` — strategie di input handling.
-- `qwenvl-html-format` — formato unificato document parsing introdotto qui.
-- `screenspot`, `screenspot-pro`, `androidworld`, `osworld`, `android-control` — benchmark GUI agent.
-- `docvqa`, `chartqa`, `infovqa`, `textvqa`, `ai2d`, `ocrbench`, `ocrbench-v2`, `mathvista`, `mmmu`, `mmbench`, `mmstar`, `realworldqa`, `mmvet`, `chartxiv`, `omnidocbench`, `cc-ocr` — benchmark immagine/documento.
-- `video-mmmu`, `mmvu`, `mmbench-video`, `tempcompass`, `charades-sta`, `perceptiontest` — benchmark video aggiuntivi.
-- `rejection-sampling` — tecnica post-training per CoT.
-- `qwen2-vl-instag` — classificatore gerarchico interno per data filtering.
+- `qwen2-5-vl` — the model itself, to be promoted to a concept page if linked from other sources.
+- `qwen` — Alibaba LLM family (Qwen2.5 / Qwen3 LLM backbone).
+- `qwen2-vl` — predecessor, already implicitly referenced as `[[qwen2-vl|Qwen2-VL]]` in qwen3-vl-2025-tech-report.
+- `window-attention` — windowed attention pattern used in the ViT.
+- `dynamic-resolution` / `dynamic-fps-sampling` — input handling strategies.
+- `qwenvl-html-format` — unified document parsing format introduced here.
+- `screenspot`, `screenspot-pro`, `androidworld`, `osworld`, `android-control` — GUI agent benchmarks.
+- `docvqa`, `chartqa`, `infovqa`, `textvqa`, `ai2d`, `ocrbench`, `ocrbench-v2`, `mathvista`, `mmmu`, `mmbench`, `mmstar`, `realworldqa`, `mmvet`, `chartxiv`, `omnidocbench`, `cc-ocr` — image/document benchmarks.
+- `video-mmmu`, `mmvu`, `mmbench-video`, `tempcompass`, `charades-sta`, `perceptiontest` — additional video benchmarks.
+- `rejection-sampling` — post-training technique for CoT.
+- `qwen2-vl-instag` — internal hierarchical classifier for data filtering.
 
 ## Direct quotes
 

@@ -8,21 +8,21 @@ updated: 2026-05-15
 
 # STAR Benchmark
 
-**STAR (Situated Reasoning in Real-World Videos)** è un benchmark di video reasoning che richiede di ragionare su scene reali con grounding spaziale e temporale (interaction, sequence, prediction, feasibility). Nel wiki appare come **sorgente** dei task Action Sequence, Action Prediction, Object Interaction di [[mvbench]] [source: raw/papers/li-2024-mvbench.pdf §3.2]; gli autori di MVBench fanno *shift randomico di start/end* per aumentare la difficoltà.
+**STAR (Situated Reasoning in Real-World Videos)** is a video reasoning benchmark that requires reasoning over real-world scenes with spatial and temporal grounding (interaction, sequence, prediction, feasibility). In the wiki it appears as the **source** of the Action Sequence, Action Prediction, and Object Interaction tasks of [[mvbench]] [source: raw/papers/li-2024-mvbench.pdf §3.2]; MVBench authors apply *random start/end shifts* to increase difficulty.
 
-## Numeri di riferimento
+## Reference numbers
 
-| Modello | STAR (zero-shot avg) | Fonte |
+| Model | STAR (zero-shot avg) | Source |
 |---|---|---|
 | VideoChat2 | 59.0 | [[li-2024-mvbench]] |
 | VideoChat2 + Mistral | 63.8 | [[li-2024-mvbench]] |
 
 ## Sources
 
-- [[li-2024-mvbench]] — sorgente di 3 task MVBench.
+- [[li-2024-mvbench]] — source of 3 MVBench tasks.
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[mvbench]] — benchmark derivato.
-- [[next-qa]], [[clevrer]] — benchmark adiacenti.
+- [[mvbench]] — derived benchmark.
+- [[next-qa]], [[clevrer]] — adjacent benchmarks.

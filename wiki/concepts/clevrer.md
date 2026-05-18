@@ -8,17 +8,17 @@ updated: 2026-05-15
 
 # CLEVRER
 
-**CLEVRER** (Collision Events for Video Representation and Reasoning) è un benchmark **sintetico** di video reasoning generato in ambiente fisico simulato (oggetti che si urtano). Quattro famiglie di domande: descriptive, explanatory, predictive, counterfactual. È uno dei pochi benchmark video con ground-truth fisica e ha [[certificate-length]] dell'ordine di 1–2 s.
+**CLEVRER** (Collision Events for Video Representation and Reasoning) is a **synthetic** video reasoning benchmark generated in a simulated physical environment (colliding objects). Four question families: descriptive, explanatory, predictive, counterfactual. It is one of the few video benchmarks with physical ground-truth, and has [[certificate-length]] on the order of 1–2 s.
 
-Nel wiki appare in due ruoli: (1) **sorgente** per [[mvbench]] dei task Moving Attribute, Counterfactual Inference, Moving Count, Moving Direction, Object Existence (con scarto domande con > 10 condizioni descrittive) [source: raw/papers/li-2024-mvbench.pdf §3.2]; (2) **dato di instruction-tuning** per VideoChat2 in Stage 3 Reasoning. Gli autori riconoscono che questo crea un *minimal source gap* tra training e benchmark (Tab. 13: rimuovere CLEVRER fa scendere accuracy di 1.8 punti).
+In the wiki it appears in two roles: (1) **source** for [[mvbench]] of the Moving Attribute, Counterfactual Inference, Moving Count, Moving Direction, Object Existence tasks (discarding questions with > 10 descriptive conditions) [source: raw/papers/li-2024-mvbench.pdf §3.2]; (2) **instruction-tuning data** for VideoChat2 in Stage 3 Reasoning. The authors acknowledge that this creates a *minimal source gap* between training and benchmark (Tab. 13: removing CLEVRER drops accuracy by 1.8 points).
 
 ## Sources
 
-- [[li-2024-mvbench]] — sorgente di 4 task MVBench + dato di instruction tuning VideoChat2.
-- [[mangalam-2023-egoschema]] — confronto certificate length (~1 s).
+- [[li-2024-mvbench]] — source of 4 MVBench tasks + VideoChat2 instruction-tuning data.
+- [[mangalam-2023-egoschema]] — certificate length comparison (~1 s).
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[mvbench]] — benchmark che lo usa come sorgente.
-- [[counterfactual-inference]] — sotto-task.
+- [[mvbench]] — benchmark that uses it as source.
+- [[counterfactual-inference]] — sub-task.

@@ -18,53 +18,53 @@ year: 2025
 
 ## TL;DR
 
-Tang et al. introducono **Adaptive Keyframe Sampling (AKS)**, un modulo plug-and-play *training-free* che sostituisce l'uniform sampling pre-VLM. AKS formalizza la selezione di $M$ keyframe come ottimizzazione di due termini: (1) **relevance** $s(Q,F_t)$ fra prompt $Q$ e ogni frame candidato $F_t$ (calcolata via BLIP/CLIP image-text matching) e (2) **coverage** $c(\mathcal{I})$ della distribuzione temporale (via Ripley's K-function su bin ricorsivi). L'algoritmo *ADA* (judge-and-split) alterna fra top-score sampling e binning ricorsivo. Su LongVideoBench e Video-MME, integrato su Qwen2-VL, LLaVA-OV e LLaVA-Video-7B, AKS porta gain consistenti: LLaVA-Video-7B 58.9→62.7 (LVB) e 64.4→65.3 (V-MME), superando perfino LLaVA-Video-72B e modelli proprietari come GPT-4V/Gemini-1.5-Flash con un 7B [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf Abstract, §4.2].
+Tang et al. introduce **Adaptive Keyframe Sampling (AKS)**, a *training-free* plug-and-play module that replaces uniform pre-VLM sampling. AKS formalizes selecting $M$ keyframes as the optimization of two terms: (1) **relevance** $s(Q,F_t)$ between prompt $Q$ and each candidate frame $F_t$ (computed via BLIP/CLIP image-text matching) and (2) **coverage** $c(\mathcal{I})$ of the temporal distribution (via Ripley's K-function on recursive bins). The *ADA* algorithm (judge-and-split) alternates between top-score sampling and recursive binning. On LongVideoBench and Video-MME, integrated with Qwen2-VL, LLaVA-OV, and LLaVA-Video-7B, AKS delivers consistent gains: LLaVA-Video-7B 58.9→62.7 (LVB) and 64.4→65.3 (V-MME), even surpassing LLaVA-Video-72B and proprietary models like GPT-4V/Gemini-1.5-Flash with a 7B model [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf Abstract, §4.2].
 
-## Contributo principale
+## Main contribution
 
-- Formulazione esplicita della keyframe selection come problema $\arg\max \sum_t s(Q,F_t) + \lambda \cdot c(\mathcal{I})$ con relevance + coverage (Eq.2) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2].
-- Approssimazione di coverage tramite K-function discretizzata: partizionamento ricorsivo del time-axis in bin, penalizzando squilibri ($|m_1 - m_2|$) — fino a $L \le \lceil\log_2 M\rceil$ livelli [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2].
-- Algoritmo **ADA** (Adaptive Sampling, §3.3): a ogni nodo dell'albero, se $s_\text{top}-s_\text{all}>s_\text{thr}$ ritorna direttamente i top-M frame del bin (TOP-mode); altrimenti splitta il bin in due e distribuisce equamente i keyframe (BIN-mode), ricorsivamente.
-- Plug-and-play: nessun parametro del VLM modificato; sostituisce solo l'algoritmo di sampling. Tre baseline: TOP ($\lambda=0$), BIN ($\lambda\to\infty$), UNI (uniform = default LLaVA-Video).
-- Studio sistematico sul ruolo della pre-filtering visivo, mostrando che l'oracolo di relevance dà gain ancora maggiori (gap da chiudere con scorer migliori).
+- Explicit formulation of keyframe selection as the problem $\arg\max \sum_t s(Q,F_t) + \lambda \cdot c(\mathcal{I})$ with relevance + coverage (Eq.2) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2].
+- Coverage approximation via discretized K-function: recursive partitioning of the time-axis into bins, penalizing imbalance ($|m_1 - m_2|$) — up to $L \le \lceil\log_2 M\rceil$ levels [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2].
+- **ADA** algorithm (Adaptive Sampling, §3.3): at each tree node, if $s_\text{top}-s_\text{all}>s_\text{thr}$ it directly returns the bin's top-M frames (TOP mode); otherwise it splits the bin in two and distributes keyframes evenly (BIN mode), recursively.
+- Plug-and-play: no VLM parameter modified; only the sampling algorithm is replaced. Three baselines: TOP ($\lambda=0$), BIN ($\lambda\to\infty$), UNI (uniform = LLaVA-Video default).
+- Systematic study of the role of visual pre-filtering, showing that the relevance oracle yields even larger gains (gap to be closed with better scorers).
 
-## Metodo
+## Method
 
-**Setup (§3.1)**: video $V \in \mathbb{R}^{T\times W\times H\times C}$, prompt $Q$, MLLM $G(\{F_t\})$ con capacità $M$. Goal: keyframe set $\mathcal{I}\subseteq\{1,\dots,T\}$ con $|\mathcal{I}|=M$ che massimizza information utile [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.1].
+**Setup (§3.1)**: video $V \in \mathbb{R}^{T\times W\times H\times C}$, prompt $Q$, MLLM $G(\{F_t\})$ with capacity $M$. Goal: keyframe set $\mathcal{I}\subseteq\{1,\dots,T\}$ with $|\mathcal{I}|=M$ that maximizes useful information [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.1].
 
 **Pipeline (Fig.2)**:
 
-1. Pre-sample candidate frames a 1 fps (o meno per efficienza).
-2. Per ogni candidato $F_t$, computa $s(Q,F_t)$ via BLIP ITM (default), CLIP o Sevila. Niente forward sul VLM finale [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2, §4.1].
-3. Lancia **ADA** ricorsivamente:
-   - Stato: bin temporale $[a,b)$ con $k$ keyframe da allocare.
-   - Calcola $s_\text{all}$ = media dei score nel bin, $s_\text{top}$ = media dei top-k score.
-   - Se $k=1$ o $s_\text{top}-s_\text{all}>s_\text{thr}$ ⇒ ritorna i top-$k$ frame (modalità TOP).
-   - Altrimenti splitta in $[a,(a+b)/2)$ e $[(a+b)/2,b)$, alloca $\lceil k/2\rceil$ e $\lfloor k/2\rfloor$, ricorri.
-   - Stop a depth massima $L$ [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.3, Fig.3].
-4. Estrai i visual token dai frame selezionati e passali al VLM standard.
+1. Pre-sample candidate frames at 1 fps (or less for efficiency).
+2. For each candidate $F_t$, compute $s(Q,F_t)$ via BLIP ITM (default), CLIP, or Sevila. No forward pass on the final VLM [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.2, §4.1].
+3. Run **ADA** recursively:
+   - State: temporal bin $[a,b)$ with $k$ keyframes to allocate.
+   - Compute $s_\text{all}$ = mean of the scores in the bin, $s_\text{top}$ = mean of the top-k scores.
+   - If $k=1$ or $s_\text{top}-s_\text{all}>s_\text{thr}$ ⇒ return the top-$k$ frames (TOP mode).
+   - Otherwise split into $[a,(a+b)/2)$ and $[(a+b)/2,b)$, allocate $\lceil k/2\rceil$ and $\lfloor k/2\rfloor$, recurse.
+   - Stop at maximum depth $L$ [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §3.3, Fig.3].
+4. Extract visual tokens from the selected frames and pass them to the standard VLM.
 
-**Hyperparametri**: $s_\text{thr}=0.6\div 0.8$, $L=3\div 5$ — tipici. LongVideoBench preferisce $L$ piccolo (questioni concentrate); Video-MME preferisce $L$ più grande (questioni multi-momento) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.4, Tab.5].
+**Hyperparameters**: $s_\text{thr}=0.6\div 0.8$, $L=3\div 5$ — typical. LongVideoBench prefers small $L$ (focused questions); Video-MME prefers larger $L$ (multi-moment questions) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.4, Tab.5].
 
-**Aspetto training-free**: nessun training del VLM, nessun fine-tuning del retriever BLIP/CLIP; tutto plug-and-play.
+**Training-free aspect**: no VLM training, no BLIP/CLIP retriever fine-tuning; entirely plug-and-play.
 
-## Risultati chiave
+## Key results
 
-**Main (Tab.1)** — accuracy %, 32 o 64 frame al VLM:
+**Main (Tab.1)** — accuracy %, 32 or 64 frames into the VLM:
 
 | Method | LVBench val | Video-MME |
 |---|---|---|
-| GPT-4V (256 frame) | 61.3 | 59.9 |
-| GPT-4o (256 frame) | 66.7 | 71.9 |
-| Gemini-1.5-Flash (256 frame) | 61.6 | 70.3 |
-| Qwen2-VL 7B (32 frame) | 55.5 | 57.6 |
+| GPT-4V (256 frames) | 61.3 | 59.9 |
+| GPT-4o (256 frames) | 66.7 | 71.9 |
+| Gemini-1.5-Flash (256 frames) | 61.6 | 70.3 |
+| Qwen2-VL 7B (32 frames) | 55.5 | 57.6 |
 | **Qwen2-VL + AKS** | **60.5** (+5.0) | **59.9** (+2.3) |
-| LLaVA-OV 7B (32 frame) | 54.8 | 56.5 |
+| LLaVA-OV 7B (32 frames) | 54.8 | 56.5 |
 | **LLaVA-OV + AKS** | **59.3** (+4.5) | **58.4** (+1.9) |
-| LLaVA-Video 7B (64 frame) | 58.9 | 64.4 |
+| LLaVA-Video 7B (64 frames) | 58.9 | 64.4 |
 | **LLaVA-Video + AKS** | **62.7** (+3.8) | **65.3** (+0.9) |
 
-LLaVA-Video-7B + AKS supera LLaVA-Video-72B (61.9 LVB) e GPT-4V/Gemini-1.5-Flash a 256 frame, con solo 64 frame [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.2].
+LLaVA-Video-7B + AKS surpasses LLaVA-Video-72B (61.9 LVB) and GPT-4V/Gemini-1.5-Flash at 256 frames, using only 64 frames [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.2].
 
 **Sampling strategy (Tab.2)** — LLaVA-Video-7B:
 
@@ -75,52 +75,52 @@ LLaVA-Video-7B + AKS supera LLaVA-Video-72B (61.9 LVB) e GPT-4V/Gemini-1.5-Flash
 | BIN | 60.2 | 65.2 |
 | **ADA** | **62.7** | **65.3** |
 
-ADA combina i pregi: TOP è ottimo per LVB (questioni mono-momento), BIN per V-MME (questioni multi-momento).
+ADA combines the strengths: TOP is best for LVB (single-moment questions), BIN for V-MME (multi-moment questions).
 
-**Frequenza sampling candidati (Tab.3)**: anche a 0.1 fps i risultati superano la baseline uniforme; a 0.25 fps performance ≈ 1 fps su Video-MME, suggerendo grosso margine per efficienza.
+**Candidate sampling frequency (Tab.3)**: even at 0.1 fps the results beat the uniform baseline; at 0.25 fps performance ≈ 1 fps on Video-MME, suggesting a large efficiency margin.
 
-**VL scorer (Tab.4)**: BLIP migliore su LVB (object-level), CLIP migliore su V-MME (global perception). Sevila intermedio.
+**VL scorer (Tab.4)**: BLIP best on LVB (object-level), CLIP best on V-MME (global perception). Sevila intermediate.
 
-**$L \times s_\text{thr}$ (Tab.5)**: LVB best a $L\in\{3,4\}, s_\text{thr}\in\{0.2,0.4\}$; V-MME best a $L\in\{4,5\}, s_\text{thr}\in\{0.6,0.8\}$.
+**$L \times s_\text{thr}$ (Tab.5)**: LVB best at $L\in\{3,4\}, s_\text{thr}\in\{0.2,0.4\}$; V-MME best at $L\in\{4,5\}, s_\text{thr}\in\{0.6,0.8\}$.
 
-**Adattività (Fig.6)**: sullo stesso video, AKS sceglie keyframe diversi per domande diverse → flessibilità.
+**Adaptivity (Fig.6)**: on the same video, AKS picks different keyframes for different questions → flexibility.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- La metric coverage approssimata via bin è euristica; ottimo globale non garantito.
-- Overhead computazionale del BLIP/CLIP forward su molti frame (ridotto via sampling a basso fps) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.4].
-- Performance del scorer (BLIP/CLIP) limita il ceiling: non c'è learning del scorer da feedback del VLM.
-- Non testato su MVBench, LongVideoBench-test, EgoSchema; analisi su 2 benchmark.
-- Su Video-MME, dove molte domande richiedono "high-level comprehension", il gain è più contenuto (+0.9 punti per LLaVA-Video-7B).
+- The coverage metric approximated via bins is a heuristic; global optimum not guaranteed.
+- Computational overhead of the BLIP/CLIP forward pass over many frames (reduced via low-fps sampling) [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf §4.4].
+- The scorer (BLIP/CLIP) performance bounds the ceiling: no learning of the scorer from VLM feedback.
+- Not tested on MVBench, LongVideoBench-test, EgoSchema; analysis on 2 benchmarks.
+- On Video-MME, where many questions require "high-level comprehension", the gain is more modest (+0.9 points for LLaVA-Video-7B).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Confronto diretto con [[arnab-2025-temporal-chain-of-thought]]: TCoT usa il VLM stesso come selector (no external scorer), AKS usa CLIP/BLIP — quale è meglio in funzione del budget di compute?
-- Combinazione con [[doorenbos-2026-video-panels]]: i frame selezionati da AKS potrebbero essere panel-zzati per moltiplicare ulteriormente il temporal coverage.
-- Effettiva latency end-to-end (BLIP forward × $T_\text{cand}$) non riportata in tabelle.
-- Estensione a video subtitle / audio modalities (il paper esplicitamente evita subtitles).
-- Allineamento fra $s(Q,F_t)$ e la nozione di "rilevanza" effettiva dal VLM: c'è dataset di supervised keyframe → potrebbe diventare un train signal.
+- Direct comparison with [[arnab-2025-temporal-chain-of-thought]]: TCoT uses the VLM itself as the selector (no external scorer), AKS uses CLIP/BLIP — which is better as a function of compute budget?
+- Combination with [[doorenbos-2026-video-panels]]: frames selected by AKS could be panel-ized to further multiply temporal coverage.
+- Effective end-to-end latency (BLIP forward × $T_\text{cand}$) not reported in the tables.
+- Extension to video subtitle / audio modalities (the paper explicitly avoids subtitles).
+- Alignment between $s(Q,F_t)$ and the effective notion of "relevance" from the VLM: a supervised keyframe dataset exists → it could become a training signal.
 
-## Concetti citati
+## Cited concepts
 
 - [[video-llm]]
 - [[long-video-understanding]]
-- [[keyframe-sampling]] — concetto centrale
+- [[keyframe-sampling]] — central concept
 - [[training-free-methods]]
 - [[image-text-matching]] — relevance score via BLIP ITM
 - [[blip-2]] — scorer
-- [[clip]] — scorer alternativo
-- [[sevila]] — scorer alternativo
-- [[ripleys-k-function]] — formalizzazione coverage
+- [[clip]] — alternative scorer
+- [[sevila]] — alternative scorer
+- [[ripleys-k-function]] — coverage formalization
 - [[lvbench]] / [[longvideobench]] — benchmark
 - [[video-mme]] — benchmark
-- [[qwen2-vl]], [[llava-onevision]], [[llava-video]] — backbone
+- [[qwen2-vl]], [[llava-onevision]], [[llava-video]] — backbones
 - [[lmms-eval]] — toolkit
 - [[uniform-sampling]] — baseline
-- [[siglip]] — citato come vision encoder LLaVA-Video
-- [[moviechat]], [[ma-lmm]], [[videostreaming]], [[longvlm]], [[goldfish]] — competitor su token reduction
+- [[siglip]] — cited as LLaVA-Video vision encoder
+- [[moviechat]], [[ma-lmm]], [[videostreaming]], [[longvlm]], [[goldfish]] — competitors on token reduction
 
-## Citazioni dirette
+## Direct quotes
 
 > "It inserts a plug-and-play module known as keyframe selection, which aims to maximize the useful information with a fixed number of video tokens." [source: raw/papers/tang-2025-adaptive-keyframe-sampling.pdf Abstract]
 

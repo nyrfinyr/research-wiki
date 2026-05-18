@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # Gemini 1.5 Pro
 
-MLLM closed-source di Google DeepMind (2024) con context window estesa fino a 1-2M token e supporto nativo a video lunghi. Top performer su Video-MME ma sorprendentemente debole (33.1%) su LVBench, dove emerge il gap su long-video QA realmente sfidante.
+Closed-source MLLM from Google DeepMind (2024) with context window extended up to 1-2M tokens and native support for long videos. Top performer on Video-MME but surprisingly weak (33.1%) on LVBench, where the gap on truly challenging long-video QA emerges.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — modello top-performer
-- [[wang-2025-lvbench]] — sorprendentemente debole (33.1%)
+- [[fu-2025-video-mme]] — top-performer model
+- [[wang-2025-lvbench]] — surprisingly weak (33.1%)
 
-## Concetti correlati
+## Related concepts
 
-- [[gemini-2-5-pro]] — successore
-- [[gpt-4o]] — competitor closed-source
+- [[gemini-2-5-pro]] — successor
+- [[gpt-4o]] — closed-source competitor

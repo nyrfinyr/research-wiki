@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # EVA-CLIP
 
-Variante CLIP con backbone ViT inizializzato da EVA (masked image modeling con feature CLIP come target), pubblicata da BAAI (2023). Migliora la scalabilità e la qualità delle feature visive rispetto a CLIP standard. Usata come encoder di riferimento in alcuni MLLM citati nella pipeline di Look Twice.
+CLIP variant with a ViT backbone initialized from EVA (masked image modeling with CLIP features as target), published by BAAI (2023). Improves scalability and visual feature quality compared to standard CLIP. Used as the reference encoder in some MLLMs cited in the Look Twice pipeline.
 
 ## Sources
 
-- [[morini-2026-look-twice]] — encoder citato fra i componenti
+- [[morini-2026-look-twice]] — encoder cited among the components
 
-## Concetti correlati
+## Related concepts
 
-- [[clip]] — predecessore
-- [[siglip]] — alternativa contemporanea
+- [[clip]] — predecessor
+- [[siglip]] — contemporaneous alternative
 - [[vision-transformer]]

@@ -18,62 +18,62 @@ year: 2026
 
 ## TL;DR
 
-**Look Twice (LoT)** è un framework **training-free, inference-time** che migliora come un MLLM utilizza evidenza multimodale nel setting **Knowledge-Based VQA**. L'idea: far guardare al modello l'input **due volte** — un primo forward pass genera **un solo token** e produce le attention map; queste vengono usate per identificare (a) la **regione visiva rilevante** (filtrando attention sink visivi con uno score sui dimension-channels critici della BOS) e (b) le **frasi di evidenza testuale** rilevanti nel contesto recuperato (RAG). I cue selezionati vengono **highlighted** nel prompt con marker `<START_IMPORTANT_TXT>` e con un bounding box `<START_IMPORTANT_IMG>` nell'immagine. Un secondo forward pass genera la risposta finale sull'input arricchito. Niente training, niente parametri modificati, overhead ≈ 1 token. Su 4 benchmark KB-VQA (E-VQA, InfoSeek, OVEN, ViQuAE) × 10 MLLM (Qwen2-VL, Qwen2.5-VL, Qwen3-VL, InternVL3.5 da 2B a 38B), LoT migliora di **+1.1 a +5.3** punti medi su tutte le combinazioni; mostra anche guadagni su benchmark vision-centric e di hallucination (RealWorldQA, V-Star, POPE, AMBER) usando solo il visual highlighting [source: raw/papers/morini-2026-look-twice.pdf §1, §4].
+**Look Twice (LoT)** is a **training-free, inference-time** framework that improves how an MLLM uses multimodal evidence in the **Knowledge-Based VQA** setting. The idea: make the model look at the input **twice** — a first forward pass generates **a single token** and produces the attention maps; these are used to identify (a) the **relevant visual region** (filtering visual attention sinks via a score on the BOS's critical dimension-channels) and (b) the **relevant textual evidence sentences** in the retrieved context (RAG). The selected cues are **highlighted** in the prompt with markers `<START_IMPORTANT_TXT>` and with a bounding box `<START_IMPORTANT_IMG>` on the image. A second forward pass generates the final answer on the enriched input. No training, no modified parameters, overhead ≈ 1 token. On 4 KB-VQA benchmarks (E-VQA, InfoSeek, OVEN, ViQuAE) × 10 MLLMs (Qwen2-VL, Qwen2.5-VL, Qwen3-VL, InternVL3.5 from 2B to 38B), LoT improves by **+1.1 to +5.3** average points across all combinations; it also shows gains on vision-centric and hallucination benchmarks (RealWorldQA, V-Star, POPE, AMBER) using only the visual highlighting [source: raw/papers/morini-2026-look-twice.pdf §1, §4].
 
-## Contributo principale
+## Main contribution
 
-- Framework training-free per **evidence highlighting multimodale** in MLLM, che usa le attention dinamiche del modello come segnale implicito di rilevanza, senza fine-tuning né cambi architetturali [source: raw/papers/morini-2026-look-twice.pdf §1].
-- **Multi-layer attention sink filtering** per la modalità visiva: identifica i `D_sink` (sottoinsieme di dimensioni hidden in cui il BOS — sink prototipico — ha attivazioni massicce) e suppressore di token visivi che attivano queste dimensioni oltre soglia τ (§3.2, Eq. 3).
-- **Two-pass inference**: il primo pass costa un solo token; il second pass usa il prompt augmentato → overhead computazionale **trascurabile** (§3, contributions).
-- Validazione cross-architecture (Qwen, InternVL) e cross-scale (2B → 38B); ablation dimostra che visual e textual highlighting sono **complementari** (Tab. 2).
+- Training-free framework for **multimodal evidence highlighting** in MLLMs, which uses the model's dynamic attentions as an implicit relevance signal, without fine-tuning or architectural changes [source: raw/papers/morini-2026-look-twice.pdf §1].
+- **Multi-layer attention sink filtering** for the visual modality: identifies the `D_sink` (subset of hidden dimensions where the BOS — prototypical sink — has massive activations) and suppresses visual tokens that activate these dimensions above threshold τ (§3.2, Eq. 3).
+- **Two-pass inference**: the first pass costs a single token; the second pass uses the augmented prompt → **negligible** computational overhead (§3, contributions).
+- Cross-architecture (Qwen, InternVL) and cross-scale (2B → 38B) validation; ablation shows that visual and textual highlighting are **complementary** (Tab. 2).
 
-## Metodo
+## Method
 
-### Setup KB-VQA (§3.1)
+### KB-VQA setup (§3.1)
 
-Input multimodale `X = [X_V; X_T; X_C]` di lunghezza `S = N_V + N_T + N_C` (visual tokens, question tokens, retrieved context tokens). Retrieval pipeline (§4.2): EVA-CLIP cross-modale image-to-text + FAISS, top-`n=3` entity Wikipedia → contesto testuale.
+Multimodal input `X = [X_V; X_T; X_C]` of length `S = N_V + N_T + N_C` (visual tokens, question tokens, retrieved context tokens). Retrieval pipeline (§4.2): cross-modal EVA-CLIP image-to-text + FAISS, top-`n=3` Wikipedia entity → textual context.
 
-Attention notation: `A^(ℓ,k) ∈ R^(S×S)` per layer `ℓ`, head `k`.
+Attention notation: `A^(ℓ,k) ∈ R^(S×S)` for layer `ℓ`, head `k`.
 
 ### Self-guided Visual Evidence Selection (§3.2)
 
 1. **Object-to-visual submatrix** (Eq. 1):
    `A^(ℓ,k)_obj→vis = A^(ℓ,k)[T_obj, V] ∈ R^(|T_obj|×N_V)`,
-   dove `T_obj` sono gli indici dei token del **target object** estratto dalla domanda con dependency parsing spaCy (cap. B, "Target Object Identification").
-2. **Aggregazione cross-layer e cross-head** (Eq. 2): media su `T_obj`, `L_vis` (intermediate layers — dove emerge il grounding cross-modal), e tutte le `K` teste ⇒ vettore `a_vis ∈ R^(N_V)`.
+   where `T_obj` are the indices of the **target object** tokens extracted from the question with spaCy dependency parsing (cap. B, "Target Object Identification").
+2. **Cross-layer and cross-head aggregation** (Eq. 2): average over `T_obj`, `L_vis` (intermediate layers — where cross-modal grounding emerges), and all `K` heads ⇒ vector `a_vis ∈ R^(N_V)`.
 
 ### Multi-Layer Attention Sink Filtering (§3.2)
 
-Citando [[gu-2024-attention-sink]] e Kang et al. 2026 (Visual Attention Sink in MLLM): alcuni token visivi attivano massicciamente le stesse `D_sink` dimensioni del BOS. Score di sink:
+Citing [[gu-2024-attention-sink]] and Kang et al. 2026 (Visual Attention Sink in MLLM): some visual tokens massively activate the same `D_sink` dimensions as the BOS. Sink score:
 `s_sink = (1/|L_sink|) Σ_{ℓ ∈ L_sink} max_{m ∈ D_sink} |H^ℓ_V[:,m]| / ‖H^ℓ_V‖_row` (Eq. 3),
-con `L_sink = L_vis`. Token con `s_sink > τ` (default: 25° percentile dei sink score sui token visivi) ⇒ `a_vis[i] = 0`. Il filtering è applicato **solo al passaggio di analisi** (primo forward); la generazione finale usa le attention non filtrate.
+with `L_sink = L_vis`. Tokens with `s_sink > τ` (default: 25th percentile of sink scores on visual tokens) ⇒ `a_vis[i] = 0`. Filtering is applied **only during the analysis pass** (first forward); final generation uses unfiltered attentions.
 
 ### Bounding Box Extraction (§3.2)
 
-- Reshape `a_vis` → mappa 2D `M_vis ∈ R^(H×W)`.
-- Centroide pesato `(c_x, c_y)` (Eq. 4); deviazioni `σ_x, σ_y` (Eq. 5).
-- Bounding box `(c_x − βσ_x, c_y − βσ_y, c_x + βσ_x, c_y + βσ_y)` con `β=2` (Eq. 6).
+- Reshape `a_vis` → 2D map `M_vis ∈ R^(H×W)`.
+- Weighted centroid `(c_x, c_y)` (Eq. 4); deviations `σ_x, σ_y` (Eq. 5).
+- Bounding box `(c_x − βσ_x, c_y − βσ_y, c_x + βσ_x, c_y + βσ_y)` with `β=2` (Eq. 6).
 
-Confronto di tre metodi (Tab. 4, supplementary): Min-Max, Morphological, Weighted Centroid. Weighted Centroid è il best (IoU 0.487, distanza centro 0.071).
+Comparison of three methods (Tab. 4, supplementary): Min-Max, Morphological, Weighted Centroid. Weighted Centroid is best (IoU 0.487, center distance 0.071).
 
 ### Self-guided Textual Evidence Selection (§3.2)
 
-Estrazione **last-to-context** dall'ultimo token generato (Eq. 7): `A^(ℓ,k)_last→ctx = A^(ℓ,k)[t, C]`.
-Aggregazione su `L_txt` = **seconda metà del decoder** (deeper layers, coerente con [[liu-2025-selfelicit]]) e tutte le `K` teste (Eq. 8). Aggregazione su frasi; selezione: frase con score massimo (oppure score ≥ α).
+**Last-to-context** extraction from the last generated token (Eq. 7): `A^(ℓ,k)_last→ctx = A^(ℓ,k)[t, C]`.
+Aggregation over `L_txt` = **second half of the decoder** (deeper layers, consistent with [[liu-2025-selfelicit]]) and all `K` heads (Eq. 8). Aggregation over sentences; selection: sentence with maximum score (or score ≥ α).
 
 ### Multimodal Inference with Evidence Highlighting
 
-Marker:
-- Testo: `<START_IMPORTANT_TXT>...<END_IMPORTANT_TXT>` sulle frasi selezionate.
-- Immagine: `<START_IMPORTANT_IMG>...<END_IMPORTANT_IMG>` sul bounding box.
+Markers:
+- Text: `<START_IMPORTANT_TXT>...<END_IMPORTANT_TXT>` on the selected sentences.
+- Image: `<START_IMPORTANT_IMG>...<END_IMPORTANT_IMG>` on the bounding box.
 
-Istruzioni di sistema aggiornate per dire al modello di **non riprodurre i marker** nell'output. Secondo forward pass su `[X*_V; X_T; X*_C]`.
+System instructions updated to tell the model **not to reproduce the markers** in the output. Second forward pass over `[X*_V; X_T; X*_C]`.
 
-## Risultati chiave
+## Key results
 
 ### Main KB-VQA (Tab. 1, §4.3)
 
-Avg delle 4 metriche (E-VQA, InfoSeek, OVEN, ViQuAE):
+Average of the 4 metrics (E-VQA, InfoSeek, OVEN, ViQuAE):
 
 | Backbone | Base | + LoT | Δ |
 |---|---|---|---|
@@ -88,28 +88,28 @@ Avg delle 4 metriche (E-VQA, InfoSeek, OVEN, ViQuAE):
 | Qwen2.5-VL-32B | 27.8 | 31.5 | +3.7 |
 | InternVL3.5-38B | 34.1 | 37.5 | +3.1 |
 
-Guadagni più marcati su InfoSeek/ViQuAE (es. InternVL3.5-4B ViQuAE 36.4 → 45.6).
+Most pronounced gains on InfoSeek/ViQuAE (e.g. InternVL3.5-4B ViQuAE 36.4 → 45.6).
 
-### Ablation modalità (Tab. 2, §4.4)
+### Modality ablation (Tab. 2, §4.4)
 
-Qwen2.5-VL-3B su E-VQA / InfoSeek:
-- **Solo textual**: 27.8→29.4 / 22.4→24.1.
-- **Solo visual**: 27.8→29.6 / 22.4→23.9.
-- **Entrambe (LoT)**: 30.4 / 25.2.
+Qwen2.5-VL-3B on E-VQA / InfoSeek:
+- **Textual only**: 27.8→29.4 / 22.4→24.1.
+- **Visual only**: 27.8→29.6 / 22.4→23.9.
+- **Both (LoT)**: 30.4 / 25.2.
 
-Le due modalità sono **complementari**.
+The two modalities are **complementary**.
 
-### Numero di passaggi recuperati (Fig. 4 left)
+### Number of retrieved passages (Fig. 4 left)
 
-Con `n` retrieved passages 1→3 il baseline guadagna poco (saturazione + rumore); LoT mantiene un guadagno consistente, suggerendo che il textual highlighting **assorbe il rumore** del retrieval.
+With `n` retrieved passages 1→3 the baseline gains little (saturation + noise); LoT maintains a consistent gain, suggesting that textual highlighting **absorbs the noise** of retrieval.
 
 ### Oracle evidence (Fig. 4 right)
 
-Anche con passaggi Wikipedia dell'entità ground-truth, LoT migliora ⇒ il textual highlighting aiuta a focalizzare anche su evidenza pulita.
+Even with ground-truth-entity Wikipedia passages, LoT improves ⇒ textual highlighting helps focus even on clean evidence.
 
-### Generalizzazione a benchmark non-KB (Tab. 3, §4.5)
+### Generalization to non-KB benchmarks (Tab. 3, §4.5)
 
-Solo visual highlighting (niente contesto testuale):
+Visual highlighting only (no textual context):
 
 | Backbone | RealWorldQA Δ | V-Star Δ | TextVQA Δ | OCRBench Δ | POPE Δ | AMBER Δ |
 |---|---|---|---|---|---|---|
@@ -118,35 +118,35 @@ Solo visual highlighting (niente contesto testuale):
 | Qwen2.5-VL-32B | +1.5 | +9.9 | +1.6 | +0.3 | +0.2 | -0.4 |
 | InternVL3.5-38B | +2.4 | +1.4 | -0.3 | -2.8 | +3.0 | +2.7 |
 
-Guadagni soprattutto su V-Star (vision-centric / fine-grained) e su AMBER (hallucination). Alcune fluttuazioni negative (es. InternVL3.5-4B su POPE/AMBER) indicano che il segnale visual è meno robusto su alcuni backbone.
+Gains mostly on V-Star (vision-centric / fine-grained) and on AMBER (hallucination). Some negative fluctuations (e.g. InternVL3.5-4B on POPE/AMBER) indicate the visual signal is less robust on some backbones.
 
-## Limitazioni dichiarate dagli autori
+## Limitations stated by the authors
 
-- Il filtering dei sink dimensions richiede di conoscere `D_sink` per il backbone specifico (costo offline una tantum, ma model-dependent) (§3.2).
-- Il textual selection sceglie solo la frase con score massimo (`α=max`); strategie più sofisticate (multi-evidence, scoring graduale) non esplorate (§4.2).
-- Validazione su 10 MLLM ma tutti basati su decoder transformer con visual encoder CLIP/SigLIP: estensione a modelli con architetture non-attention (es. Mamba-based VLM) non testata.
-- Il target object si estrae da una sola noun phrase (spaCy POS): domande con riferimenti multipli o costruzioni sintattiche complesse possono fallire (§B).
+- Sink-dimension filtering requires knowing `D_sink` for the specific backbone (one-time offline cost, but model-dependent) (§3.2).
+- Textual selection picks only the maximum-score sentence (`α=max`); more sophisticated strategies (multi-evidence, graded scoring) not explored (§4.2).
+- Validation on 10 MLLMs but all decoder-transformer-based with CLIP/SigLIP visual encoders: extension to models with non-attention architectures (e.g. Mamba-based VLMs) is untested.
+- The target object is extracted from a single noun phrase (spaCy POS): questions with multiple referents or complex syntactic constructions can fail (§B).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- **Soglia τ = 25th percentile**: scelta empirica per i modelli testati; non c'è uno studio di sensibilità su backbone come Qwen3-VL-32B o LLaMA-3.2-Vision dove la distribuzione dei sink score potrebbe differire.
-- Il bounding box è **rettangolare assissimmetrico** (centroide ± βσ): per oggetti molto allungati o frammentati questo è inadeguato. Strategie più morfologiche (Min-Max/Morphological) hanno trade-off documentati (Tab. 4) ma non integrate dinamicamente.
-- Su benchmark senza retrieval (Tab. 3), per Qwen3-VL-4B su AMBER c'è -0.7: il visual highlighting può **danneggiare** in scenari dove il modello base è già ben-allineato.
-- Il modello deve **rispettare** il prompt instruction di non includere i marker — comportamento mai quantificato (rate di leakage?).
-- Il paper non discute il costo aggiuntivo della **routine di analisi attention** (memorizzare attention maps per `L_vis ∪ L_txt` su tutti i layer e head può essere caro per 38B, soprattutto con visual token ~256-1024).
-- Connessione con [[flash-attention]]: l'estrazione esplicita di `A^(ℓ,k)` richiede di **materializzare** le attention maps, contro la pratica di FlashAttention che non le scrive su HBM. Questo crea overhead memoria significativo (non commentato).
+- **Threshold τ = 25th percentile**: empirical choice for the tested models; no sensitivity study on backbones such as Qwen3-VL-32B or LLaMA-3.2-Vision where the sink-score distribution could differ.
+- The bounding box is **axis-aligned rectangular** (centroid ± βσ): inadequate for very elongated or fragmented objects. More morphological strategies (Min-Max/Morphological) have documented trade-offs (Tab. 4) but are not dynamically integrated.
+- On non-retrieval benchmarks (Tab. 3), for Qwen3-VL-4B on AMBER there is -0.7: visual highlighting can **harm** in scenarios where the base model is already well-aligned.
+- The model must **comply** with the prompt instruction not to include the markers — a behavior never quantified (leakage rate?).
+- The paper does not discuss the extra cost of the **attention analysis routine** (storing attention maps for `L_vis ∪ L_txt` across all layers and heads can be expensive for 38B, especially with ~256-1024 visual tokens).
+- Connection with [[flash-attention]]: explicit extraction of `A^(ℓ,k)` requires **materializing** the attention maps, contrary to FlashAttention's practice of not writing them to HBM. This creates significant memory overhead (not discussed).
 
-## Connessioni con altri lavori del wiki
+## Connections to other works in the wiki
 
-- LoT è la **generalizzazione cross-modale** di [[liu-2025-selfelicit]] (citato come ref. [26]): SelfElicit usa la stessa idea (attention deeper layers + sentence marker) ma solo testuale. LoT aggiunge (1) visual side, (2) sink filtering specifico per MLLM (Kang et al. 2026, "Visual Attention Sink").
-- L'attention sink filtering eredita direttamente da [[gu-2024-attention-sink]] (ref. [13]).
-- Coerente con la letteratura "deep layers know" (vedi anche [[map-the-flow]] Kim 2025).
+- LoT is the **cross-modal generalization** of [[liu-2025-selfelicit]] (cited as ref. [26]): SelfElicit uses the same idea (deep-layer attention + sentence marker) but text-only. LoT adds (1) the visual side, (2) MLLM-specific sink filtering (Kang et al. 2026, "Visual Attention Sink").
+- Attention-sink filtering inherits directly from [[gu-2024-attention-sink]] (ref. [13]).
+- Consistent with the "deep layers know" line of work (see also [[map-the-flow]] Kim 2025).
 
-## Concetti citati
+## Cited concepts
 
 [[look-twice]], [[evidence-highlighting]], [[kb-vqa]], [[multimodal-large-language-model]], [[visual-attention-sink]], [[attention-sink]], [[multimodal-attention]], [[bounding-box-extraction]], [[training-free-methods]], [[self-elicit]], [[rag]], [[encyclopedic-vqa]], [[infoseek]], [[oven]], [[viquae]], [[realworldqa]], [[v-star]], [[textvqa]], [[chartqa]], [[ocrbench]], [[pope]], [[amber]], [[qwen2-vl]], [[qwen2-5-vl]], [[qwen3-vl]], [[internvl3-5]], [[eva-clip]], [[faiss]], [[spacy]].
 
-## Citazioni dirette rilevanti
+## Relevant direct quotes
 
 > "We introduce Look Twice (LoT), a training-free inference-time framework that improves multimodal evidence selection in pretrained MLLMs by explicitly highlighting query-relevant cues in both retrieved text and input image." (§1, Contributions)
 

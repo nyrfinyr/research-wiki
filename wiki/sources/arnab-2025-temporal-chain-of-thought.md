@@ -18,31 +18,31 @@ year: 2025
 
 ## TL;DR
 
-Arnab et al. propongono **Temporal Chain of Thought (TCoT)**: una strategia di inferenza per video QA in cui *lo stesso VLM* viene usato prima per selezionare i frame rilevanti (con justification testuale) e poi per rispondere alla domanda. Niente captioner esterni né tool: un solo VLM, due chiamate. La variante finale **Dynamic-Segment TCoT** partiziona il video in $l$ segmenti, esegue una *Single-Step* su ciascuno con campionamento $s$ frame per segmento, concatena gli indici selezionati e li aggrega per la risposta finale. Su LVBench (68 min/video medi) +11.4 punti con context 32K vs. baseline 32K; con 700K token totali (iterativi a 32K), batte la baseline non-iterativa a 700K di +2.8 punti. SOTA su EgoSchema, LVBench, OpenEQA, NExT-QA con Gemini 1.5 Flash; il guadagno generalizza a Qwen-2.5-VL-7B e GPT-4o-mini [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf Abstract, §4.3].
+Arnab et al. propose **Temporal Chain of Thought (TCoT)**: an inference strategy for video QA in which *the same VLM* is used first to select the relevant frames (with a textual justification) and then to answer the question. No external captioners and no tools: a single VLM, two calls. The final variant **Dynamic-Segment TCoT** partitions the video into $l$ segments, runs a *Single-Step* over each with $s$ sampled frames per segment, concatenates the selected indices, and aggregates them for the final answer. On LVBench (avg. 68 min/video) it gains +11.4 points with a 32K context vs. the 32K baseline; with 700K total tokens (iterative at 32K), it beats the non-iterative 700K baseline by +2.8 points. SOTA on EgoSchema, LVBench, OpenEQA, NExT-QA with Gemini 1.5 Flash; the gain generalises to Qwen-2.5-VL-7B and GPT-4o-mini [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf Abstract, §4.3].
 
-## Contributo principale
+## Main contribution
 
-- Una nuova *inference strategy* training-free per video QA che decompone $a = H(G(x,q), q)$ con $G$ = context aggregation e $H$ = answering, entrambi delegati allo stesso VLM [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.2-3].
-- *Single-Step TCoT*: il VLM produce in JSON la lista di frame ID rilevanti più una *justification* testuale (Fig.3), ispirata a CoT: i frame selezionati sono "visual thoughts".
-- *Dynamic-Segment TCoT*: gestisce video > context window dividendo in $l$ segmenti non sovrapposti da $m=N/l$ frame, campionando $s$ frame per segmento per la selezione e poi raffinando l'unione $\hat x$ uniformemente fino a $k - u$ frame, dove $u$ frame uniformi extra ($u \ll N$) garantiscono coverage minima [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.5].
-- Studio inference-time scaling: aumentando $l$ il numero totale di token cresce e accuracy migliora smoothly, mentre la baseline lunga satura a ~1000 frame.
-- Analisi adattiva: la frazione di frame selezionati varia per tipo di domanda (temporal grounding ~7%, summarization ~25%), allineata con annotazioni human di reference time (Fig.6).
+- A new training-free *inference strategy* for video QA that decomposes $a = H(G(x,q), q)$ with $G$ = context aggregation and $H$ = answering, both delegated to the same VLM [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.2-3].
+- *Single-Step TCoT*: the VLM produces in JSON the list of relevant frame IDs plus a textual *justification* (Fig.3), CoT-inspired: the selected frames are "visual thoughts".
+- *Dynamic-Segment TCoT*: handles videos longer than the context window by splitting them into $l$ non-overlapping segments of $m=N/l$ frames, sampling $s$ frames per segment for selection, then refining the union $\hat x$ uniformly up to $k - u$ frames, where $u$ extra uniform frames ($u \ll N$) guarantee minimum coverage [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.5].
+- Inference-time scaling study: as $l$ grows the total token count grows and accuracy improves smoothly, while the long baseline saturates around 1000 frames.
+- Adaptivity analysis: the fraction of selected frames varies by question type (temporal grounding ~7%, summarization ~25%), aligned with human time-reference annotations (Fig.6).
 
-## Metodo
+## Method
 
-**Notazione (§3.1)**: input video $x \in \mathbb{R}^{T\times H\times W\times C}$, question $q$ → answer $a$. Context limit $k$ in token; Gemini 1.5 Flash usa 258 token/frame, $k=32K$ ⇒ ~120 frame [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §4.1].
+**Notation (§3.1)**: input video $x \in \mathbb{R}^{T\times H\times W\times C}$, question $q$ → answer $a$. Context limit $k$ in tokens; Gemini 1.5 Flash uses 258 tokens/frame, $k=32K$ ⇒ ~120 frames [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §4.1].
 
-**Single-Step TCoT (§3.2)**: il VLM riceve fino a $N$ frame indicizzati e il prompt di Fig.3, restituisce JSON `{frame_ids:[...], justification: "..."}`. I frame selezionati $\hat x = \{x_i\}_{i\in S}$ vengono aumentati con $u$ frame uniformemente campionati ($u \ll N$, default $u=20$) per disambiguazione contestuale. Final context $c = \hat x \cup x[u]$ [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Fig.3].
+**Single-Step TCoT (§3.2)**: the VLM receives up to $N$ indexed frames and the prompt in Fig.3, returns JSON `{frame_ids:[...], justification: "..."}`. The selected frames $\hat x = \{x_i\}_{i\in S}$ are augmented with $u$ uniformly sampled frames ($u \ll N$, default $u=20$) for contextual disambiguation. Final context $c = \hat x \cup x[u]$ [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Fig.3].
 
-**Dynamic-Segment TCoT (§3.2)**: video → $l$ segmenti di $m=N/l$ frame; ogni segmento $x_i$ viene downsampled a $s$ frame ($s=64$ default), poi $S(x_i[s], q)$ produce gli indici. Concatenazione $\hat x = [S(x_1[s],q), \dots, S(x_l[s],q)]$. Se $|\hat x| > k - u$, sub-sample uniforme a $k-u$ frame; si aggiunge $x[u]$ uniforme globale. Costo totale = $l\cdot s$ frame indipendente da $N$ [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.5].
+**Dynamic-Segment TCoT (§3.2)**: video → $l$ segments of $m=N/l$ frames; each segment $x_i$ is downsampled to $s$ frames ($s=64$ default), then $S(x_i[s], q)$ produces the indices. Concatenation $\hat x = [S(x_1[s],q), \dots, S(x_l[s],q)]$. If $|\hat x| > k - u$, uniformly sub-sample to $k-u$ frames; add the global uniform $x[u]$. Total cost = $l\cdot s$ frames, independent of $N$ [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §3.2, Eq.5].
 
-**Aspetto training-free**: tutto fa leva su instruction-tuning del VLM; nessun fine-tuning, nessun captioner separato (a differenza di LangRepo/VideoAgent/LLoVi), nessun retriever, nessun tool calling.
+**Training-free aspect**: everything leverages the VLM's instruction-tuning; no fine-tuning, no separate captioner (unlike LangRepo/VideoAgent/LLoVi), no retriever, no tool calling.
 
-**Backbone testati**: Gemini-1.5-flash-002 (primario), Qwen-2.5-VL-7B, GPT-4o-mini.
+**Backbones tested**: Gemini-1.5-flash-002 (primary), Qwen-2.5-VL-7B, GPT-4o-mini.
 
-## Risultati chiave
+## Key results
 
-**Ablation context aggregation (Tab.1)** — 120 frame input, Gemini Flash 32K:
+**Context aggregation ablation (Tab.1)** — 120 input frames, Gemini Flash 32K:
 
 | Method | EgoSchema | LVBench |
 |---|---|---|
@@ -51,9 +51,9 @@ Arnab et al. propongono **Temporal Chain of Thought (TCoT)**: una strategia di i
 | Hierarchical | 74.0 | 53.3 |
 | Dynamic-segment (ours, $l=12$, $s=64$) | **75.2** | **61.7** |
 
-**Computation vs. accuracy (Fig.4)** su LVBench: TCoT cresce smoothly da $l=2$ a $l=32$ (31K → 697K token totali), 50.3 → 61.7. Baseline a 700K (2700 frame nativi) raggiunge solo 58.9. Self-consistency CoT (sampling+voting) inefficace (≈51) [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §4.2].
+**Computation vs. accuracy (Fig.4)** on LVBench: TCoT grows smoothly from $l=2$ to $l=32$ (31K → 697K total tokens), 50.3 → 61.7. Baseline at 700K (2700 native frames) only reaches 58.9. Self-consistency CoT (sampling+voting) ineffective (≈51) [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf §4.2].
 
-**Alternative aggregation (Tab.2)** — tutte usano la stessa segmentazione, fixed 120 frame:
+**Alternative aggregation (Tab.2)** — all use the same segmentation, fixed 120 frames:
 
 | Selection | EgoSchema | LVBench |
 |---|---|---|
@@ -65,51 +65,51 @@ Arnab et al. propongono **Temporal Chain of Thought (TCoT)**: una strategia di i
 | VLM direct (ours) | **75.2** | **61.7** |
 | Oracle annotated time-refs | — | 67.4 |
 
-**SOTA (Tab.3)** — LVBench: TCoT(Gemini Flash, 32K context, 672K total) = **61.7** vs precedente best Gemini 1.5 Flash 58.9 a 700K (single shot). TCoT(GPT-4o-mini, 22K) = 53.5 vs baseline 48.0 (+5.5). TCoT(Qwen2.5-VL-7B, 128K) = 49.1 vs 46.1. — EgoSchema full: TCoT(Gemini) = 69.1 vs baseline 67.8. — NExT-QA: 81.0 vs 80.0. — OpenEQA: 69.2 vs 68.0.
+**SOTA (Tab.3)** — LVBench: TCoT(Gemini Flash, 32K context, 672K total) = **61.7** vs. previous best Gemini 1.5 Flash 58.9 at 700K (single shot). TCoT(GPT-4o-mini, 22K) = 53.5 vs. baseline 48.0 (+5.5). TCoT(Qwen2.5-VL-7B, 128K) = 49.1 vs. 46.1. — EgoSchema full: TCoT(Gemini) = 69.1 vs. baseline 67.8. — NExT-QA: 81.0 vs. 80.0. — OpenEQA: 69.2 vs. 68.0.
 
-**Adattività (Fig.6)**: % frame selezionati varia 6–25% per question type; allineato con annotazioni "time references" di LVBench.
+**Adaptivity (Fig.6)**: % of selected frames varies 6–25% across question types; aligned with LVBench "time references" annotations.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- Richiede un VLM con buona capacità di *instruction following* per la selection function zero-shot; modelli meno allineati richiederebbero RL/fine-tuning ad hoc (§5).
-- Failure mode (Fig.5): la selezione può mancare frame critici (es. "drop of water as a mirror") e nessuna correzione downstream è possibile.
-- Headroom oracle su LVBench = 67.4 vs 61.7 ⇒ il selector non è perfetto.
-- L'intera analisi è su VLM proprietario o limitato a 7B open-source; non testata su modelli locali piccoli.
+- Requires a VLM with strong *instruction following* for the zero-shot selection function; less aligned models would require ad-hoc RL/fine-tuning (§5).
+- Failure mode (Fig.5): the selection may miss critical frames (e.g. "drop of water as a mirror") and no downstream correction is possible.
+- Oracle headroom on LVBench = 67.4 vs. 61.7 ⇒ the selector is not perfect.
+- The whole analysis runs on proprietary VLMs or a 7B open-source model; not tested on small local models.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Combinazione con [[adaptive-keyframe-sampling]] (CLIP/BLIP scoring) per pre-filtrare i frame prima di darli al VLM-selector → costo di calcolo ulteriormente ridotto?
-- È possibile addestrare un modello con RL per migliorare la selection function come suggerito nelle limitazioni? (Direzione futura.)
-- Come reagisce a video con scene cuts molto frequenti? L'ablazione non lo dice.
-- Il prompt JSON-strict è fragile: cosa succede con VLM piccoli che non rispettano il formato? Il paper gestisce fallback `S=[1..N]`.
-- L'overhead end-to-end in latenza wall-clock vs. baseline 32K non è riportato (solo token count).
+- Combination with [[adaptive-keyframe-sampling]] (CLIP/BLIP scoring) to pre-filter frames before handing them to the VLM-selector → further compute reduction?
+- Can a model be trained with RL to improve the selection function, as the limitations suggest? (Future direction.)
+- How does it react to videos with very frequent scene cuts? The ablation does not address it.
+- The JSON-strict prompt is brittle: what happens with small VLMs that do not respect the format? The paper handles it with a fallback `S=[1..N]`.
+- The end-to-end wall-clock latency overhead vs. the 32K baseline is not reported (only token count).
 
-## Concetti citati
+## Cited concepts
 
 - [[video-llm]]
 - [[long-video-understanding]]
-- [[chain-of-thought]] — fonte dell'intuizione
-- [[inference-time-scaling]] — paradigma
+- [[chain-of-thought]] — source of the intuition
+- [[inference-time-scaling]] — paradigm
 - [[training-free-methods]]
 - [[keyframe-sampling]] / [[frame-selection]]
-- [[gemini-1-5-flash]] — backbone primario
-- [[qwen2-5-vl]] — backbone secondario
-- [[gpt-4o-mini]] — backbone secondario
+- [[gemini-1-5-flash]] — primary backbone
+- [[qwen2-5-vl]] — secondary backbone
+- [[gpt-4o-mini]] — secondary backbone
 - [[egoschema]] — benchmark
-- [[lvbench]] — benchmark, guadagno maggiore
-- [[openeqa]] — benchmark embodied
+- [[lvbench]] — benchmark, largest gain
+- [[openeqa]] — embodied benchmark
 - [[next-qa]] — benchmark
-- [[llovi]] — baseline LLM-based captioning
-- [[videoagent]] — baseline tool-using
-- [[videotree]] — baseline clustering
-- [[language-repository]] — baseline summarization
-- [[lost-in-the-middle]] — fenomeno motivante (Liu et al. 2024)
-- [[ruler]] — long-context benchmark citato
-- [[self-consistency-cot]] — baseline alternativa di inference scaling
-- [[siglip]] — usato come feature retriever in baseline
-- [[bolt]], [[longvu]], [[lvnet]] — competitor video-QA
+- [[llovi]] — LLM-based captioning baseline
+- [[videoagent]] — tool-using baseline
+- [[videotree]] — clustering baseline
+- [[language-repository]] — summarization baseline
+- [[lost-in-the-middle]] — motivating phenomenon (Liu et al. 2024)
+- [[ruler]] — long-context benchmark cited
+- [[self-consistency-cot]] — alternative inference-scaling baseline
+- [[siglip]] — used as feature retriever in baseline
+- [[bolt]], [[longvu]], [[lvnet]] — video-QA competitors
 
-## Citazioni dirette
+## Direct quotes
 
 > "We use the VLM itself to iteratively identify and extract the most relevant frames from the video, which are then used for answering." [source: raw/papers/arnab-2025-temporal-chain-of-thought.pdf Abstract]
 

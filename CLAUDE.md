@@ -4,22 +4,29 @@
 
 ## Domain
 
-Wiki personale di **ricerca scientifica**. Raccoglie paper (principalmente via Zotero), articoli divulgativi, talk, report tecnici. Costruisce nel tempo pagine per concetti (idee, metodi, framework, problemi aperti) e sintesi cross-cutting (confronti, rassegne, tesi di lettura).
+Personal wiki for **scientific research**. Collects papers (mainly via Zotero), popular articles, talks, technical reports. Over time it builds pages for concepts (ideas, methods, frameworks, open problems) and cross-cutting syntheses (comparisons, surveys, reading theses).
 
-**Niente pagine per autori o entità.** Gli autori vivono solo nella frontmatter `authors: [...]` delle pagine source e nelle citazioni inline — non creare mai `entities/<autore>.md` automaticamente durante l'ingest. Se serve una pagina per un'organizzazione, un tool o un dataset, trattala come concetto sotto `concepts/`.
+**No pages for authors or entities.** Authors live only in the `authors: [...]` frontmatter of source pages and in inline citations — never auto-create `entities/<author>.md` during ingest. If a page is needed for an organization, tool, or dataset, treat it as a concept under `concepts/`.
 
-Lingua del wiki: **italiano** per le sintesi e i commenti dell'utente; **inglese** quando si citano direttamente passaggi originali dei paper. I titoli delle pagine seguono la lingua più naturale per l'entità/concetto (es. nomi propri non si traducono).
+## Language
 
-## Integrazione Zotero
+**The wiki is English-only.** Every page (sources, concepts, syntheses, `index.md`, `log.md`, this `CLAUDE.md`, and `README.md`) is written in English. Exceptions:
 
-La libreria Zotero dell'utente è la fonte primaria. Lo skill `zotero` (`~/.claude/skills/zotero/SKILL.md`) gestisce l'accesso. Quando l'utente dice "ingest paper X":
+- Direct quotes from sources, inside `>` blockquotes, may stay in the source's original language.
+- Proper names, paper titles, dataset names, and identifiers are not translated.
 
-1. Risolvi il paper via `zotero --pdf <DOI | itemKey>` per ottenere il path locale del PDF.
-2. **Copia** (non spostare) il PDF dentro `raw/papers/` con uno slug kebab-case basato su `<autore>-<anno>-<titolo-corto>.pdf`. Se la copia è già presente, riusa.
-3. Procedi con il workflow standard di ingest sotto.
-4. Nella frontmatter della pagina `wiki/sources/<slug>.md` includi sia `source_path: raw/papers/<slug>.pdf` sia `zotero_key: <itemKey>` e `doi: <doi>` per poter risalire al record Zotero.
+Even when the user discusses a source in Italian (or any other language), what lands on disk is English.
 
-Per aggiungere un paper *nuovo* alla libreria prima di ingestirlo, usa `zotero --collection "<nome>" <DOI>` (vedi skill Zotero per dettagli; preferisci sempre il DOI al titolo, normalizza DOI arXiv con `arXiv` maiuscolo).
+## Zotero integration
+
+The user's Zotero library is the primary source. The `zotero` skill (`~/.claude/skills/zotero/SKILL.md`) handles access. When the user says "ingest paper X":
+
+1. Resolve the paper via `zotero --pdf <DOI | itemKey>` to obtain the local PDF path.
+2. **Copy** (don't move) the PDF into `raw/papers/` with a kebab-case slug based on `<author>-<year>-<short-title>.pdf`. If a copy already exists, reuse it.
+3. Proceed with the standard ingest workflow below.
+4. In the frontmatter of the `wiki/sources/<slug>.md` page include both `source_path: raw/papers/<slug>.pdf` and `zotero_key: <itemKey>` and `doi: <doi>` so the Zotero record can be traced back.
+
+To add a *new* paper to the library before ingesting it, use `zotero --collection "<name>" <DOI>` (see the Zotero skill for details; always prefer DOI over title, normalize arXiv DOIs with capitalized `arXiv`).
 
 ## Directory layout
 
@@ -28,86 +35,86 @@ Per aggiungere un paper *nuovo* alla libreria prima di ingestirlo, usa `zotero -
 ├── CLAUDE.md
 ├── README.md
 ├── raw/
-│   ├── papers/        # PDF copiati da Zotero (vedi sopra)
-│   ├── articles/      # web articles, blog, report non-paper
-│   ├── transcripts/   # talk, podcast, interviste
-│   └── assets/        # immagini, figure
+│   ├── papers/        # PDFs copied from Zotero (see above)
+│   ├── articles/      # web articles, blogs, non-paper reports
+│   ├── transcripts/   # talks, podcasts, interviews
+│   └── assets/        # images, figures
 └── wiki/
     ├── index.md
     ├── log.md
-    ├── concepts/      # idee, metodi, problemi, framework, tool/dataset trattati come concetti
-    ├── sources/       # una pagina riassunto per ogni fonte ingerita
-    └── syntheses/     # confronti, rassegne, risposte filed-back
+    ├── concepts/      # ideas, methods, problems, frameworks; tools/datasets treated as concepts
+    ├── sources/       # one summary page per ingested source
+    └── syntheses/     # comparisons, surveys, filed-back answers
 ```
 
 ## Page format
 
-Frontmatter YAML obbligatoria su ogni pagina:
+YAML frontmatter required on every page:
 
 ```yaml
 ---
-title: <Titolo leggibile>
+title: <Human-readable English title>
 type: concept | source | synthesis
 tags: [...]
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
-# solo type=source:
+# type=source only:
 source_path: raw/papers/<slug>.pdf
 source_kind: paper | article | transcript | report
-source_date: <data pubblicazione>
-doi: <doi se applicabile>
-zotero_key: <itemKey se da Zotero>
+source_date: <publication date>
+doi: <doi if applicable>
+zotero_key: <itemKey if from Zotero>
 venue: <conference/journal>
 authors: [<author1>, <author2>]
 year: <YYYY>
 ---
 ```
 
-Sezioni per tipo:
+Sections by type:
 
-- **source (paper)**: TL;DR (1 paragrafo) → Contributo principale (1-3 bullet) → Metodo → Risultati chiave (con numeri e tabelle quando rilevanti) → Limitazioni dichiarate dagli autori → Domande aperte / critiche → Concetti citati (link). Le quote dirette includono numero di pagina/sezione: `> "..." (§3.2, p. 7)`. Gli autori non hanno una pagina dedicata: restano solo nella frontmatter `authors:` e nelle citazioni inline.
-- **concept**: 1 paragrafo di definizione → Claim chiave con citazioni → Concetti collegati → Domande aperte → Sources.
-- **synthesis**: domanda/tesi in cima → argomentazione con citazioni → verdetto/risposta → fonti utilizzate.
+- **source (paper)**: TL;DR (1 paragraph) → Main contribution (1-3 bullets) → Method → Key results (with numbers and tables where relevant) → Limitations stated by the authors → Open questions / critiques → Concepts cited (links). Direct quotes include page/section number: `> "..." (§3.2, p. 7)`. Authors do not get a dedicated page: they remain only in the `authors:` frontmatter and inline citations.
+- **concept**: 1 paragraph of definition → key claims with citations → related concepts → open questions → Sources.
+- **synthesis**: question/thesis at the top → argument with citations → verdict/answer → sources used.
 
 ## Citation rules
 
-- Link interni: `[[concept-slug]]` o `[[concepts/foo]]` per disambiguazione.
-- Citazioni di fonte inline a fine claim: `… come mostrato in [source: raw/papers/vaswani-2017-attention.pdf]`. Per paper con DOI, opzionalmente aggiungi anche `[doi:10.xxxx/...]`.
-- Contraddizioni: `> ⚠ Contradicts [[other-source]]: <spiegazione in una riga>`.
+- Internal links: `[[concept-slug]]` or `[[concepts/foo]]` for disambiguation.
+- Inline source citations at the end of a claim: `… as shown in [source: raw/papers/vaswani-2017-attention.pdf]`. For papers with a DOI, optionally also add `[doi:10.xxxx/...]`.
+- Contradictions: `> ⚠ Contradicts [[other-source]]: <one-line explanation>`.
 
-## Convenzioni operative specifiche di questo wiki
+## Operational conventions specific to this wiki
 
-1. **Una fonte alla volta.** Discutere takeaways con l'utente prima di scrivere — niente batch silenziosi salvo richiesta esplicita.
-2. **Niente pagine autore.** Gli autori restano nella frontmatter `authors:` delle pagine source. Non creare `entities/<autore>.md` né altra pagina per persone fisiche, salvo richiesta esplicita dell'utente.
-3. **Numeri e formule**: preservare con cura. Quando una claim si appoggia a un numero specifico (accuracy, FLOPs, parametri), citare la tabella o sezione esatta.
-4. **Open questions** vivono sia nella pagina della fonte sia nell'indice (sezione "Open questions").
-5. **Git**: ogni ingest produce un commit a sé con messaggio `ingest: <Author> (<Year>) — <Short Title>`. Lint passes: `lint: <date> — <high-level summary>`. Init/refactor strutturali: messaggi descrittivi liberi.
+1. **One source at a time.** Discuss takeaways with the user before writing — no silent batches unless explicitly requested.
+2. **No author pages.** Authors remain in the `authors:` frontmatter of source pages. Do not create `entities/<author>.md` or any other page for natural persons, unless explicitly requested by the user.
+3. **Numbers and formulas**: preserve carefully. When a claim relies on a specific number (accuracy, FLOPs, parameters), cite the exact table or section.
+4. **Open questions** live both on the source page and in the index ("Open questions" section).
+5. **Git**: every ingest produces a standalone commit with message `ingest: <Author> (<Year>) — <Short Title>`. Lint passes: `lint: <date> — <high-level summary>`. Init/structural refactors: free-form descriptive messages.
 
-## Workflow di ingest (questo wiki)
+## Ingest workflow (this wiki)
 
-1. Risolvi PDF via Zotero se serve (`zotero --pdf <DOI | key>`), copia in `raw/papers/`.
-2. Leggi il paper end-to-end (per PDF >10 pagine, leggi a range di pagine).
-3. Discuti 3-6 takeaway con l'utente prima di scrivere.
-4. Scrivi `wiki/sources/<slug>.md` (formato paper sopra).
-5. Per ogni concetto citato: aggiorna pagina esistente o crea stub. **Non** creare pagine per autori (restano solo in frontmatter `authors:`).
-6. Aggiorna `wiki/index.md`.
-7. Appendi a `wiki/log.md`: `## [YYYY-MM-DD] ingest | <Author> (<Year>) — <Title>` + bullet pagine toccate.
+1. Resolve PDF via Zotero if needed (`zotero --pdf <DOI | key>`), copy into `raw/papers/`.
+2. Read the paper end-to-end (for PDFs >10 pages, read by page ranges).
+3. Discuss 3-6 takeaways with the user before writing.
+4. Write `wiki/sources/<slug>.md` (paper format above).
+5. For each cited concept: update the existing page or create a stub. **Do not** create pages for authors (they stay only in the `authors:` frontmatter).
+6. Update `wiki/index.md`.
+7. Append to `wiki/log.md`: `## [YYYY-MM-DD] ingest | <Author> (<Year>) — <Title>` + bullets for pages touched.
 8. `git add -A && git commit -m "ingest: <Author> (<Year>) — <Short Title>"`.
 
-## Workflow di query
+## Query workflow
 
-1. Leggi prima `wiki/index.md`.
-2. Leggi le pagine candidate (e le loro vicine).
-3. Rispondi con `[[wikilink]]` e citazioni inline.
-4. Proponi di archiviare risposte sostanziose come `wiki/syntheses/<slug>.md`.
+1. Read `wiki/index.md` first.
+2. Read candidate pages (and their neighbors).
+3. Answer with `[[wikilink]]`s and inline citations.
+4. Offer to archive substantial answers as `wiki/syntheses/<slug>.md`.
 
-## Workflow di lint
+## Lint workflow
 
-Su richiesta. Check: orphan, stub, link rotti, contraddizioni, pagine mancanti (concetti citati ≥3 volte senza pagina propria), drift dell'indice, gap di dati. Output: un report unico; attendere approvazione prima di applicare.
+On request. Checks: orphans, stubs, broken links, contradictions, missing pages (concepts cited ≥3 times without their own page), index drift, data gaps. Output: a single report; wait for approval before applying.
 
 ## Conventions
 
-- Date: ISO 8601 (`2026-05-12`).
-- Slugs: kebab-case ASCII; per paper: `<autore-cognome>-<anno>-<titolo-corto>` (es. `vaswani-2017-attention`).
-- Niente emoji nel contenuto del wiki.
-- L'utente legge in Obsidian — markdown Obsidian-compatible, wikilink `[[...]]`.
+- Dates: ISO 8601 (`2026-05-12`).
+- Slugs: ASCII kebab-case; for papers: `<author-surname>-<year>-<short-title>` (e.g., `vaswani-2017-attention`).
+- No emoji in wiki content.
+- The user reads in Obsidian — Obsidian-compatible markdown, `[[...]]` wikilinks.

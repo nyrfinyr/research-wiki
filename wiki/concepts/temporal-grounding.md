@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Temporal Grounding
 
-Il temporal grounding è il task di localizzare un intervallo temporale in un video data una query in linguaggio naturale: il modello deve restituire (start, end) corrispondenti al segmento in cui l'evento descritto si verifica. È una delle capacità chiave per long-video understanding e per il retrieval cross-modale.
+Temporal grounding is the task of localizing a temporal interval in a video given a natural-language query: the model must return (start, end) corresponding to the segment in which the described event occurs. It is one of the key capabilities for long-video understanding and for cross-modal retrieval.
 
-Nel wiki è elencato fra le skill core misurate da [[lvbench]] e si relaziona con [[charades-sta]] e [[temporal-understanding]].
+In the wiki it is listed among the core skills measured by [[lvbench]] and relates to [[charades-sta]] and [[temporal-understanding]].
 
 ## Sources
 
-- [[wang-2025-lvbench]] — temporal grounding è una delle 6 skill core
+- [[wang-2025-lvbench]] — temporal grounding is one of the 6 core skills

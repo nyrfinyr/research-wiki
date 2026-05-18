@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Future-Aware Causal Mask
 
-La future-aware causal mask (Pei 2025) è una modifica training-free della causal mask in un MLLM che permette ai token visivi di vedere "in avanti" su una finestra limitata, in modo che l'informazione visiva non resti intrappolata in [[attention-sink]] alla testa della sequenza ma fluisca verso i token di query. Pensata per la fase di prefill, separata dal decoding.
+The future-aware causal mask (Pei 2025) is a training-free modification of the causal mask in an MLLM that allows visual tokens to look "forward" over a limited window, so that visual information does not remain trapped in [[attention-sink]] at the head of the sequence but flows toward the query tokens. Designed for the prefill phase, separate from decoding.
 
-Nel wiki è il concetto centrale del paper Pei 2025 e termine di confronto per il lavoro Liu 2026 su adaptive information flow.
+In the wiki it is the central concept of the Pei 2025 paper and a point of comparison for the Liu 2026 work on adaptive information flow.
 
 ## Sources
 
-- [[pei-2025-causal-mask-attention]] — concetto centrale del paper
-- [[liu-2026-adaptive-information-flow]] — confronto diretto come baseline
+- [[pei-2025-causal-mask-attention]] — central concept of the paper
+- [[liu-2026-adaptive-information-flow]] — direct comparison as baseline

@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # GPT-4V
 
-GPT-4 with Vision: estensione visiva di GPT-4 rilasciata da OpenAI a fine 2023. Predecessore di GPT-4o, supporta input immagine ma non video nativo.
+GPT-4 with Vision: visual extension of GPT-4 released by OpenAI at the end of 2023. Predecessor of GPT-4o, supports image input but no native video.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — predecessore di GPT-4o
-- [[li-2024-mvbench]] — modello di confronto
+- [[fu-2025-video-mme]] — predecessor of GPT-4o
+- [[li-2024-mvbench]] — comparison model
 
-## Concetti correlati
+## Related concepts
 
-- [[gpt-4]] — base text-only
-- [[gpt-4o]] — successore omni
+- [[gpt-4]] — text-only base
+- [[gpt-4o]] — omni successor

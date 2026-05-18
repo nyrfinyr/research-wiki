@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Interleaved MRoPE
 
-Interleaved MRoPE è una variante di [[mrope]] introdotta in Qwen3-VL in cui le dimensioni dell'embedding rotatorio dedicate ad asse temporale, height e width vengono interlacciate lungo i canali invece di essere assegnate a blocchi contigui. L'interleaving stabilizza l'estrapolazione a contesti video lunghi e migliora il comportamento posizionale rispetto a M-RoPE base.
+Interleaved MRoPE is a variant of [[mrope]] introduced in Qwen3-VL in which the rotary embedding dimensions dedicated to the temporal axis, height and width are interleaved along the channels instead of being assigned to contiguous blocks. Interleaving stabilizes extrapolation to long video contexts and improves positional behavior compared to base M-RoPE.
 
-Nel wiki è uno dei componenti architetturali distintivi del rapporto tecnico Qwen3-VL.
+In the wiki it is one of the distinctive architectural components of the Qwen3-VL technical report.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — variante introdotta dal modello
+- [[qwen3-vl-2025-tech-report]] — variant introduced by the model

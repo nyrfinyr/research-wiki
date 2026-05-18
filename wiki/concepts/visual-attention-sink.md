@@ -8,35 +8,35 @@ updated: 2026-05-15
 
 # Visual Attention Sink
 
-Estensione del fenomeno [[attention-sink]] ai **token visivi** nei Multimodal LLM: un piccolo sottoinsieme di token visivi — tipicamente patch di **sfondo spazialmente persistenti** lungo l'asse temporale o costanti in posizione — riceve attenzione altissima ma trasporta semantica quasi nulla. Comportamento analogo al BOS/SEP token degli LLM testuali ma localizzato nel grid visivo. Documentato nel video encoder dei Video LLM da Kim et al. (2026) e nei multimodal token (text + image) dei MLLM da Morini et al. (2026), che cita Kang et al. 2026 ("Visual Attention Sink in MLLM") e [[gu-2024-attention-sink]] come fondamento [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.2; raw/papers/morini-2026-look-twice.pdf §3.2].
+Extension of the [[attention-sink]] phenomenon to **visual tokens** in Multimodal LLMs: a small subset of visual tokens — typically **spatially persistent background patches** along the temporal axis or constant in position — receives very high attention but carries almost no semantics. Analogous behavior to BOS/SEP tokens in text LLMs, but localized in the visual grid. Documented in the video encoder of Video LLMs by Kim et al. (2026) and in multimodal tokens (text + image) of MLLMs by Morini et al. (2026), which cites Kang et al. 2026 ("Visual Attention Sink in MLLM") and [[gu-2024-attention-sink]] as foundational [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.2; raw/papers/morini-2026-look-twice.pdf §3.2].
 
-## Claim chiave / Tecnica
+## Key claim / Technique
 
-- **Persistenza spaziale** (Kim 2026): la visualizzazione patch-wise (Fig. 3) mostra che i sink token visivi hanno **attenzione alta persistente in coordinate spaziali fisse** lungo l'asse temporale, tipicamente in regioni di sfondo (es. corner inferiore sinistro: patch 154/155 su LLaVA-OneVision-7B). Per analogia con i sink in [[transformer]] LLM (BOS, SEP), Kim et al. li chiamano *sink token* del visual encoder [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.2].
-- **Sink score** (Kim 2026): per il token visivo `i` su `T` frame: `ŝ_i = Σ_t A^t_i` (somma temporale delle attention column-wise mean), poi `s_i = MinMax-Norm(ŝ_i^w)` con `w=1.1` per sharpening. L'iperparametro `w>1` rende la distribuzione di `s_i` più sharp così da concentrare il penalty sui veri sink [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §4.1, Eq. 4].
-- **Test causale** (Kim 2026): rimuovendo selettivamente i sink token (top 10% per frequenza) dal set selezionato di VisionZip e sostituendoli con i token a più alta attenzione successiva, il performance drop su EventHallusion cala drasticamente, mentre l'MCQA migliora — conferma che i sink sono **direttamente dannosi** per il fine-grained understanding [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.3].
-- **Temporal pruning come sink-suppressor implicito**: Holitom (temporal+spatial pruning) seleziona l'**83% in meno** di sink token rispetto alla variante senza temporal pruning (384 → 66): i sink in zone di sfondo hanno alta similarity cosine fra frame adiacenti e quindi vengono *mergeati* dal temporal pruning [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.3].
-- **Manifestazione MLLM (Morini 2026)**: in LoT, alcuni token visivi attivano massicciamente le stesse `D_sink` dimensioni dell'hidden state che il BOS attiva (prototipo sink testuale). Score di sink:
+- **Spatial persistence** (Kim 2026): the patch-wise visualization (Fig. 3) shows that visual sink tokens have **persistently high attention at fixed spatial coordinates** along the temporal axis, typically in background regions (e.g. bottom-left corner: patch 154/155 on LLaVA-OneVision-7B). By analogy with sinks in [[transformer]] LLMs (BOS, SEP), Kim et al. call them *sink tokens* of the visual encoder [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.2].
+- **Sink score** (Kim 2026): for visual token `i` over `T` frames: `ŝ_i = Σ_t A^t_i` (temporal sum of column-wise mean attention), then `s_i = MinMax-Norm(ŝ_i^w)` with `w=1.1` for sharpening. The hyperparameter `w>1` makes the distribution of `s_i` sharper so as to concentrate the penalty on true sinks [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §4.1, Eq. 4].
+- **Causal test** (Kim 2026): selectively removing the sink tokens (top 10% by frequency) from VisionZip's selected set and replacing them with the next-highest-attention tokens, the performance drop on EventHallusion shrinks drastically, while MCQA improves — confirming that sinks are **directly harmful** to fine-grained understanding [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.3].
+- **Temporal pruning as implicit sink-suppressor**: Holitom (temporal+spatial pruning) selects **83% fewer** sink tokens than the variant without temporal pruning (384 → 66): sinks in background regions have high cosine similarity between adjacent frames and are therefore *merged away* by temporal pruning [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf §3.3].
+- **MLLM manifestation (Morini 2026)**: in LoT, some visual tokens massively activate the same `D_sink` dimensions of the hidden state that BOS activates (textual sink prototype). Sink score:
   ```
   s_sink = (1/|L_sink|) Σ_{ℓ ∈ L_sink} max_{m ∈ D_sink} |H^ℓ_V[:,m]| / ‖H^ℓ_V‖_row
   ```
-  Token con `s_sink > τ` (default: 25° percentile) vengono **azzerati** nel pass di analysis attention. Il filtering è applicato *solo* al pass di analisi; la generazione finale usa le attention non filtrate [source: raw/papers/morini-2026-look-twice.pdf §3.2, Eq. 3].
+  Tokens with `s_sink > τ` (default: 25th percentile) are **zeroed out** in the analysis attention pass. Filtering is applied *only* to the analysis pass; the final generation uses the unfiltered attention [source: raw/papers/morini-2026-look-twice.pdf §3.2, Eq. 3].
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **STSP — Sink-Token-aware Spatial Pruning** (Kim 2026): modifica score `Ã^t_i = A^t_i − μ_s · s_i` con `μ_s ∈ {0.2, 0.3}` per VisionZip/FastVid.
-- **STTP — Sink-Token-aware Temporal Pruning** (Kim 2026): aggiunge `μ_t·s_i ≈ 0.07` al criterio di temporal merging per forzare i sink nel set di pruning.
-- **Multi-layer sink filtering** (Morini 2026): basato su `D_sink` dell'hidden state, non sui pesi di attention — definizione diversa da Kim 2026 ma stesso obiettivo.
-- **Tipologia**: il sink visivo include patch di sfondo, padding patch dei VLM "vintage" con fixed-resolution, ed eventualmente i registers token (Darcet 2023, citati in Kim 2026).
+- **STSP — Sink-Token-aware Spatial Pruning** (Kim 2026): modifies the score `Ã^t_i = A^t_i − μ_s · s_i` with `μ_s ∈ {0.2, 0.3}` for VisionZip/FastVid.
+- **STTP — Sink-Token-aware Temporal Pruning** (Kim 2026): adds `μ_t·s_i ≈ 0.07` to the temporal merging criterion to push sinks into the pruning set.
+- **Multi-layer sink filtering** (Morini 2026): based on `D_sink` of the hidden state, not on attention weights — a different definition from Kim 2026 but the same goal.
+- **Typology**: the visual sink includes background patches, padding patches of "vintage" fixed-resolution VLMs, and possibly registers tokens (Darcet 2023, cited in Kim 2026).
 
-## Concetti correlati
+## Related concepts
 
-- [[attention-sink]] — fenomeno parent, originariamente osservato nei LLM puri.
-- [[visual-token-pruning]] — famiglia target dell'intervento sink-aware.
-- [[evidence-highlighting]] — Morini 2026 lo usa per **filtrare** i sink prima di calcolare la regione visiva rilevante.
-- [[kv-cache]] — sink visivi sono un caso speciale di "token che vanno mantenuti o evictati con priorità diversa".
+- [[attention-sink]] — parent phenomenon, originally observed in pure LLMs.
+- [[visual-token-pruning]] — target family of the sink-aware intervention.
+- [[evidence-highlighting]] — Morini 2026 uses it to **filter** sinks before computing the relevant visual region.
+- [[kv-cache]] — visual sinks are a special case of "tokens that must be kept or evicted with different priority".
 
 ## Sources
 
-- [[kim-2026-sink-token-aware-pruning]] — definisce sink token visivi, sink score, STSP/STTP.
-- [[morini-2026-look-twice]] — usa multi-layer sink filtering basato su `D_sink` per evidence highlighting in MLLM.
+- [[kim-2026-sink-token-aware-pruning]] — defines visual sink tokens, sink score, STSP/STTP.
+- [[morini-2026-look-twice]] — uses multi-layer sink filtering based on `D_sink` for evidence highlighting in MLLMs.

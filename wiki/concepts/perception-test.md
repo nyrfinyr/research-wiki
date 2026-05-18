@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Perception Test
 
-**Perception Test** è un benchmark multi-task di video understanding sviluppato da Google DeepMind, focalizzato sulla valutazione di capacità percettive di base (memoria, abstraction, reasoning fisico, semantica). Nel wiki appare in due ruoli: (1) come **sorgente dati** per [[mvbench]] (task Object Shuffle, Action Count, State Change, Character Order — vedi [[li-2024-mvbench]] §3.2) e (2) come **benchmark di valutazione** per i moderni video-LLM nei tech report.
+**Perception Test** is a multi-task video understanding benchmark developed by Google DeepMind, focused on evaluating basic perceptual capabilities (memory, abstraction, physical reasoning, semantics). In the wiki it appears in two roles: (1) as a **data source** for [[mvbench]] (Object Shuffle, Action Count, State Change, Character Order tasks — see [[li-2024-mvbench]] §3.2) and (2) as an **evaluation benchmark** for modern video-LLMs in tech reports.
 
-## Numeri di riferimento
+## Reference numbers
 
-Risultati selezionati (test split):
+Selected results (test split):
 
-| Modello | PerceptionTest | Fonte |
+| Model | PerceptionTest | Source |
 |---|---|---|
 | Qwen2.5-VL-3B | 66.9 | [[qwen2-5-vl-2025-tech-report]] |
 | Qwen2.5-VL-7B | 70.5 | [[qwen2-5-vl-2025-tech-report]] |
@@ -27,12 +27,12 @@ Risultati selezionati (test split):
 
 ## Sources
 
-- [[li-2024-mvbench]] — sorgente di 4 task derivati per MVBench.
-- [[qwen2-5-vl-2025-tech-report]] — valuta Qwen2.5-VL.
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3.
+- [[li-2024-mvbench]] — source of 4 tasks derived for MVBench.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates Qwen2.5-VL.
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3.
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[mvbench]] — benchmark che lo usa come sorgente.
-- [[video-llm]] — modelli valutati.
+- [[mvbench]] — benchmark that uses it as a source.
+- [[video-llm]] — evaluated models.

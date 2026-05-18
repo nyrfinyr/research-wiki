@@ -18,28 +18,28 @@ year: 2025
 
 ## TL;DR
 
-Qwen3-VL è la versione 3 della famiglia di vision-language model di Alibaba: 4 varianti dense (**2B / 4B / 8B / 32B**) + 2 MoE (**30B-A3B** e **235B-A22B**), tutte con context window nativa di **256K token** che integra testo + immagine + video in maniera interleavata. Tre upgrade architetturali rispetto a [[qwen2-5-vl|Qwen2.5-VL]]: (1) **Interleaved MRoPE**, che ridistribuisce le dimensioni temporal/height/width su tutto lo spettro di frequenze per evitare lo *spectral bias* della MRoPE chunked; (2) **DeepStack**, che inietta feature da 3 layer intermedi del ViT in altrettanti layer dell'LLM via residual connection, senza allungare il context; (3) **textual timestamp tokens** (`<3.0 seconds>`) al posto del T-RoPE absolute-time-aligned di Qwen2.5-VL. Pre-training in 4 stage (alignment merger → multimodal pretrain 8K → long-context 32K → ultra-long 256K) per ~2.2T token totali; post-training in tre fasi (SFT su 1.2M campioni con phase 32K poi 256K → strong-to-weak distillation testuale → RL con SAPO) e versioni "instruct" e "thinking". Square-root re-weighting per bilanciare loss text vs multimodal. SOTA o competitivo vs Gemini 2.5 Pro / GPT-5 / Claude Opus 4.1 su STEM, OCR, document understanding, video understanding (specialmente long video), 2D/3D grounding, GUI agent [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1, §2].
+Qwen3-VL is the version 3 of Alibaba's vision-language model family: 4 dense variants (**2B / 4B / 8B / 32B**) + 2 MoE (**30B-A3B** and **235B-A22B**), all with a native **256K-token** context window that interleaves text + image + video. Three architectural upgrades over [[qwen2-5-vl|Qwen2.5-VL]]: (1) **Interleaved MRoPE**, which redistributes temporal/height/width dimensions across the entire frequency spectrum to avoid the *spectral bias* of chunked MRoPE; (2) **DeepStack**, which injects features from 3 intermediate ViT layers into as many LLM layers via residual connections, without lengthening the context; (3) **textual timestamp tokens** (`<3.0 seconds>`) in place of Qwen2.5-VL's absolute-time-aligned T-RoPE. Pre-training in 4 stages (alignment merger → multimodal pretrain 8K → long-context 32K → ultra-long 256K) for ~2.2T total tokens; post-training in three phases (SFT on 1.2M samples with a 32K then 256K phase → text-only strong-to-weak distillation → RL with SAPO) and "instruct" and "thinking" variants. Square-root re-weighting to balance text vs multimodal loss. SOTA or competitive vs Gemini 2.5 Pro / GPT-5 / Claude Opus 4.1 on STEM, OCR, document understanding, video understanding (especially long video), 2D/3D grounding, GUI agents [source: raw/papers/qwen3-vl-2025-tech-report.pdf §1, §2].
 
-## Contributo principale
+## Main contribution
 
-- **Interleaved MRoPE**: la MRoPE originale di [[qwen2-vl|Qwen2-VL]] partiziona le dimensioni dell'embedding in chunk temporal/height/width con frequenze distinte, creando uno *spectral imbalance* che degrada long-video understanding. Qwen3-VL distribuisce t,h,w *interleaved* su tutto lo spettro di frequenze (low + high) per ogni asse [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
-- **DeepStack** applicata al ViT: visual token da 3 layer intermedi del vision encoder vengono proiettati con merger dedicati e *sommati* agli hidden state dei primi 3 layer dell'LLM. Aumenta vision-language alignment e preserva feature low/high-level senza estendere il context [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.2].
-- **Text-based timestamps**: invece di T-RoPE che lega gli ID temporali al tempo assoluto (con ID enormi e sparsi su long video), Qwen3-VL prefigge a ogni temporal patch un timestamp testuale formattato (in `seconds` o `HMS`). Risolve due limiti del Qwen2.5-VL: sparsità degli ID temporali e necessità di sampling uniforme su fps diversi [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
-- **Square-root reweighting**: per-token loss normalizzata da `sqrt` invece di per-sample, bilancia testo e multimodale durante training; senza perdita di capacità text-only [source: raw/papers/qwen3-vl-2025-tech-report.pdf abstract, §1].
-- **Bifurcazione thinking / non-thinking**: due varianti post-trained, la thinking esplicita CoT esteso con context fino a 81 920 token su task come AIME-25 / HMMT-25 / LiveCodeBench [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5.11].
-- **Multilingual OCR**: da 10 lingue (Qwen2.5-VL) a **39 lingue** con >70% accuracy su 32/39 [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5.4, Fig. 2].
+- **Interleaved MRoPE**: the original MRoPE in [[qwen2-vl|Qwen2-VL]] partitions embedding dimensions into temporal/height/width chunks with distinct frequencies, creating a *spectral imbalance* that degrades long-video understanding. Qwen3-VL distributes t,h,w *interleaved* across the full frequency spectrum (low + high) along each axis [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
+- **DeepStack** applied to the ViT: visual tokens from 3 intermediate vision-encoder layers are projected with dedicated mergers and *added* to the hidden states of the first 3 LLM layers. Increases vision-language alignment and preserves low/high-level features without extending the context [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.2].
+- **Text-based timestamps**: instead of T-RoPE, which ties temporal IDs to absolute time (with huge sparse IDs on long video), Qwen3-VL prefixes each temporal patch with a formatted textual timestamp (in `seconds` or `HMS`). Resolves two limitations of Qwen2.5-VL: temporal-ID sparsity and the need for uniform sampling across different fps [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
+- **Square-root reweighting**: per-token loss normalized by `sqrt` instead of per-sample, balances text and multimodal during training; no loss of text-only capability [source: raw/papers/qwen3-vl-2025-tech-report.pdf abstract, §1].
+- **Thinking / non-thinking bifurcation**: two post-trained variants, the thinking one explicitly uses extended CoT with contexts up to 81,920 tokens on tasks such as AIME-25 / HMMT-25 / LiveCodeBench [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5.11].
+- **Multilingual OCR**: from 10 languages (Qwen2.5-VL) to **39 languages** with >70% accuracy on 32/39 [source: raw/papers/qwen3-vl-2025-tech-report.pdf §5.4, Fig. 2].
 
-## Metodo
+## Method
 
-### Architettura
+### Architecture
 
-Tre moduli (come Qwen2.5-VL) [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2]:
+Three modules (as in Qwen2.5-VL) [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2]:
 
-1. **Vision encoder** = [[siglip|SigLIP-2]] (`SigLIP2-SO-400M` di default; `SigLIP2-Large 300M` per le varianti 2B/4B), inizializzato dai checkpoint ufficiali e fine-tuned con dynamic resolution. Usa 2D-RoPE con interpolation degli absolute position embedding (seguendo CoMP).
-2. **MLP-based vision-language merger**: MLP a due layer che comprime feature `2×2` del ViT in un singolo visual token. Ci sono inoltre *merger dedicati* per il path DeepStack (uno per ciascuno dei 3 layer ViT campionati).
-3. **LLM backbone** = [[qwen|Qwen3]] (Yang et al., 2025a). Le varianti:
+1. **Vision encoder** = [[siglip|SigLIP-2]] (`SigLIP2-SO-400M` by default; `SigLIP2-Large 300M` for the 2B/4B variants), initialized from the official checkpoints and fine-tuned with dynamic resolution. Uses 2D-RoPE with absolute position-embedding interpolation (following CoMP).
+2. **MLP-based vision-language merger**: two-layer MLP that compresses `2×2` ViT features into a single visual token. Also includes *dedicated mergers* for the DeepStack path (one per each of the 3 sampled ViT layers).
+3. **LLM backbone** = [[qwen|Qwen3]] (Yang et al., 2025a). The variants:
 
-| Variante | Tipo | Param totali | Attivati / token |
+| Variant | Type | Total params | Active / token |
 |---|---|---|---|
 | Qwen3-VL-2B | dense | 2 B | 2 B |
 | Qwen3-VL-4B | dense | 4 B | 4 B |
@@ -48,63 +48,63 @@ Tre moduli (come Qwen2.5-VL) [source: raw/papers/qwen3-vl-2025-tech-report.pdf �
 | Qwen3-VL-30B-A3B | MoE | 30 B | 3 B |
 | Qwen3-VL-235B-A22B | MoE | 235 B | 22 B |
 
-Tutte addestrate con context **256K**. Il flagship 235B-A22B "outperforms most VLMs across a broad set of multimodal tasks and surpasses its text-only counterpart on the majority of language benchmarks" [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2, p. 2].
+All trained with **256K** context. The 235B-A22B flagship "outperforms most VLMs across a broad set of multimodal tasks and surpasses its text-only counterpart on the majority of language benchmarks" [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2, p. 2].
 
 ### Interleaved MRoPE
 
-In MRoPE-chunked (Qwen2-VL/2.5-VL), le dimensioni dell'embedding venivano divise in tre blocchi (t, h, w) ciascuno con un range di frequenze rotary diverso → spectral bias: la dimensione "t" copre solo certe frequenze, degradando long-video [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1]. Qwen3-VL ridistribuisce t/h/w *interleaved* lungo l'embedding, in modo che **ogni asse copra sia low che high frequencies** → mitiga lo spectral bias e migliora il positional modeling video.
+In chunked MRoPE (Qwen2-VL/2.5-VL), embedding dimensions were divided into three blocks (t, h, w), each with a different range of rotary frequencies → spectral bias: the "t" dimension only covers certain frequencies, degrading long-video performance [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1]. Qwen3-VL redistributes t/h/w *interleaved* along the embedding so that **each axis covers both low and high frequencies** → mitigates the spectral bias and improves video positional modeling.
 
 ### DeepStack
 
-Adattamento del paper DeepStack (Meng et al., 2024) al ViT: si campionano feature da 3 layer del SigLIP-2; tre merger dedicati proiettano nello spazio dell'LLM; i visual token risultanti sono **sommati come residual ai primi 3 layer dell'LLM** [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.2]. Vantaggi: preserva info low-level (texture, edges) accanto a feature high-level; nessun aumento di context length.
+Adaptation of the DeepStack paper (Meng et al., 2024) to the ViT: features are sampled from 3 SigLIP-2 layers; three dedicated mergers project them into the LLM space; the resulting visual tokens are **added as residuals to the first 3 LLM layers** [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.2]. Benefits: preserves low-level info (texture, edges) alongside high-level features; no context-length increase.
 
 ### Video Timestamps
 
-Limiti diagnosticati del T-RoPE (Qwen2.5-VL):
-1. Position IDs temporali troppo grandi/sparsi per video lunghi → degradazione long temporal context.
-2. Richiede sampling uniforme su tanti fps, costoso da costruire.
+Diagnosed limitations of T-RoPE (Qwen2.5-VL):
+1. Temporal position IDs too large/sparse for long videos → long-temporal-context degradation.
+2. Requires uniform sampling across many fps, expensive to construct.
 
-Soluzione Qwen3-VL: prima di ogni temporal patch, si inserisce un **token testuale di timestamp** formato `<3.0 seconds>`. Training su due formati (sec e `HH:MM:SS`) per imparare entrambe le rappresentazioni. Costo: leggero aumento di context [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
+Qwen3-VL solution: before each temporal patch, insert a **textual timestamp token** formatted as `<3.0 seconds>`. Trained on two formats (sec and `HH:MM:SS`) to learn both representations. Cost: slight context-length increase [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
 
-### Pre-training (4 stage, ~2.2T token totali)
+### Pre-training (4 stages, ~2.2T total tokens)
 
-| Stage | Obiettivo | Trainable | Token budget | Sequence length |
+| Stage | Goal | Trainable | Token budget | Sequence length |
 |---|---|---|---|---|
-| S0 | Vision-Language Alignment | solo merger | 67 B | 8 192 |
-| S1 | Multimodal Pre-Training (full) | tutti | ~1 T | 8 192 |
-| S2 | Long-Context Pre-Training | tutti | ~1 T | 32 768 |
-| S3 | Ultra-Long-Context Adaptation | tutti | 100 B | 262 144 |
+| S0 | Vision-Language Alignment | merger only | 67 B | 8 192 |
+| S1 | Multimodal Pre-Training (full) | all | ~1 T | 8 192 |
+| S2 | Long-Context Pre-Training | all | ~1 T | 32 768 |
+| S3 | Ultra-Long-Context Adaptation | all | 100 B | 262 144 |
 
-Curriculum dati (§3.2):
-- **Image caption + interleaved**: re-caption con Qwen2.5-VL-32B fine-tuned per recaptioning; deduplicazione semantica; clustering per coverage. Interleaved book-scale fino a 256K token usando un parser Qwen2.5-VL-7B.
-- **Knowledge**: long-tail entity sampling importance-weighted.
-- **OCR e document parsing**: 30M sample OCR in-house + 29 lingue aggiuntive sintetizzate; 3M PDF da Common Crawl + 4M interni; formati `QwenVL-HTML` (con bbox element-level) e `QwenVL-Markdown` (con tabelle in LaTeX).
-- **Grounding & counting**: coordinate normalizzate `[0, 1000]` (cambio rispetto a Qwen2.5-VL che usava coordinate native). Bounding box + point-based grounding.
-- **Spatial / 3D**: 9-DoF bounding box in JSON, unificate via Omni3D in virtual camera coordinate system.
+Data curriculum (§3.2):
+- **Image caption + interleaved**: re-captioning with Qwen2.5-VL-32B fine-tuned for recaptioning; semantic deduplication; clustering for coverage. Book-scale interleaved up to 256K tokens using a Qwen2.5-VL-7B parser.
+- **Knowledge**: importance-weighted long-tail entity sampling.
+- **OCR and document parsing**: 30M in-house OCR samples + 29 additional synthesized languages; 3M PDFs from Common Crawl + 4M internal; `QwenVL-HTML` (with element-level bboxes) and `QwenVL-Markdown` (with LaTeX tables) formats.
+- **Grounding & counting**: normalized coordinates `[0, 1000]` (change from Qwen2.5-VL which used native coordinates). Bounding box + point-based grounding.
+- **Spatial / 3D**: 9-DoF JSON bounding boxes, unified via Omni3D in a virtual camera coordinate system.
 - **Code**: text-only Qwen3-Coder corpus + multimodal (UI→HTML/CSS, image→SVG, flowchart→code).
-- **Video**: dense caption short-to-long, spatio-temporal video grounding, length-adaptive sampling (fps e max frame variabili per stage).
-- **STEM**: 1M point-grounding + 2M perception VQA + 6M annotated diagram caption + 60M esercizi K-12/undergrad + 12M long-CoT multimodal sample.
-- **Agent (GUI / function calling / search)**: tracce multi-step su desktop/mobile/web con CoT augmentation.
+- **Video**: short-to-long dense caption, spatio-temporal video grounding, length-adaptive sampling (variable fps and max frames per stage).
+- **STEM**: 1M point-grounding + 2M perception VQA + 6M annotated diagram captions + 60M K-12/undergrad exercises + 12M long-CoT multimodal samples.
+- **Agent (GUI / function calling / search)**: multi-step traces on desktop/mobile/web with CoT augmentation.
 
-### Post-training (3 fasi)
+### Post-training (3 phases)
 
-1. **SFT** (§4.2.1): dataset di ~1.2M sample (1/3 text-only, 2/3 multimodal). Strategia a due fasi: 1 epoch a 32K seq → 1 epoch a 256K seq con curriculum interleavato 256K/32K. Long context include documenti tecnici di centinaia di pagine, libri, video fino a 2 ore. Query filtering + response filtering (rule-based + reward-model basato su Qwen2.5-VL series).
-   - **Long-CoT cold start** (§4.2.2): ~1:1 VL/text, focus STEM e agentic. Filter "Multimodal Necessity": scarta sample che Qwen3-30B-nothink risolve senza l'immagine.
-2. **Strong-to-Weak Distillation** (§4.3): off-policy (teacher → student response distillation) + on-policy (student response, KL alignment con teacher logits). Eseguita **solo con dati text-only**, ma migliora anche multimodal.
+1. **SFT** (§4.2.1): ~1.2M-sample dataset (1/3 text-only, 2/3 multimodal). Two-phase strategy: 1 epoch at 32K seq → 1 epoch at 256K seq with 256K/32K interleaved curriculum. Long context includes technical documents of hundreds of pages, books, videos up to 2 hours. Query filtering + response filtering (rule-based + reward model based on the Qwen2.5-VL series).
+   - **Long-CoT cold start** (§4.2.2): ~1:1 VL/text, focus on STEM and agentic. "Multimodal Necessity" filter: discards samples Qwen3-30B-nothink solves without the image.
+2. **Strong-to-Weak Distillation** (§4.3): off-policy (teacher → student response distillation) + on-policy (student response, KL alignment with teacher logits). Performed **only on text-only data**, but improves multimodal performance too.
 3. **Reinforcement Learning** (§4.4):
-   - **Reasoning RL**: ~30K query verificabili (math, code, logic, visual grounding, visual puzzle), filter pass-rate>90%, algoritmo **SAPO** (Smooth and Adaptive Policy Optimization, Gao et al., 2025).
-   - **General RL**: multi-task per istruzione following + preference alignment. Reward hybrid rule-based + Qwen2.5-VL-72B / Qwen3 come judge model.
-   - **Thinking with Images** (§4.5): 2 stage di SFT + multi-turn tool-integrated RL su agent traces, tre reward signal (answer accuracy, multi-turn reasoning, tool-calling target dimensionato).
+   - **Reasoning RL**: ~30K verifiable queries (math, code, logic, visual grounding, visual puzzle), pass-rate>90% filter, algorithm **SAPO** (Smooth and Adaptive Policy Optimization, Gao et al., 2025).
+   - **General RL**: multi-task for instruction following + preference alignment. Hybrid reward, rule-based + Qwen2.5-VL-72B / Qwen3 as judge model.
+   - **Thinking with Images** (§4.5): 2 stages of SFT + multi-turn tool-integrated RL on agent traces, three reward signals (answer accuracy, multi-turn reasoning, scaled tool-calling target).
 
 ### Infrastructure
 
-Train su Alibaba PAI-Lingjun via Megatron-LM con TP+PP+CP+EP+ZeRO-1 DP fino a 10 000 GPU. Inferenza con vLLM (PagedAttention) o SGLang [source: raw/papers/qwen3-vl-2025-tech-report.pdf §4.6].
+Trained on Alibaba PAI-Lingjun via Megatron-LM with TP+PP+CP+EP+ZeRO-1 DP up to 10,000 GPUs. Inference with vLLM (PagedAttention) or SGLang [source: raw/papers/qwen3-vl-2025-tech-report.pdf §4.6].
 
-## Risultati chiave
+## Key results
 
 ### Flagship: Qwen3-VL-235B-A22B vs frontier closed-source (§5, Tab. 2)
 
-Tutti score "thinking" del Qwen3-VL-235B-A22B. `+` indica tool use.
+All scores are "thinking" for Qwen3-VL-235B-A22B. `+` denotes tool use.
 
 | Benchmark | **Qwen3-VL 235B thinking** | Qwen3-VL 235B instruct | Gemini 2.5 Pro (thinking) | GPT-5 high | Claude Opus 4.1 (thinking) |
 |---|---|---|---|---|---|
@@ -145,14 +145,14 @@ Tutti score "thinking" del Qwen3-VL-235B-A22B. `+` indica tool use.
 | ScreenSpot Pro | 61.8 | 62.0 | – | – | – |
 | OSWorld | 38.1 | 31.6 | – | – | – |
 
-Note salient (§5):
-- **Long video**: Qwen3-VL-235B-A22B-Instruct su MLVU "attains or even surpasses Gemini-2.5-Pro" [§5.9].
-- **Hallucination**: thinking variant supera Gemini-2.5-Pro/GPT-5/Claude Opus 4.1 di rispettivamente 3.0 / 1.0 / 6.3 punti su HallusionBench [§5.3].
-- **MIA-Bench**: nelle subtask "math" e "textual" Qwen3-VL-Thinking batte GPT-5-high di +10.0 e +5.0 punti [§5.3].
+Salient notes (§5):
+- **Long video**: Qwen3-VL-235B-A22B-Instruct on MLVU "attains or even surpasses Gemini-2.5-Pro" [§5.9].
+- **Hallucination**: the thinking variant surpasses Gemini-2.5-Pro/GPT-5/Claude Opus 4.1 by 3.0 / 1.0 / 6.3 points respectively on HallusionBench [§5.3].
+- **MIA-Bench**: on the "math" and "textual" subtasks Qwen3-VL-Thinking beats GPT-5-high by +10.0 and +5.0 points [§5.3].
 
 ### Medium models (§5, Tab. 3): Qwen3-VL-30B-A3B / 32B
 
-Selezione (instruct numbers; "thinking" simile o leggermente superiore):
+Selection (instruct numbers; "thinking" similar or slightly higher):
 
 | Benchmark | Qwen3-VL-30B-A3B inst | Qwen3-VL-32B inst | Gemini 2.5 Flash | GPT-5 mini |
 |---|---|---|---|---|
@@ -172,7 +172,7 @@ Selezione (instruct numbers; "thinking" simile o leggermente superiore):
 | OSWorld | 30.3 | **32.6** | – | – |
 | AndroidWorld | 54.3 | 57.3 | – | – |
 
-Highlight: Qwen3-VL-32B Instruct supera (su molti benchmark) il **precedente** Qwen2.5-VL-72B → "the medium-sized Qwen3-VL model has already surpassed it on reasoning tasks" [§5.2].
+Highlight: Qwen3-VL-32B Instruct surpasses (on many benchmarks) the **previous** Qwen2.5-VL-72B → "the medium-sized Qwen3-VL model has already surpassed it on reasoning tasks" [§5.2].
 
 ### Small models (§5, Tab. 4): 2B / 4B / 8B
 
@@ -188,11 +188,11 @@ Highlight: Qwen3-VL-32B Instruct supera (su molti benchmark) il **precedente** Q
 | LVBench | 47.4 | 56.2 | **58.0** | – |
 | VideoMMMU | 41.9 | 56.2 | **65.3** | 63.0 |
 
-Lo 8B raggiunge la fascia di **Qwen2.5-VL-72B** su molti video benchmark grazie a interleaved MRoPE + textual timestamps + scaling delle dense caption [§5.9].
+The 8B reaches the **Qwen2.5-VL-72B** tier on many video benchmarks thanks to interleaved MRoPE + textual timestamps + dense-caption scaling [§5.9].
 
 ### Text-only (§5.11, Tab. 5)
 
-Qwen3-VL-235B-A22B Instruct vs LLM puri:
+Qwen3-VL-235B-A22B Instruct vs pure LLMs:
 
 | Benchmark | Qwen3-VL-235B-A22B Inst | Qwen3-235B-A22B-Inst-2507 | DeepSeek V3 0324 | Claude Opus 4 (no think) |
 |---|---|---|---|---|
@@ -205,44 +205,44 @@ Qwen3-VL-235B-A22B Instruct vs LLM puri:
 | MultiIF | 76.3 | **77.5** | 66.5 | – |
 | PolyMATH | 45.1 | **50.2** | 32.2 | 30.0 |
 
-Implicazione: il modello vision-language è ora *complementare* al pure-LLM Qwen3, non un suo downgrade — risultato chiave del square-root reweighting.
+Implication: the vision-language model is now *complementary* to the pure-LLM Qwen3, not a downgrade — a key result of square-root reweighting.
 
-### Cosa cambia rispetto a Qwen2.5-VL
+### What changes vs Qwen2.5-VL
 
-- **Interleaved MRoPE** invece di chunked MRoPE → +long-video.
-- **DeepStack injection** invece di un singolo merger → +alignment, info multi-livello.
-- **Text-based timestamp tokens** invece di T-RoPE absolute-time → +temporal grounding.
-- **Square-root reweighting** della loss → bilancia text/multimodal senza catastrophic forgetting.
-- **256K context** vs Qwen2.5-VL's max ~32K → long-doc + long-video native.
-- **MoE varianti** (30B-A3B, 235B-A22B) introdotte ex novo.
-- **39 lingue OCR** vs 10 di Qwen2.5-VL.
-- **3D grounding nativo** con 9-DoF bbox, mAP@0.15 su Omni3D (ARKitScenes, Hypersim, SUN RGB-D).
-- **Bifurcazione thinking/non-thinking** con SFT distinto.
+- **Interleaved MRoPE** instead of chunked MRoPE → +long-video.
+- **DeepStack injection** instead of a single merger → +alignment, multi-level info.
+- **Text-based timestamp tokens** instead of absolute-time T-RoPE → +temporal grounding.
+- **Square-root reweighting** of the loss → balances text/multimodal without catastrophic forgetting.
+- **256K context** vs Qwen2.5-VL's max ~32K → native long-doc + long-video.
+- **MoE variants** (30B-A3B, 235B-A22B) newly introduced.
+- **39 OCR languages** vs 10 in Qwen2.5-VL.
+- **Native 3D grounding** with 9-DoF bbox, mAP@0.15 on Omni3D (ARKitScenes, Hypersim, SUN RGB-D).
+- **Thinking/non-thinking bifurcation** with distinct SFT.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-Il report non ha una sezione "Limitations" esplicita. Implicate dal testo:
+The report has no explicit "Limitations" section. Limitations implied by the text:
 
-- Confronto fps/frame cap *non* completamente fair: API limitations su Gemini 2.5 Pro (512 frame), GPT-5 (256), Claude Opus 4.1 (100) vs Qwen3-VL fino a 2 048 frame; il vantaggio long-video è in parte un artefatto del numero di frame [§5.9].
-- Per Charades-STA si campiona a 4 fps; per altri video benchmark 2 fps — la finestra effettiva è sempre limitata da `total tokens ≤ 224K` con `max tokens per frame 640-768`.
-- Tool use ("Perception with Tool") aggiunge ~5 punti su V*/HRBench: "the absolute improvement by adding tools is consistently ~5 points" [§5.6], suggerendo che il sollevamento puro architetturale è stagnante senza tool.
+- fps/frame-cap comparison *not* fully fair: API limitations on Gemini 2.5 Pro (512 frames), GPT-5 (256), Claude Opus 4.1 (100) vs Qwen3-VL up to 2,048 frames; the long-video advantage is partly an artifact of the number of frames [§5.9].
+- For Charades-STA sampling is 4 fps; for other video benchmarks 2 fps — the effective window is always limited by `total tokens ≤ 224K` with `max tokens per frame 640-768`.
+- Tool use ("Perception with Tool") adds ~5 points on V*/HRBench: "the absolute improvement by adding tools is consistently ~5 points" [§5.6], suggesting that pure architectural uplift is stagnating without tools.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Quanto del salto vs Qwen2.5-VL viene da architettura (interleaved MRoPE + DeepStack + textual timestamp) e quanto dal backbone (Qwen3 vs Qwen2.5) + scale (256K vs 32K context) + ridge dati? Il report non offre ablation isolate (es. Qwen3 LLM + Qwen2.5-VL architecture).
-- Square-root reweighting è descritto ma non quantificato: nessuna ablation con/senza, nessuna curva di trade-off testo↔multimodale.
-- "Thinking with images" non riporta latency / token cost numerici per multi-turn tool calling RL: l'overhead pratico in inference è oscuro.
-- Niente analisi di "spectral imbalance" empirica della MRoPE originale (frequency response plots): la giustificazione di interleaved MRoPE è basata su "subsequent studies" citate ma non riprodotte in-paper [§2.1].
-- Open-weights: il GitHub esiste (`QwenLM/Qwen3-VL`) ma la licenza dei pesi non è dichiarata nel report.
+- How much of the jump vs Qwen2.5-VL comes from architecture (interleaved MRoPE + DeepStack + textual timestamp) vs the backbone (Qwen3 vs Qwen2.5) + scale (256K vs 32K context) + data ridge? The report offers no isolated ablations (e.g. Qwen3 LLM + Qwen2.5-VL architecture).
+- Square-root reweighting is described but not quantified: no ablation with/without, no text↔multimodal trade-off curve.
+- "Thinking with images" does not report numerical latency / token cost for multi-turn tool-calling RL: the practical inference overhead is obscure.
+- No empirical analysis of the original MRoPE's "spectral imbalance" (frequency response plots): the justification for interleaved MRoPE is based on "subsequent studies" cited but not reproduced in-paper [§2.1].
+- Open weights: the GitHub exists (`QwenLM/Qwen3-VL`) but the weights license is not stated in the report.
 
-## Concetti citati
+## Cited concepts
 
 - [[vision-language-model]], [[video-llm]], [[multimodal-large-language-model]]
 - [[qwen]], [[qwen2-vl]], [[qwen2-5-vl]], [[qwen3]]
 - [[mrope]], [[interleaved-mrope]], [[t-rope]], [[rotary-position-embedding]], [[positional-encoding]]
-- [[deepstack]] (vision encoder multi-level fusion)
+- [[deepstack]] (multi-level vision-encoder fusion)
 - [[siglip]] (SigLIP-2, encoder)
-- [[mixture-of-experts]] (varianti 30B-A3B, 235B-A22B)
+- [[mixture-of-experts]] (variants 30B-A3B, 235B-A22B)
 - [[long-context]], [[context-length]]
 - [[instruction-tuning]], [[supervised-fine-tuning]], [[chain-of-thought]], [[strong-to-weak-distillation]]
 - [[reinforcement-learning]], [[sapo]] (Smooth and Adaptive Policy Optimization)
@@ -258,7 +258,7 @@ Il report non ha una sezione "Limitations" esplicita. Implicate dal testo:
 - [[v-star]], [[hrbench]]
 - [[megatron-lm]], [[vllm]], [[sglang]]
 
-## Citazioni dirette
+## Direct quotes
 
 > "We introduce Qwen3-VL, the most capable vision–language model in the Qwen series to date […] It natively supports interleaved contexts of up to 256K tokens, seamlessly integrating text, images, and video." (Abstract, p. 1)
 

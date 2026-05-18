@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Otter
 
-MLLM open-source (Li et al., 2023) basato su OpenFlamingo, fine-tunato sul dataset MIMIC-IT per multi-modal in-context instruction tuning. Eredita la struttura gated cross-attention di Flamingo.
+Open-source MLLM (Li et al., 2023) based on OpenFlamingo, fine-tuned on the MIMIC-IT dataset for multi-modal in-context instruction tuning. It inherits the gated cross-attention structure of Flamingo.
 
 ## Sources
 
-- [[li-2024-mvbench]] — modello di confronto
+- [[li-2024-mvbench]] — comparison model
 
-## Concetti correlati
+## Related concepts
 
-- [[flamingo]] — architettura genitrice
-- [[blip-2]], [[instructblip]] — alternative contemporanee
+- [[flamingo]] — parent architecture
+- [[blip-2]], [[instructblip]] — contemporary alternatives

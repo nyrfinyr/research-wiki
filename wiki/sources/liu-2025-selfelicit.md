@@ -18,30 +18,30 @@ year: 2025
 
 ## TL;DR
 
-SelfElicit è un metodo **training-free, inference-time** per migliorare le risposte di un LM in setting context-based QA (RAG-style). L'idea: usare i punteggi di **attention degli strati profondi** come segnale implicito per identificare le **frasi di evidenza** rilevanti nel contesto fornito, e ri-iniettarle nel prompt avvolte da marker `<start_important> ... <end_important>`. Genera **un solo token aggiuntivo** all'inferenza per ottenere le attention map (overhead ~3-5%), eppure ottiene **+5.0%-11.7%** di EM/F1 medio su HotpotQA, NewsQA, TriviaQA, NaturalQuestions e su 6 LM (Llama-3.1 8B/70B, Mistral 7B/12B, Qwen2.5 7B/32B), battendo CoT, Full-Elicit e Prompt-Elicit (che usa il LM per estrarre evidenza generativamente — 800-900% più costoso) [source: raw/papers/liu-2025-selfelicit.pdf §1, §4.2, Tab. 1].
+SelfElicit is a **training-free, inference-time** method to improve LM answers in context-based QA (RAG-style) settings. The idea: use **deep-layer attention** scores as an implicit signal to identify the **evidence sentences** relevant in the provided context, and re-inject them into the prompt wrapped by `<start_important> ... <end_important>` markers. It generates **a single extra token** at inference to obtain the attention maps (overhead ~3-5%), yet achieves **+5.0%-11.7%** mean EM/F1 on HotpotQA, NewsQA, TriviaQA, NaturalQuestions and across 6 LMs (Llama-3.1 8B/70B, Mistral 7B/12B, Qwen2.5 7B/32B), beating CoT, Full-Elicit and Prompt-Elicit (which generatively uses the LM to extract evidence — 800-900% more expensive) [source: raw/papers/liu-2025-selfelicit.pdf §1, §4.2, Tab. 1].
 
-## Contributo principale
+## Main contribution
 
-- **Osservazione empirica**: gli strati profondi del Transformer assegnano relative attention 4-8× più alta alle frasi di evidenza ground-truth nel contesto, **indipendentemente** dal fatto che la risposta finale sia corretta (Fig. 2). Il modello "sa" già dove sta l'evidenza, ma non sempre la usa nella generazione (§3.1).
-- Metodo: pesa l'attention dell'**ultimo token di prompt** verso le frasi del contesto, ne calcola lo `e_i` aggregato sugli evidence-reading layers `L_ER` (di default la **seconda metà** dei layer), seleziona `S_SE = {s_i : e_i ≥ α · max(e)}` con `α=0.5`, e wrappa quelle frasi con marker speciali nel prompt finale (§3.2, Alg. 1).
-- Validazione: alta AUROC (~80-95) sul match con evidenze ground-truth; robustezza al rumore (distractor variant di HotpotQA, contesto 1443% più lungo); analisi dell'effetto di `L_ER` e `α`.
+- **Empirical observation**: deep Transformer layers assign 4-8× higher relative attention to ground-truth evidence sentences in the context, **regardless** of whether the final answer is correct (Fig. 2). The model already "knows" where the evidence is, but does not always use it when generating (§3.1).
+- Method: weight the **last prompt token**'s attention towards the context sentences, compute the aggregated `e_i` over the evidence-reading layers `L_ER` (by default the **second half** of the layers), select `S_SE = {s_i : e_i ≥ α · max(e)}` with `α=0.5`, and wrap those sentences with special markers in the final prompt (§3.2, Alg. 1).
+- Validation: high AUROC (~80-95) for matching ground-truth evidence; robustness to noise (HotpotQA distractor variant, context 1443% longer); analysis of the effect of `L_ER` and `α`.
 
-## Metodo
+## Method
 
-### Notazione (§2)
+### Notation (§2)
 
-Decoder-only Transformer; per ogni layer `ℓ` definisce
+Decoder-only Transformer; for each layer `ℓ` it defines
 `a^(ℓ) = (1/H) Σ_h a^(ℓ,h)`,
-attention probability dal token corrente verso tutti gli `n` precedenti.
+the attention probability from the current token to all `n` previous ones.
 
 ### Sentence-level attention (§3.1)
 
-Date `m` frasi nel contesto e i range token `(t^start_si, t^end_si)`:
-`ā^(ℓ)_i = (1/|t^end_si − t^start_si + 1|) · Σ_{j ∈ frase i} a^(ℓ)_j`.
+Given `m` sentences in the context and the token ranges `(t^start_si, t^end_si)`:
+`ā^(ℓ)_i = (1/|t^end_si − t^start_si + 1|) · Σ_{j ∈ sentence i} a^(ℓ)_j`.
 
 ### Evidence-reading layers (§3.1, RQ4)
 
-Subset `L_ER` di layer; `e_i = (1/|L_ER|) Σ_{ℓ ∈ L_ER} ā^(ℓ)_i`. Confronto in Tab. 4 (Llama-3.1-8B HotpotQA):
+Subset `L_ER` of layers; `e_i = (1/|L_ER|) Σ_{ℓ ∈ L_ER} ā^(ℓ)_i`. Comparison in Tab. 4 (Llama-3.1-8B HotpotQA):
 
 | Layer span | Elicit AUROC | EM |
 |---|---|---|
@@ -53,33 +53,33 @@ Subset `L_ER` di layer; `e_i = (1/|L_ER|) Σ_{ℓ ∈ L_ER} ā^(ℓ)_i`. Confron
 | 50-75% | 91.66 | 63.57 |
 | 75-100% | 91.02 | 63.43 |
 
-Default robusto: **last 50%**.
+Robust default: **last 50%**.
 
 ### Thresholding (§3.1, RQ5)
 
 `S_SE = {s_i : e_i ≥ α · max(e)}`. Default `α = 0.5`:
-- Precision-recall trade-off; per task multi-hop il valore ottimo è vicino a 0.5 (HotpotQA, TQA); per task single-hop con poche evidenze (NQ) `α=1` può essere ottimo.
-- SelfElicit è **robusto** ad `α ∈ [0.5, 1]` (Fig. 4).
+- Precision-recall trade-off; for multi-hop tasks the optimum is near 0.5 (HotpotQA, TQA); for single-hop tasks with few evidences (NQ) `α=1` can be optimal.
+- SelfElicit is **robust** to `α ∈ [0.5, 1]` (Fig. 4).
 
 ### Highlighting prompt (§3.2)
 
-Le frasi selezionate vengono wrappate con `<start_important>...<end_important>` e il template viene esteso con istruzioni esplicite (non includere i marker nell'output). La risposta è generata sulla versione highlighted del contesto.
+The selected sentences are wrapped with `<start_important>...<end_important>` and the template is extended with explicit instructions (do not include the markers in the output). The answer is generated over the highlighted version of the context.
 
-### Algoritmo 1
-1. `Φ(τ_QA(c,q))` genera **un solo token** per ottenere le attention map.
-2. Calcola `ā^(ℓ)` per `ℓ ∈ L_ER` (Eq. 2).
-3. Calcola `e` (Eq. 3).
-4. Seleziona `S_SE` (Eq. 4).
-5. Compone `c*` con marker.
-6. `Φ(τ_SEQA(c*, q))` genera la risposta finale.
+### Algorithm 1
+1. `Φ(τ_QA(c,q))` generates **a single token** to obtain the attention maps.
+2. Compute `ā^(ℓ)` for `ℓ ∈ L_ER` (Eq. 2).
+3. Compute `e` (Eq. 3).
+4. Select `S_SE` (Eq. 4).
+5. Build `c*` with markers.
+6. `Φ(τ_SEQA(c*, q))` generates the final answer.
 
-Overhead: 1 token + recomputation della forward = ~3-5% del baseline (vs 800-900% per Prompt-Elicit, vedi Tab. 1).
+Overhead: 1 token + a forward recomputation = ~3-5% of the baseline (vs. 800-900% for Prompt-Elicit, see Tab. 1).
 
-## Risultati chiave
+## Key results
 
 ### Main results (Tab. 1, §4.2)
 
-Llama-3.1-8B (EM / F1 in ×10⁻²; gain rispetto al baseline):
+Llama-3.1-8B (EM / F1 in ×10⁻²; gain over baseline):
 
 | Method | HotpotQA EM | NewsQA EM | TQA EM | NQ EM | Avg ranking |
 |---|---|---|---|---|---|
@@ -89,11 +89,11 @@ Llama-3.1-8B (EM / F1 in ×10⁻²; gain rispetto al baseline):
 | PromptElicit | 66.3 | 62.8 | 76.0 | 61.8 | 2.75 |
 | **SelfElicit** | **68.5** | **66.9** | **79.4** | **64.0** | **1.00** |
 
-Risultati simili su Llama-70B, Mistral 7B/12B, Qwen2.5 7B/32B; SelfElicit batte PromptElicit in **40/48** coppie model-task-metric a frazione del costo.
+Similar results on Llama-70B, Mistral 7B/12B, Qwen2.5 7B/32B; SelfElicit beats PromptElicit in **40/48** model-task-metric pairs at a fraction of the cost.
 
-### Sentence-level retrieval di evidenze (Tab. 3, §4.2 RQ2)
+### Sentence-level evidence retrieval (Tab. 3, §4.2 RQ2)
 
-AUROC dell'evidence eliciting:
+Evidence-eliciting AUROC:
 
 | Dataset | Llama-3.1 | Mistral | Qwen-2.5 |
 |---|---|---|---|
@@ -102,46 +102,46 @@ AUROC dell'evidence eliciting:
 | TQA | 73.27 | 68.89 | 70.59 |
 | NQ | 90.87 | 85.51 | 87.43 |
 
-NDCG: simili (66-92). TQA basso perché ha più risposte candidate equivalenti.
+NDCG: similar (66-92). TQA is lower because it has more equivalent candidate answers.
 
-### Robustezza al rumore (Fig. 3, §4.3 RQ3)
+### Robustness to noise (Fig. 3, §4.3 RQ3)
 
-HotpotQA distractor (contesto +1443% di rumore):
+HotpotQA distractor (context +1443% noise):
 - Base: EM 58.9 → 54.3 (–4.6), F1 57.7 → 53.0.
 - +SelfElicit: EM 68.5 → 62.7 (–5.8), F1 69.5 → 63.5.
 
-Vantaggio assoluto **preservato** in presenza di rumore. SelfElicit naturalmente seleziona una percentuale **minore** di contesto in distractor mode (<10% vs ~50% in gold) anche con `α` fisso ⇒ adattività implicita (Fig. 3b).
+Absolute advantage **preserved** under noise. SelfElicit naturally selects a **smaller** percentage of context in distractor mode (<10% vs. ~50% in gold) even with fixed `α` ⇒ implicit adaptivity (Fig. 3b).
 
-### Layer span e α (RQ4, RQ5)
+### Layer span and α (RQ4, RQ5)
 
-- Layer profondi sono **necessari**: span 0-25% peggio del baseline su elicit accuracy (59% AUROC).
-- `α` troppo basso = come FullElicit; `α` troppo alto perde recall su task multi-hop.
+- Deep layers are **necessary**: span 0-25% is worse than baseline on elicit accuracy (59% AUROC).
+- Too-low `α` = like FullElicit; too-high `α` loses recall on multi-hop tasks.
 
-## Limitazioni dichiarate dagli autori
+## Stated limitations
 
-- Non applicabile a **proprietary LM** che non espongono le attention score (GPT-4, Claude API).
-- Soglia `α` statica; un controllo dinamico per input (in base a noise/coverage) potrebbe migliorare i risultati (§Limitations, Appx C.1).
-- Validato solo su context-based QA: estensione a summarization, dialogue grounding o tool-use non testata.
+- Not applicable to **proprietary LMs** that do not expose attention scores (GPT-4, Claude API).
+- Static `α` threshold; dynamic per-input control (based on noise/coverage) could improve results (§Limitations, Appx. C.1).
+- Validated only on context-based QA: extension to summarisation, dialogue grounding or tool-use not tested.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Quanto del vantaggio dipende dalla **calibrazione del template prompt**? I marker `<start_important>` sono token rari: l'effetto potrebbe sfumare con tokenizer che li frammentano in modo diverso.
-- L'esperimento usa frasi (segmentate con spaCy). Token-level highlighting è discusso ma scartato (Appx B.4) per ragioni di leggibilità ⇒ resta da capire se costruzioni linguisticamente diverse (codice, chat logs) cambierebbero la scelta.
-- L'evidenza che "deep layers know where evidence is" è coerente con [[map-the-flow]] (Kim 2025) sul flusso di informazione layer-wise nei MLLM; un'analisi quantitativa cross-architecture sarebbe interessante.
-- Confronto con **decoding-time** methods (DoLa, Context-Aware Decoding di Shi et al. 2024) presente in related work ma non in Tab. 1: si potrebbe **comporre** SelfElicit con CAD.
-- L'AUROC su TQA (~70) suggerisce che il segnale attention degrada quando l'evidenza è ambigua; nessuna mitigazione proposta.
-- Costo inferenziale dichiarato come "additional one token": ma l'aumento medio inference-time è del 17-30% per i modelli più piccoli (Tab. 1 colonna "Inference Time") perché la prompt è due volte più lunga (con marker) — il paper minimizza un po' questo aspetto.
+- How much of the gain depends on **prompt-template calibration**? The `<start_important>` markers are rare tokens: the effect could fade with tokenisers that fragment them differently.
+- The experiment uses sentences (segmented with spaCy). Token-level highlighting is discussed but discarded (Appx. B.4) for readability reasons ⇒ it remains unclear whether linguistically different constructions (code, chat logs) would change the choice.
+- The evidence that "deep layers know where evidence is" aligns with [[map-the-flow]] (Kim 2025) on layer-wise information flow in MLLMs; a cross-architecture quantitative analysis would be interesting.
+- Comparison with **decoding-time** methods (DoLa, Context-Aware Decoding by Shi et al. 2024) appears in related work but not in Tab. 1: SelfElicit could be **composed** with CAD.
+- AUROC on TQA (~70) suggests the attention signal degrades when evidence is ambiguous; no mitigation is proposed.
+- Inference cost reported as "additional one token": but the average inference-time increase is 17-30% for the smaller models (Tab. 1 "Inference Time" column) because the prompt is twice as long (with markers) — the paper somewhat downplays this aspect.
 
-## Connessioni con altri lavori del wiki
+## Connections with other wiki entries
 
-- Stessa filosofia di [[look-twice]] (Morini 2026) ma su LM testuale puro; LoT esplicitamente cita SelfElicit come reference per il textual side e lo estende al visual (con attention sink filtering aggiuntivo) nei MLLM.
-- Coerente con il principio che **attention ≈ relevance** già evidenziato in BERT-attention analyses (Clark 2019) e con [[map-the-flow]] sul "vision function layer" nei modelli profondi.
+- Same philosophy as [[look-twice]] (Morini 2026) but on a pure textual LM; LoT explicitly cites SelfElicit as the textual-side reference and extends it to the visual one (with additional attention-sink filtering) in MLLMs.
+- Consistent with the principle that **attention ≈ relevance** already highlighted in BERT-attention analyses (Clark 2019) and with [[map-the-flow]] on the "vision function layer" in deep models.
 
-## Concetti citati
+## Cited concepts
 
 [[evidence-highlighting]], [[self-elicit]], [[context-based-qa]], [[rag]], [[attention-as-relevance]], [[in-context-learning]], [[chain-of-thought]], [[prompt-augmentation]], [[hotpotqa]], [[newsqa]], [[triviaqa]], [[natural-questions]], [[llama]], [[mistral]], [[qwen]], [[deep-layers-evidence]], [[layer-normalization]], [[transformer]].
 
-## Citazioni dirette rilevanti
+## Relevant direct quotes
 
 > "By analyzing the attention scores during response generation, we demonstrate that the LMs have an inherent ability to identify the relevant evidence in the context, regardless of whether they respond correctly or not." (§1, Contributions)
 

@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # UMT-L
 
-Unified Masked Transformer Large — encoder spatio-temporale per video. Scelto come visual encoder di VideoChat2 perché offre una capacità spatial-temporal superiore rispetto a EVA-CLIP-g (ablazione in Tab. 6 di MVBench).
+Unified Masked Transformer Large — a spatio-temporal encoder for video. Chosen as the visual encoder of VideoChat2 because it offers superior spatial-temporal capacity compared to EVA-CLIP-g (ablation in Tab. 6 of MVBench).
 
 ## Sources
 
-- [[li-2024-mvbench]] — visual encoder di VideoChat2, motivato da forte capacità spatial-temporal vs EVA-CLIP-g
+- [[li-2024-mvbench]] — visual encoder of VideoChat2, motivated by strong spatial-temporal capacity vs EVA-CLIP-g
 
-## Concetti correlati
+## Related concepts
 
-- [[videochat2]] — modello che lo adotta
-- [[eva-clip]] — alternativa confrontata
-- [[q-former]] — modulo successivo nella pipeline
+- [[videochat2]] — model that adopts it
+- [[eva-clip]] — alternative compared
+- [[q-former]] — subsequent module in the pipeline

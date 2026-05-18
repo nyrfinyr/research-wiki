@@ -8,39 +8,39 @@ updated: 2026-05-15
 
 # Sigmoid Attention
 
-Sostituzione della softmax con la **funzione sigmoide elemento per elemento** nei pesi di attention: `Attention(Q,K,V) = σ(QKᵀ/√d) V` invece di `softmax(QKᵀ/√d) V`. La differenza cruciale è l'assenza di **normalizzazione row-wise**: i pesi non devono sommare a 1 per riga, quindi l'attention diventa **densa** (tutti i token possono contribuire significativamente) e non sviluppa l'effetto winner-take-all dell'esponenziale. È stata proposta in versione "pulita" da Gu et al. (2024) come **rimedio architetturale all'[[attention-sink]]** e adottata da SWAT (Fu 2025) come componente centrale del layer di sliding window training [source: raw/papers/gu-2024-attention-sink.pdf §7.3-7.4; raw/papers/fu-2025-sliding-window-attention.pdf §3.2].
+Replacement of softmax with the **element-wise sigmoid function** in attention weights: `Attention(Q,K,V) = σ(QKᵀ/√d) V` instead of `softmax(QKᵀ/√d) V`. The crucial difference is the absence of **row-wise normalization**: weights are not required to sum to 1 per row, so attention becomes **dense** (all tokens can contribute significantly) and does not develop the winner-take-all effect of the exponential. It was proposed in a "clean" form by Gu et al. (2024) as an **architectural remedy to the [[attention-sink]]** and adopted by SWAT (Fu 2025) as the central component of the sliding window training layer [source: raw/papers/gu-2024-attention-sink.pdf §7.3-7.4; raw/papers/fu-2025-sliding-window-attention.pdf §3.2].
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **Eliminazione del sink in pre-training** (Gu et al.): sostituendo softmax con **sigmoid senza normalizzazione**, `Sink^ε_1 ≈ 0.44%` vs 18.18% del default; valid loss 3.70 vs 3.73 softmax — **sink non emerge** fino a 1B parametri. Stesso effetto con `elu+1 senza normalizzazione` o kernel MLP. **Mantenendo la normalizzazione** (sigmoid normalizzata) il sink ricompare ⇒ la causa profonda è la **normalizzazione**, non la softmax in sé [source: raw/papers/gu-2024-attention-sink.pdf §7.4, Tab. 6].
-- **Doppio benefit per SWA** (Fu et al.): in SWAT la sigmoid serve a (1) **prevenire l'attention sink** propagato dalla varianza del primo token tramite normalizzazione, (2) **mantenere dense attention weights** che evitano l'**information loss della softmax** (es. logits `[1.5, 5.0, 2.4, 0.5, 1.3]` → softmax `[0.03, 0.88, 0.07, 0.01, 0.02]`) [source: raw/papers/fu-2025-sliding-window-attention.pdf §1, §2.2, §3.2].
-- **Limiti pratici (instabilità senza positional bias)**: sigmoid puro su Vanilla 128/128 fallisce in Fu et al. (PPL 14.26 vs 5.51 softmax); serve combinarla con [[rotary-position-embedding]] e/o balanced ALiBi per stabilità [source: raw/papers/fu-2025-sliding-window-attention.pdf §4.4, Tab. 3, No.2].
-- **Adozione open question**: validata fino a 760M (SWAT) / 1B (Gu); il comportamento a 7B / 70B / 235B (scale dei modelli production attuali) **non è ancora dimostrato** — Mistral, LLaMA, Qwen non l'hanno adottata [source: raw/papers/gu-2024-attention-sink.pdf §domande aperte].
+- **Sink elimination in pre-training** (Gu et al.): replacing softmax with **sigmoid without normalization**, `Sink^ε_1 ≈ 0.44%` vs 18.18% for the default; valid loss 3.70 vs 3.73 softmax — **sink does not emerge** up to 1B parameters. Same effect with `elu+1 without normalization` or MLP kernel. **Keeping normalization** (normalized sigmoid) the sink reappears ⇒ the root cause is **normalization**, not softmax itself [source: raw/papers/gu-2024-attention-sink.pdf §7.4, Tab. 6].
+- **Double benefit for SWA** (Fu et al.): in SWAT the sigmoid is used to (1) **prevent the attention sink** propagated by the variance of the first token through normalization, (2) **keep dense attention weights** that avoid the **information loss of softmax** (e.g. logits `[1.5, 5.0, 2.4, 0.5, 1.3]` → softmax `[0.03, 0.88, 0.07, 0.01, 0.02]`) [source: raw/papers/fu-2025-sliding-window-attention.pdf §1, §2.2, §3.2].
+- **Practical limits (instability without positional bias)**: pure sigmoid on Vanilla 128/128 fails in Fu et al. (PPL 14.26 vs 5.51 softmax); it must be combined with [[rotary-position-embedding]] and/or balanced ALiBi for stability [source: raw/papers/fu-2025-sliding-window-attention.pdf §4.4, Tab. 3, No.2].
+- **Adoption open question**: validated up to 760M (SWAT) / 1B (Gu); behavior at 7B / 70B / 235B (the scales of current production models) **is not yet demonstrated** — Mistral, LLaMA, Qwen have not adopted it [source: raw/papers/gu-2024-attention-sink.pdf §open questions].
 
-### Formula confronto
+### Formula comparison
 
-| Variante | Pesi | Sink^ε_1 | Note |
+| Variant | Weights | Sink^ε_1 | Notes |
 |---|---|---|---|
-| Softmax (default) | `softmax(QKᵀ/√d)` | ~18-99% | sink emerge sempre |
-| Sigmoid normalizzata | `σ(QKᵀ/√d) / Σσ` | sink ricompare | normalizzazione = causa |
-| **Sigmoid no-norm** | `σ(QKᵀ/√d)` | **≈ 0.44%** | sink non emerge |
-| MLP kernel no-norm | `φ(Q)φ(K)ᵀ` | ≈ 0% | sink non emerge |
+| Softmax (default) | `softmax(QKᵀ/√d)` | ~18-99% | sink always emerges |
+| Normalized sigmoid | `σ(QKᵀ/√d) / Σσ` | sink reappears | normalization = cause |
+| **Sigmoid no-norm** | `σ(QKᵀ/√d)` | **≈ 0.44%** | sink does not emerge |
+| MLP kernel no-norm | `φ(Q)φ(K)ᵀ` | ≈ 0% | sink does not emerge |
 
 [source: raw/papers/gu-2024-attention-sink.pdf §7.4, Tab. 6]
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **SWAT layer** (Fu 2025): `σ(QKᵀ/√d + s·(m−n)) · V` con `m−n < ω` (sliding window), RoPE su Q,K, balanced ALiBi su `s` [source: raw/papers/fu-2025-sliding-window-attention.pdf §3.2, Eq. 5].
-- **Linear attention kernel** (Katharopoulos 2020 e successori): `φ(Q)φ(K)ᵀ V` — anche senza normalizzazione il sink scompare; conferma indirettamente la tesi di Gu.
+- **SWAT layer** (Fu 2025): `σ(QKᵀ/√d + s·(m−n)) · V` with `m−n < ω` (sliding window), RoPE on Q,K, balanced ALiBi on `s` [source: raw/papers/fu-2025-sliding-window-attention.pdf §3.2, Eq. 5].
+- **Linear attention kernel** (Katharopoulos 2020 and successors): `φ(Q)φ(K)ᵀ V` — even without normalization the sink disappears; indirectly confirms Gu's thesis.
 
-## Concetti correlati
+## Related concepts
 
-- [[attention-sink]] — fenomeno che sigmoid-attention elimina alla radice.
-- [[scaled-dot-product-attention]] — variante "canonica" sostituita da sigmoid.
-- [[sliding-window-attention]] — SWAT combina sigmoid con window per long-context efficiente.
-- [[kv-cache]] — un modello senza sink potrebbe rendere obsoleto l'anchoring di Streaming-LLM.
+- [[attention-sink]] — phenomenon that sigmoid-attention eliminates at the root.
+- [[scaled-dot-product-attention]] — "canonical" variant replaced by sigmoid.
+- [[sliding-window-attention]] — SWAT combines sigmoid with windowing for efficient long-context.
+- [[kv-cache]] — a sink-free model could make Streaming-LLM's anchoring obsolete.
 
 ## Sources
 
-- [[gu-2024-attention-sink]] — propone sigmoid-no-norm come rimedio architetturale al sink.
-- [[fu-2025-sliding-window-attention]] — adotta sigmoid in SWAT, conferma direzionalmente Gu a 760M.
+- [[gu-2024-attention-sink]] — proposes sigmoid-no-norm as an architectural remedy to the sink.
+- [[fu-2025-sliding-window-attention]] — adopts sigmoid in SWAT, directionally confirms Gu at 760M.

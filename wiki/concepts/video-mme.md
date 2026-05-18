@@ -8,23 +8,23 @@ updated: 2026-05-15
 
 # Video-MME
 
-Video-MME è un benchmark "full-spectrum" di video question-answering per [[multimodal-large-language-model]], introdotto da [[fu-2025-video-mme]]. Combina diversità di dominio, ampio range di durata (11 s – 1 h), input multi-modali (frame + sottotitoli + audio) e annotazione interamente manuale: 900 video YouTube curati a mano, 2.700 domande multiple-choice (3 per video, 4 opzioni), distribuiti in modo bilanciato su tre fasce di durata. È de facto lo standard per confrontare MLLM video moderni in modalità w/o vs w/ subtitles.
+Video-MME is a "full-spectrum" video question-answering benchmark for [[multimodal-large-language-model]], introduced by [[fu-2025-video-mme]]. It combines domain diversity, a wide duration range (11 s – 1 h), multi-modal inputs (frames + subtitles + audio) and fully manual annotation: 900 hand-curated YouTube videos, 2,700 multiple-choice questions (3 per video, 4 options), distributed in a balanced manner across three duration bands. It is the de facto standard for comparing modern video MLLMs in w/o vs w/ subtitles mode.
 
-## Composizione / Protocollo
+## Composition / Protocol
 
-- **900 video** totali (300 short < 2 min / 300 medium 4–15 min / 300 long 30–60 min), 744 con sottotitoli, **tutti** con audio. Durata media 1017.9 s (~17 min) [source: raw/papers/fu-2025-video-mme.pdf §3.2].
-- **2.700 QA** (3 per video, 4 opzioni → random baseline 25 %). Distribuzione opzioni A/B/C/D ≈ 25.1 / 27.2 / 25.3 / 22.4 % [source: raw/papers/fu-2025-video-mme.pdf §3.2].
-- **Tassonomia video**: 6 domini × 30 sottocategorie (Knowledge, Film & Television, Sports Competition, Artistic Performance, Life Record, Multilingual).
-- **Tassonomia task**: 12 task type raggruppati in *perception* (OCR, action/attribute/object recognition, counting, spatial/temporal perception) e *reasoning* (spatial/action/temporal reasoning, information synopsis).
-- **Filtro qualità**: Gemini 1.5 Pro text-only blind test → si scartano le QA che risponde correttamente; raggiunge < 15 % accuracy nel setting blind, confermando dipendenza dal contenuto video [source: raw/papers/fu-2025-video-mme.pdf §3.1].
-- **Certificate length** (concetto da [[egoschema]]): mediana 26 s / 164.7 s / 890.7 s per short/medium/long.
-- **Protocollo**: prompt `subtitles + question + 4 options`; output letter-only; accuracy via regex match (non LLM judge). Modalità testate: *w/o subs*, *w/ subs*, *w/ audio*.
+- **900 videos** total (300 short < 2 min / 300 medium 4–15 min / 300 long 30–60 min), 744 with subtitles, **all** with audio. Average duration 1017.9 s (~17 min) [source: raw/papers/fu-2025-video-mme.pdf §3.2].
+- **2,700 QA** (3 per video, 4 options → random baseline 25%). Option distribution A/B/C/D ≈ 25.1 / 27.2 / 25.3 / 22.4% [source: raw/papers/fu-2025-video-mme.pdf §3.2].
+- **Video taxonomy**: 6 domains × 30 subcategories (Knowledge, Film & Television, Sports Competition, Artistic Performance, Life Record, Multilingual).
+- **Task taxonomy**: 12 task types grouped into *perception* (OCR, action/attribute/object recognition, counting, spatial/temporal perception) and *reasoning* (spatial/action/temporal reasoning, information synopsis).
+- **Quality filter**: Gemini 1.5 Pro text-only blind test → QA correctly answered are discarded; reaches < 15% accuracy in the blind setting, confirming dependence on video content [source: raw/papers/fu-2025-video-mme.pdf §3.1].
+- **Certificate length** (concept from [[egoschema]]): median 26 s / 164.7 s / 890.7 s for short/medium/long.
+- **Protocol**: prompt `subtitles + question + 4 options`; letter-only output; accuracy via regex match (no LLM judge). Modes tested: *w/o subs*, *w/ subs*, *w/ audio*.
 
-## Numeri di riferimento
+## Reference numbers
 
-Dal paper originale [source: raw/papers/fu-2025-video-mme.pdf §4.2, Tab. 4]:
+From the original paper [source: raw/papers/fu-2025-video-mme.pdf §4.2, Tab. 4]:
 
-| Modello | Short w/o | Medium w/o | Long w/o | Overall w/o | Overall w/ subs |
+| Model | Short w/o | Medium w/o | Long w/o | Overall w/o | Overall w/ subs |
 |---|---|---|---|---|---|
 | Random | 25.0 | 25.0 | 25.0 | 25.0 | 25.0 |
 | GPT-4V | 70.5 | 55.8 | 53.5 | 59.9 | 63.3 |
@@ -34,9 +34,9 @@ Dal paper originale [source: raw/papers/fu-2025-video-mme.pdf §4.2, Tab. 4]:
 | VILA-1.5 34B (best OS) | 68.1 | 58.1 | 50.8 | 59.0 | 59.4 |
 | Video-LLaVA 7B | 45.3 | 38.0 | 36.2 | 39.9 | 41.6 |
 
-Dai source pages successivi del wiki:
+From later source pages in the wiki:
 
-| Modello | w/o subs | w/ subs | Fonte |
+| Model | w/o subs | w/ subs | Source |
 |---|---|---|---|
 | Qwen2.5-VL-3B | 61.5 | 67.6 | [[qwen2-5-vl-2025-tech-report]] |
 | Qwen2.5-VL-7B | 65.1 | 71.6 | [[qwen2-5-vl-2025-tech-report]] |
@@ -50,27 +50,27 @@ Dai source pages successivi del wiki:
 | Gemini 2.5 Pro (thinking) | **85.1** | — | [[qwen3-vl-2025-tech-report]] |
 | GPT-5 high | 84.7 | — | [[qwen3-vl-2025-tech-report]] |
 
-L'accuracy decade monotonicamente con la durata; i sottotitoli aiutano sempre, con guadagno crescente sui long (+10.1 punti per Gemini 1.5 Pro).
+Accuracy decays monotonically with duration; subtitles always help, with growing gain on long videos (+10.1 points for Gemini 1.5 Pro).
 
 ## Sources
 
-- [[fu-2025-video-mme]] — introduce il benchmark e definisce la pipeline.
-- [[qwen2-5-vl-2025-tech-report]] — valuta la famiglia Qwen2.5-VL.
-- [[qwen3-vl-2025-tech-report]] — valuta la famiglia Qwen3-VL.
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3 (2B e 7B).
-- [[wang-2025-lvbench]] — confronto in Tab. 1.
-- [[tang-2025-adaptive-keyframe-sampling]] — usa Video-MME come benchmark principale.
-- [[arnab-2025-temporal-chain-of-thought]] — non valuta direttamente ma cita.
-- [[doorenbos-2026-video-panels]] — valuta paneling su Video-MME.
-- [[kim-2026-sink-token-aware-pruning]] — valuta SToP su Video-MME.
+- [[fu-2025-video-mme]] — introduces the benchmark and defines the pipeline.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates the Qwen2.5-VL family.
+- [[qwen3-vl-2025-tech-report]] — evaluates the Qwen3-VL family.
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3 (2B and 7B).
+- [[wang-2025-lvbench]] — comparison in Tab. 1.
+- [[tang-2025-adaptive-keyframe-sampling]] — uses Video-MME as primary benchmark.
+- [[arnab-2025-temporal-chain-of-thought]] — does not evaluate directly but cites it.
+- [[doorenbos-2026-video-panels]] — evaluates paneling on Video-MME.
+- [[kim-2026-sink-token-aware-pruning]] — evaluates SToP on Video-MME.
 
-## Concetti correlati
+## Related concepts
 
-- [[multimodal-large-language-model]] — oggetto di valutazione.
-- [[video-llm]] — sub-famiglia tipicamente valutata.
+- [[multimodal-large-language-model]] — object of evaluation.
+- [[video-llm]] — sub-family typically evaluated.
 - [[long-video-understanding]] — task.
-- [[multiple-choice-qa]] — formato.
-- [[certificate-length]] — adottato dai paper come misura di difficoltà.
-- [[egoschema]] — predecessore long-form.
-- [[lvbench]] — benchmark contemporaneo extreme long-video.
-- [[mvbench]] — predecessore short-clip temporal.
+- [[multiple-choice-qa]] — format.
+- [[certificate-length]] — adopted by papers as a difficulty measure.
+- [[egoschema]] — long-form predecessor.
+- [[lvbench]] — contemporary extreme long-video benchmark.
+- [[mvbench]] — short-clip temporal predecessor.

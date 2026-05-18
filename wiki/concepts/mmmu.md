@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # MMMU
 
-MMMU (Massive Multi-discipline Multimodal Understanding) è un benchmark per la valutazione di MLLM su domande di livello universitario che richiedono integrazione di testo e immagine attraverso discipline accademiche. Misura la capacità di un modello vision-language di applicare conoscenza specialistica a contenuti multimodali eterogenei.
+MMMU (Massive Multi-discipline Multimodal Understanding) is a benchmark for evaluating MLLMs on college-level questions that require integration of text and image across academic disciplines. It measures a vision-language model's ability to apply specialized knowledge to heterogeneous multimodal content.
 
-Nel wiki appare come bench di riferimento "image understanding" affiancato a [[mmmu-pro]], [[mathvista]] e altri nei report tecnici di modelli generalisti.
+In the wiki it appears as a reference "image understanding" benchmark flanked by [[mmmu-pro]], [[mathvista]] and others in tech reports of generalist models.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — citato fra i benchmark di image understanding
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA di valutazione
+- [[qwen3-vl-2025-tech-report]] — cited among the image understanding benchmarks
+- [[zhang-2025-videollama-3]] — cited as image-VQA evaluation benchmark

@@ -8,30 +8,30 @@ updated: 2026-05-15
 
 # Multimodal Rotary Position Embedding (MRoPE)
 
-Famiglia di estensioni di [[rotary-position-embedding]] per i Vision-Language Model: invece di un singolo asse di posizione 1D (testo) si codificano congiuntamente **temporal, height, width** (e talvolta channel) come dimensioni rotary distinte, dando al modello una position-signal per ciascun asse [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1]. Introdotta da Qwen2-VL come "MRoPE chunked", è evoluta in **T-RoPE** absolute-time-aligned (Qwen2.5-VL) e in **Interleaved MRoPE** spectrally-uniform (Qwen3-VL). Adottata anche da VideoLLaMA-3 come 2D-RoPE per immagini [source: raw/papers/zhang-2025-videollama-3.pdf §3.1; raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3].
+Family of extensions of [[rotary-position-embedding]] for Vision-Language Models: instead of a single 1D position axis (text), **temporal, height, width** (and sometimes channel) are jointly encoded as distinct rotary dimensions, giving the model a position-signal for each axis [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1]. Introduced by Qwen2-VL as "chunked MRoPE", it evolved into **T-RoPE** absolute-time-aligned (Qwen2.5-VL) and **Interleaved MRoPE** spectrally-uniform (Qwen3-VL). Also adopted by VideoLLaMA-3 as 2D-RoPE for images [source: raw/papers/zhang-2025-videollama-3.pdf §3.1; raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3].
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **MRoPE chunked (Qwen2-VL)**: le `d` dimensioni dell'embedding sono partizionate in tre gruppi `(t, h, w)`, ciascuno con un range di frequenze rotary distinto. La rotazione applicata al token in posizione `(t_i, h_i, w_i)` è il prodotto delle rotazioni per gruppo. Limite diagnosticato: **spectral bias** — la dimensione `t` copre solo certe frequenze, degradando long-video understanding [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
-- **T-RoPE (Qwen2.5-VL)**: il temporal ID **non si lega più all'indice frame** ma al **timestamp reale (clock assoluto)**. Permette di apprendere "the cadence of time through the intervals between temporal dimension IDs" indipendentemente dall'FPS di campionamento, abilitando temporal grounding al secondo (Charades-STA mIoU 50.9 vs GPT-4o 35.7) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3].
-- **Interleaved MRoPE (Qwen3-VL)**: ridistribuisce le dimensioni t/h/w *interleaved* lungo l'embedding, in modo che ogni asse copra sia low- che high-frequencies. Mitiga lo spectral bias, migliora il positional modeling video [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
-- **Textual timestamp tokens (Qwen3-VL)**: rimpiazza T-RoPE per la dimensione temporale inserendo prima di ogni temporal patch un token testuale `<3.0 seconds>` (o formato `HH:MM:SS`). Diagnosi del T-RoPE: position IDs temporali troppo grandi/sparsi per video lunghi → degrada long temporal context; richiede sampling uniforme su tanti fps, costoso da costruire [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
-- **2D-RoPE per immagini singole** (VideoLLaMA-3): MRoPE usata come pura 2D-RoPE sulle dimensioni spatial — è la specializzazione image-only dell'estensione multimodale [source: raw/papers/zhang-2025-videollama-3.pdf §3.1].
+- **Chunked MRoPE (Qwen2-VL)**: the `d` dimensions of the embedding are partitioned into three groups `(t, h, w)`, each with a distinct rotary frequency range. The rotation applied to the token at position `(t_i, h_i, w_i)` is the product of the per-group rotations. Diagnosed limitation: **spectral bias** — the `t` dimension only covers certain frequencies, degrading long-video understanding [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
+- **T-RoPE (Qwen2.5-VL)**: the temporal ID is **no longer tied to the frame index** but to the **real timestamp (absolute clock)**. Allows learning "the cadence of time through the intervals between temporal dimension IDs" independently of sampling FPS, enabling temporal grounding at the second (Charades-STA mIoU 50.9 vs GPT-4o 35.7) [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.1.3].
+- **Interleaved MRoPE (Qwen3-VL)**: redistributes the t/h/w dimensions *interleaved* along the embedding, so that each axis covers both low- and high-frequencies. Mitigates spectral bias, improves video positional modeling [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
+- **Textual timestamp tokens (Qwen3-VL)**: replaces T-RoPE for the temporal dimension by inserting before each temporal patch a textual token `<3.0 seconds>` (or `HH:MM:SS` format). T-RoPE diagnosis: temporal position IDs too large/sparse for long videos → degrades long temporal context; requires uniform sampling over many fps, expensive to construct [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
+- **2D-RoPE for single images** (VideoLLaMA-3): MRoPE used as pure 2D-RoPE on the spatial dimensions — it is the image-only specialization of the multimodal extension [source: raw/papers/zhang-2025-videollama-3.pdf §3.1].
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **Chunked vs Interleaved**: la differenza non è teorica ma di copertura dello spettro di frequenze; Qwen3-VL non riporta plot empirici della "spectral imbalance" — la giustificazione si appoggia a citazioni di "subsequent studies" non riprodotte [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
-- **Absolute-time vs textual timestamp**: due strategie alternative per long-video. Qwen2.5-VL sceglie la prima (T-RoPE); Qwen3-VL la abbandona per i textual timestamp tokens, leggero aumento di context ma più flessibilità [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
+- **Chunked vs Interleaved**: the difference is not theoretical but in frequency-spectrum coverage; Qwen3-VL does not report empirical plots of the "spectral imbalance" — the justification rests on citations of "subsequent studies" not reproduced [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.1].
+- **Absolute-time vs textual timestamp**: two alternative strategies for long-video. Qwen2.5-VL picks the first (T-RoPE); Qwen3-VL abandons it in favor of textual timestamp tokens, a slight context increase but more flexibility [source: raw/papers/qwen3-vl-2025-tech-report.pdf §2.3].
 
-## Concetti correlati
+## Related concepts
 
-- [[rotary-position-embedding]] — base architetturale di MRoPE.
-- [[vision-transformer]] — ViT moderni usano 2D-RoPE (caso degenere di MRoPE).
-- [[positional-encoding]] — superfamiglia.
-- [[dynamic-resolution]] — MRoPE permette di codificare posizioni in immagini a risoluzione variabile senza re-interpolazione.
+- [[rotary-position-embedding]] — architectural base of MRoPE.
+- [[vision-transformer]] — modern ViTs use 2D-RoPE (degenerate case of MRoPE).
+- [[positional-encoding]] — super-family.
+- [[dynamic-resolution]] — MRoPE allows encoding positions in variable-resolution images without re-interpolation.
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — introduce T-RoPE absolute-time-aligned.
-- [[qwen3-vl-2025-tech-report]] — introduce Interleaved MRoPE e textual timestamp tokens.
-- [[zhang-2025-videollama-3]] — usa MRoPE come 2D-RoPE per il ViT image-centric.
+- [[qwen2-5-vl-2025-tech-report]] — introduces absolute-time-aligned T-RoPE.
+- [[qwen3-vl-2025-tech-report]] — introduces Interleaved MRoPE and textual timestamp tokens.
+- [[zhang-2025-videollama-3]] — uses MRoPE as 2D-RoPE for the image-centric ViT.

@@ -8,19 +8,19 @@ updated: 2026-05-15
 
 # VideoLLaMA 3
 
-MLLM frontier (2B e 7B) di DAMO Academy / Alibaba per comprensione congiunta di immagini e video. Paradigma di training **vision-centric**: encoder visivo costruito su grandi corpora image-text di alta qualità prima del fine-tuning video. Novità chiave: Any-resolution Vision Tokenization (AVT) sopra SigLIP con 2D-RoPE, e Differential Frame Pruner (DiffFP) per rimuovere patch ridondanti tra frame consecutivi. LLM backbone Qwen2.5; raggiunge SOTA su VideoMME, MLVU, LongVideoBench, LVBench, PerceptionTest, NextQA e benchmark immagine.
+Frontier MLLM (2B and 7B) from DAMO Academy / Alibaba for joint image and video understanding. **Vision-centric** training paradigm: visual encoder built on large high-quality image-text corpora before video fine-tuning. Key novelties: Any-resolution Vision Tokenization (AVT) on top of SigLIP with 2D-RoPE, and Differential Frame Pruner (DiffFP) to remove redundant patches between consecutive frames. Qwen2.5 LLM backbone; achieves SOTA on VideoMME, MLVU, LongVideoBench, LVBench, PerceptionTest, NextQA and image benchmarks.
 
-Per i dettagli completi vedere la pagina di source [[zhang-2025-videollama-3]].
+For full details see the source page [[zhang-2025-videollama-3]].
 
 ## Sources
 
-- [[zhang-2025-videollama-3]] — paper introduttivo
-- [[doorenbos-2026-video-panels]] — backbone testato
-- [[kim-2025-map-the-flow]] — backbone analizzato in mechanistic interpretability
-- [[wang-2025-lvbench]] — modello valutato
+- [[zhang-2025-videollama-3]] — introductory paper
+- [[doorenbos-2026-video-panels]] — backbone tested
+- [[kim-2025-map-the-flow]] — backbone analyzed in mechanistic interpretability
+- [[wang-2025-lvbench]] — model evaluated
 
-## Concetti correlati
+## Related concepts
 
-- [[siglip]] — vision encoder adattato con AVT
+- [[siglip]] — vision encoder adapted with AVT
 - [[qwen]] — LLM backbone (Qwen2.5)
-- [[video-llama]] — antenato
+- [[video-llama]] — ancestor

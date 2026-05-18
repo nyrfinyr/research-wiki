@@ -8,32 +8,32 @@ updated: 2026-05-15
 
 # Look Twice (LoT)
 
-**Look Twice (LoT)** è il framework **training-free, inference-time** introdotto da Morini et al. (2026) per migliorare l'utilizzo dell'evidenza multimodale nei MLLM nel setting Knowledge-Based VQA. L'idea cardine: far guardare al modello l'input **due volte** — un primo forward pass genera **un solo token** e produce le attention map; queste vengono usate per identificare (a) la regione visiva rilevante (filtrando attention sink visivi con uno score sulle dimension-channels critiche della BOS) e (b) le frasi di evidenza testuale rilevanti nel contesto recuperato (RAG). I cue selezionati sono **highlighted** nel prompt con marker `<START_IMPORTANT_TXT>` e con un bounding box `<START_IMPORTANT_IMG>` nell'immagine. Un secondo forward pass genera la risposta finale sull'input arricchito. Niente training, niente parametri modificati, overhead ≈ 1 token.
+**Look Twice (LoT)** is the **training-free, inference-time** framework introduced by Morini et al. (2026) to improve the use of multimodal evidence in MLLMs in the Knowledge-Based VQA setting. The core idea: have the model look at the input **twice** — a first forward pass generates **a single token** and produces the attention maps; these are used to identify (a) the relevant visual region (filtering visual attention sinks with a score over the critical dimension-channels of the BOS) and (b) the relevant textual evidence sentences in the retrieved context (RAG). The selected cues are **highlighted** in the prompt with `<START_IMPORTANT_TXT>` markers and with a bounding box `<START_IMPORTANT_IMG>` on the image. A second forward pass generates the final answer on the enriched input. No training, no parameters modified, overhead ≈ 1 token.
 
-## Architettura
+## Architecture
 
-Tre componenti chiave:
+Three key components:
 
-1. **Self-guided Visual Evidence Selection**: aggregazione cross-layer/cross-head delle attention dal target object (estratto via dependency parsing spaCy) verso i token visivi, su layer intermedi `L_vis`. Output: vettore `a_vis ∈ R^(N_V)`.
-2. **Multi-Layer Attention Sink Filtering**: identifica dimensioni `D_sink` in cui BOS attiva massicciamente; sopprime token visivi che attivano queste dimensioni oltre soglia τ (default 25° percentile).
-3. **Self-guided Textual Evidence Selection**: estrazione last-to-context dell'ultimo token generato, aggregata sui **deep layers** (seconda metà del decoder, coerente con SelfElicit); selezione frasi via score massimo o soglia α.
+1. **Self-guided Visual Evidence Selection**: cross-layer/cross-head aggregation of attention from the target object (extracted via spaCy dependency parsing) toward visual tokens, on intermediate layers `L_vis`. Output: vector `a_vis ∈ R^(N_V)`.
+2. **Multi-Layer Attention Sink Filtering**: identifies dimensions `D_sink` in which BOS activates massively; suppresses visual tokens that activate these dimensions above threshold τ (default 25th percentile).
+3. **Self-guided Textual Evidence Selection**: last-to-context extraction of the last generated token, aggregated over the **deep layers** (second half of the decoder, consistent with SelfElicit); sentence selection via max score or threshold α.
 
-Bounding box estratto via **weighted centroid** + deviazioni (β=2). Validato cross-architecture (Qwen, InternVL) e cross-scale (2B → 38B).
+Bounding box extracted via **weighted centroid** + deviations (β=2). Validated cross-architecture (Qwen, InternVL) and cross-scale (2B → 38B).
 
-## Numeri di riferimento
+## Reference numbers
 
-Su 4 benchmark KB-VQA (E-VQA, InfoSeek, OVEN, ViQuAE) × 10 MLLM, LoT migliora di **+1.1 a +5.3** punti medi. Guadagni maggiori: Qwen2-VL-7B +5.3, Qwen2.5-VL-3B +4.3, InternVL3.5-4B +4.2. Ablation (Tab. 2): visual-only e textual-only sono **complementari** (Qwen2.5-VL-3B E-VQA: solo-textual 29.4, solo-visual 29.6, LoT 30.4).
+On 4 KB-VQA benchmarks (E-VQA, InfoSeek, OVEN, ViQuAE) × 10 MLLMs, LoT improves by **+1.1 to +5.3** average points. Largest gains: Qwen2-VL-7B +5.3, Qwen2.5-VL-3B +4.3, InternVL3.5-4B +4.2. Ablation (Tab. 2): visual-only and textual-only are **complementary** (Qwen2.5-VL-3B E-VQA: textual-only 29.4, visual-only 29.6, LoT 30.4).
 
 ## Sources
 
-- [[morini-2026-look-twice]] — paper introduttivo
-- [[gu-2024-attention-sink]] — fondamento teorico per attention sink filtering
-- [[liu-2025-selfelicit]] — antenato testuale, coerenza sui deep layers
+- [[morini-2026-look-twice]] — introductory paper
+- [[gu-2024-attention-sink]] — theoretical foundation for attention sink filtering
+- [[liu-2025-selfelicit]] — textual antecedent, consistency on deep layers
 
-## Concetti correlati
+## Related concepts
 
-- [[evidence-highlighting]] — task generale
-- [[attention-sink]], [[visual-attention-sink]] — filtraggio applicato
-- [[self-elicit]] — controparte text-only
-- [[map-the-flow]] — coerenza con "deep layers know"
+- [[evidence-highlighting]] — general task
+- [[attention-sink]], [[visual-attention-sink]] — filtering applied
+- [[self-elicit]] — text-only counterpart
+- [[map-the-flow]] — consistency with "deep layers know"
 - [[multimodal-large-language-model]], [[training-free-methods]]

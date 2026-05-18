@@ -18,57 +18,57 @@ year: 2021
 
 ## TL;DR
 
-Gli autori dimostrano che un **Transformer puro applicato direttamente a una sequenza di patch d'immagine** può eguagliare o battere le CNN state-of-the-art (ResNet/BiT, EfficientNet/Noisy Student) sui benchmark di classificazione, *a patto* di pre-addestrarlo su dataset molto grandi (ImageNet-21k da 14M immagini o JFT-300M da 303M). Il modello, chiamato **Vision Transformer (ViT)**, raggiunge 88.55% top-1 su ImageNet, 90.72% su ImageNet-ReaL, 94.55% su CIFAR-100, 77.63% sulla suite VTAB a 19 task, con un costo di pre-training inferiore alle baseline CNN comparabili (2.5k TPUv3-core-days per ViT-H/14 vs. 9.9k per BiT-L) [source: raw/papers/dosovitskiy-2021-vit.pdf §4.2]. È il paper che apre la stagione dei Transformer per la computer vision e fonda l'archetipo del [[vision-transformer]] usato poi in CLIP, DINO, MAE, SAM, MLLM moderni.
+The authors show that a **pure Transformer applied directly to a sequence of image patches** can match or beat state-of-the-art CNNs (ResNet/BiT, EfficientNet/Noisy Student) on classification benchmarks, *provided* it is pre-trained on very large datasets (ImageNet-21k with 14M images or JFT-300M with 303M). The model, called **Vision Transformer (ViT)**, reaches 88.55% top-1 on ImageNet, 90.72% on ImageNet-ReaL, 94.55% on CIFAR-100, 77.63% on the 19-task VTAB suite, with a pre-training cost lower than comparable CNN baselines (2.5k TPUv3-core-days for ViT-H/14 vs. 9.9k for BiT-L) [source: raw/papers/dosovitskiy-2021-vit.pdf §4.2]. It is the paper that opens the Transformer era in computer vision and establishes the [[vision-transformer]] archetype used later in CLIP, DINO, MAE, SAM and modern MLLMs.
 
-## Contributo principale
+## Main contribution
 
-- Mostrare che **non serve alcun bias induttivo specifico per le immagini** oltre alla decomposizione iniziale in patch: con sufficienti dati di pre-training un Transformer "vanilla" supera le CNN [source: raw/papers/dosovitskiy-2021-vit.pdf §1, §3.1].
-- Introdurre l'archetipo **patch + linear projection + position embedding + class token** che diventa standard per tutti i vision transformer successivi (§3.1).
-- Caratterizzare empiricamente la **dipendenza dalla scala dei dati**: ViT è inferiore alle ResNet su ImageNet (1.3M) ma le supera con ImageNet-21k e JFT-300M (§4.3, Fig. 3-4).
+- Show that **no image-specific inductive bias is needed** beyond the initial patch decomposition: with enough pre-training data a "vanilla" Transformer surpasses CNNs [source: raw/papers/dosovitskiy-2021-vit.pdf §1, §3.1].
+- Introduce the **patch + linear projection + position embedding + class token** archetype that becomes the standard for every subsequent vision transformer (§3.1).
+- Empirically characterise the **data-scale dependence**: ViT is below ResNets on ImageNet (1.3M) but surpasses them on ImageNet-21k and JFT-300M (§4.3, Figs. 3-4).
 
-## Metodo
+## Method
 
 ### Patch embedding (§3.1)
 
-Un'immagine `x ∈ R^(H×W×C)` viene tagliata in `N = HW/P²` patch quadrate di lato `P` (tipicamente 14, 16 o 32 px). Ogni patch viene appiattita a un vettore in `R^(P²·C)` e proiettata linearmente in `R^D` con una matrice apprendibile `E` (Eq. 1). `D` è costante in tutti i layer (768 per ViT-Base, 1024 per Large, 1280 per Huge — Tab. 1).
+An image `x ∈ R^(H×W×C)` is cut into `N = HW/P²` square patches of side `P` (typically 14, 16 or 32 px). Each patch is flattened to a vector in `R^(P²·C)` and linearly projected into `R^D` with a learnable matrix `E` (Eq. 1). `D` is constant across layers (768 for ViT-Base, 1024 for Large, 1280 for Huge — Tab. 1).
 
 ### Class token + position embedding (§3.1)
 
-In stile BERT si prepone un **embedding `[class]` apprendibile** alla sequenza; lo stato finale di quel token (`z⁰_L`) è la rappresentazione dell'immagine per la classificazione (Eq. 4). A ogni patch (e al class token) si **somma una position embedding 1D apprendibile** `E_pos ∈ R^((N+1)×D)` (Eq. 1).
+In BERT style, a learnable **`[class]` embedding** is prepended to the sequence; its final hidden state (`z⁰_L`) is the image representation used for classification (Eq. 4). To every patch (and to the class token) a **learnable 1D position embedding** `E_pos ∈ R^((N+1)×D)` is added (Eq. 1).
 
 > "We use standard learnable 1D position embeddings, since we have not observed significant performance gains from using more advanced 2D-aware position embeddings." (§3.1)
 
-A fine-tuning con risoluzione diversa, le position embedding pre-addestrate vengono **interpolate bilinearmente** in 2D in base alla loro posizione nella griglia originale (§3.2). Questo, insieme all'estrazione delle patch, è dichiarato come l'unico bias induttivo 2D iniettato a mano.
+When fine-tuning at a different resolution, the pre-trained position embeddings are **bilinearly interpolated** in 2D according to their position in the original grid (§3.2). This, together with patch extraction, is declared as the only 2D inductive bias injected by hand.
 
-### Encoder Transformer (§3.1)
+### Transformer encoder (§3.1)
 
-Identico all'encoder di [[transformer]] con due differenze:
-- **Pre-Norm** (LayerNorm prima di MSA e MLP, residual dopo), Eq. 2-4: `z'_ℓ = MSA(LN(z_{ℓ-1})) + z_{ℓ-1}`, `z_ℓ = MLP(LN(z'_ℓ)) + z'_ℓ`.
-- **MLP con GELU** invece di ReLU.
+Identical to the [[transformer]] encoder with two differences:
+- **Pre-Norm** (LayerNorm before MSA and MLP, residual after), Eq. 2-4: `z'_ℓ = MSA(LN(z_{ℓ-1})) + z_{ℓ-1}`, `z_ℓ = MLP(LN(z'_ℓ)) + z'_ℓ`.
+- **MLP with GELU** instead of ReLU.
 
-### Inductive bias e Hybrid (§3.1)
+### Inductive bias and Hybrid (§3.1)
 
-ViT ha **molto meno bias induttivo** delle CNN: solo l'MLP è locale e traslazionalmente equivariante; la self-attention è globale. Tutte le relazioni spaziali tra patch vengono apprese da zero. In alternativa, un modello **hybrid** può estrarre patch da feature map di un ResNet (es. stage 4 con patch 1×1) per iniettare bias convoluzionali nelle prime fasi.
+ViT has **far less inductive bias** than CNNs: only the MLP is local and translation-equivariant; self-attention is global. All spatial relations between patches are learned from scratch. Alternatively, a **hybrid** model can extract patches from a ResNet feature map (e.g. stage 4 with 1×1 patches) to inject convolutional bias in the early stages.
 
-### Varianti del modello (Tab. 1)
+### Model variants (Tab. 1)
 
-| Modello | Layers | D | MLP | Heads | Params |
+| Model | Layers | D | MLP | Heads | Params |
 |---|---|---|---|---|---|
 | ViT-Base | 12 | 768 | 3072 | 12 | 86M |
 | ViT-Large | 24 | 1024 | 4096 | 16 | 307M |
 | ViT-Huge | 32 | 1280 | 5120 | 16 | 632M |
 
-Notazione `ViT-L/16` = Large con patch 16×16. La sequence length cresce con `1/P²`: ViT-L/14 è più costoso di ViT-L/16 (§4.1).
+Notation `ViT-L/16` = Large with 16×16 patches. Sequence length grows as `1/P²`: ViT-L/14 is more expensive than ViT-L/16 (§4.1).
 
 ### Training (§4.1)
 
-- **Pre-training**: Adam con `β1=0.9, β2=0.999`, batch 4096, weight decay 0.1, warmup + decay lineari. Datasets: ImageNet (1.3M), ImageNet-21k (14M), JFT-300M (303M). Deduplicazione contro i test set downstream.
-- **Fine-tuning**: SGD con momentum, batch 512; risoluzione spesso superiore (es. 512 per L/16, 518 per H/14) con interpolazione delle position embeddings; Polyak averaging factor 0.9999 per il numero finale su ImageNet (§4.1).
+- **Pre-training**: Adam with `β1=0.9, β2=0.999`, batch 4096, weight decay 0.1, linear warmup + decay. Datasets: ImageNet (1.3M), ImageNet-21k (14M), JFT-300M (303M). Deduplication against downstream test sets.
+- **Fine-tuning**: SGD with momentum, batch 512; often higher resolution (e.g. 512 for L/16, 518 for H/14) with position-embedding interpolation; Polyak averaging factor 0.9999 for the final ImageNet number (§4.1).
 - Hardware: TPUv3.
 
-## Risultati chiave
+## Key results
 
-### Confronto SOTA (Tab. 2, §4.2)
+### SOTA comparison (Tab. 2, §4.2)
 
 | Dataset | ViT-H/14 (JFT) | ViT-L/16 (JFT) | ViT-L/16 (I21k) | BiT-L (ResNet152×4) | Noisy Student (EffNet-L2) |
 |---|---|---|---|---|---|
@@ -81,49 +81,49 @@ Notazione `ViT-L/16` = Large con patch 16×16. La sequence length cresce con `1/
 | VTAB (19) | **77.63** | 76.28 | 72.72 | 76.29 | — |
 | TPUv3-core-days | 2.5k | 0.68k | 0.23k | 9.9k | 12.3k |
 
-ViT-L/16 pre-addestrato su ImageNet-21k è "treno-abile" in ~30 giorni su un singolo nodo TPUv3 a 8 core e già batte BiT-L su quasi tutto (§4.2).
+ViT-L/16 pre-trained on ImageNet-21k is "trainable" in ~30 days on a single 8-core TPUv3 node and already beats BiT-L on almost everything (§4.2).
 
-### Dipendenza dalla scala dei dati (§4.3, Fig. 3-4)
+### Data-scale dependence (§4.3, Figs. 3-4)
 
-- Su ImageNet (1.3M) ViT-Large è **inferiore** a ViT-Base ⇒ overfitting; le BiT ResNet (area grigia) dominano.
-- Su ImageNet-21k (14M) i modelli si pareggiano.
-- Su JFT-300M ViT-H/14 surclassa tutto.
-- Su subset 9M-90M-300M di JFT senza extra-regularization: ViT-B/32 è peggio di ResNet50 a 9M ma migliore a 90M+; ViT-L/16 batte ResNet152×2 solo dai 300M in poi (Fig. 4). Conferma quantitativa che **"large scale training trumps inductive bias"** (§1).
+- On ImageNet (1.3M) ViT-Large is **worse** than ViT-Base ⇒ overfitting; the BiT ResNets (grey area) dominate.
+- On ImageNet-21k (14M) the models break even.
+- On JFT-300M ViT-H/14 outclasses everything.
+- On 9M-90M-300M subsets of JFT without extra regularisation: ViT-B/32 is worse than ResNet50 at 9M but better from 90M onwards; ViT-L/16 only beats ResNet152×2 from 300M on (Fig. 4). Quantitative confirmation that **"large scale training trumps inductive bias"** (§1).
 
 ### Scaling (§4.4, Fig. 5)
 
-A parità di FLOPs di pre-training su JFT-300M, ViT domina ResNet su una curva performance/compute: ViT usa **2-4× meno compute** per raggiungere la stessa accuracy media (5 dataset). Hybrid (R50+ViT) è leggermente meglio di ViT puro per modelli piccoli, ma il gap si annulla a scala maggiore. Nessun segno di saturazione per ViT-H entro l'intervallo testato.
+At equal pre-training FLOPs on JFT-300M, ViT dominates ResNet on a performance/compute curve: ViT uses **2-4× less compute** to reach the same average accuracy (5 datasets). Hybrid (R50+ViT) is slightly better than pure ViT for small models, but the gap vanishes at larger scale. No sign of saturation for ViT-H within the tested range.
 
-### Analisi interna (§4.5, Fig. 6-7)
+### Internal analysis (§4.5, Figs. 6-7)
 
-- I primi 28 componenti principali dei filtri di patch embedding di ViT-L/32 ricordano basi tipo Gabor / "filtri plausibili".
-- La **similarità delle position embedding** apprese mostra struttura riga/colonna 2D e a volte struttura sinusoidale, anche se inizializzate 1D senza prior 2D — spiega perché l'aggiunta di prior 2D non aiuta (Appx D.4).
-- **Mean attention distance** (analogo del receptive field) calcolata sui pesi di attention: già nei layer più bassi alcune teste attendono globalmente, altre restano molto locali (specie in hybrid, dove le early-layer fanno lavoro tipo convoluzione); la distanza cresce con la profondità.
+- The first 28 principal components of ViT-L/32 patch-embedding filters resemble Gabor-like / "plausible filter" bases.
+- The **similarity of learned position embeddings** shows 2D row/column structure and sometimes sinusoidal structure, despite being initialised as 1D without 2D prior — this explains why adding a 2D prior does not help (Appx. D.4).
+- **Mean attention distance** (analogue of receptive field), computed from attention weights: already at the lowest layers some heads attend globally while others stay very local (especially in hybrid, where early-layer heads do convolution-like work); the distance grows with depth.
 
 ### Self-supervision (§4.6)
 
-Esperimento preliminare di **masked patch prediction** (analogo a MLM in BERT): ViT-B/16 raggiunge 79.9% su ImageNet, +2% rispetto al training da zero ma -4% rispetto al pre-training supervisionato. Contrastive learning lasciato a future work (anticipa DINO, MAE, MoCo-v3).
+Preliminary **masked patch prediction** experiment (analogous to MLM in BERT): ViT-B/16 reaches 79.9% on ImageNet, +2% over training from scratch but -4% vs. supervised pre-training. Contrastive learning is left to future work (foreshadowing DINO, MAE, MoCo-v3).
 
-## Limitazioni dichiarate dagli autori
+## Stated limitations
 
-- Servono dataset di pre-training **molto grandi** (≥14M, idealmente ~300M) per battere le CNN; ViT è inferiore con i soli 1.3M di ImageNet (§4.3).
-- Applicazione a detection e segmentation non testata (§5, "many challenges remain"). Suggeriscono che il setup possa estendersi (cita DETR di Carion et al.).
-- Self-supervised pre-training ancora lontano dal supervisionato (-4% su ImageNet, §4.6).
-- Hardware: i risultati H/14 richiedono JFT-300M, dataset proprietario Google non riproducibile pubblicamente.
+- Very **large** pre-training datasets are required (≥14M, ideally ~300M) to beat CNNs; ViT is worse with the 1.3M of ImageNet alone (§4.3).
+- Application to detection and segmentation not tested (§5, "many challenges remain"). They suggest the setup can be extended (citing Carion et al.'s DETR).
+- Self-supervised pre-training still well behind supervised (-4% on ImageNet, §4.6).
+- Hardware: H/14 results require JFT-300M, a proprietary Google dataset not publicly reproducible.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- **JFT-300M non è pubblico** ⇒ riproducibilità limitata; la community ha dovuto attendere LAION / DataComp per replicare a scala simile.
-- Non viene analizzata la **robustezza** (ImageNet-A/C/R, adversarial) né l'interpretabilità head-by-head in modo quantitativo.
-- Le position embedding **1D learnable** sono adeguate per griglie regolari, ma il paper non discute sequenze a risoluzione mista o input non-griglia.
-- L'analisi dell'attention distance è descrittiva: non viene legata a metriche di accuracy o a pruning delle teste.
-- Il paper precede l'emergere di [[attention-sink]] e di tecniche IO-aware tipo [[flash-attention]] ⇒ niente discussione di efficiency a livello hardware né di memoria GPU.
+- **JFT-300M is not public** ⇒ limited reproducibility; the community had to wait for LAION / DataComp to replicate at similar scale.
+- **Robustness** (ImageNet-A/C/R, adversarial) and quantitative head-by-head interpretability are not analysed.
+- **1D learnable** position embeddings are adequate for regular grids, but the paper does not discuss mixed-resolution sequences or non-grid inputs.
+- The attention-distance analysis is descriptive: it is not linked to accuracy metrics or to head pruning.
+- The paper predates the emergence of [[attention-sink]] and IO-aware techniques such as [[flash-attention]] ⇒ no discussion of hardware-level efficiency or GPU memory.
 
-## Concetti citati
+## Cited concepts
 
 [[vision-transformer]], [[transformer]], [[self-attention]], [[multi-head-attention]], [[patch-embedding]], [[positional-encoding]], [[class-token]], [[layer-normalization]], [[gelu]], [[encoder-decoder-architecture]], [[imagenet]], [[imagenet-21k]], [[jft-300m]], [[vtab]], [[bit-big-transfer]], [[noisy-student]], [[masked-image-modeling]].
 
-## Citazioni dirette rilevanti
+## Relevant direct quotes
 
 > "We show that this reliance on CNNs is not necessary and a pure transformer applied directly to sequences of image patches can perform very well on image classification tasks." (Abstract)
 

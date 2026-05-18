@@ -8,12 +8,12 @@ updated: 2026-05-15
 
 # VILA
 
-Visual Language model di NVIDIA × MIT (Lin et al., 2024) con focus su un pre-training data recipe interleaved image-text che migliora multi-image reasoning e in-context learning. Disponibile in versioni image e video; citata come top open-source MLLM video.
+Visual Language model from NVIDIA × MIT (Lin et al., 2024) focused on an interleaved image-text pre-training data recipe that improves multi-image reasoning and in-context learning. Available in image and video versions; cited as a top open-source video MLLM.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — top open-source MLLM video valutato
+- [[fu-2025-video-mme]] — top open-source video MLLM evaluated
 
-## Concetti correlati
+## Related concepts
 
-- [[llava-next-video]], [[videochat2]] — competitor video open-source
+- [[llava-next-video]], [[videochat2]] — open-source video competitors

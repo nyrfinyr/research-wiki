@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # ActivityNet-QA
 
-**ActivityNet-QA** è un benchmark di Video-QA basato sui video di ActivityNet, con focus su domande relative ad azioni e attività. Citato come benchmark di confronto in molti tech report di MLLM video, ha [[certificate-length]] mediana ~1–3 s [source: raw/papers/mangalam-2023-egoschema.pdf Fig. 3] — classificato come short-form. [[zhang-2024-llovi]] lo cita come benchmark che "richiede solo short clip".
+**ActivityNet-QA** is a Video-QA benchmark based on ActivityNet videos, focused on questions about actions and activities. Cited as a comparison benchmark in many video MLLM tech reports, it has a median [[certificate-length]] of ~1–3 s [source: raw/papers/mangalam-2023-egoschema.pdf Fig. 3] — classified as short-form. [[zhang-2024-llovi]] cites it as a benchmark that "requires only short clips".
 
-## Numeri di riferimento
+## Reference numbers
 
-Risultati selezionati zero-shot:
+Selected zero-shot results:
 
-| Modello | ActivityNet-QA | Fonte |
+| Model | ActivityNet-QA | Source |
 |---|---|---|
 | VideoChatGPT | 35.2 | [[li-2024-mvbench]] |
 | VideoChat2 | 49.1 | [[li-2024-mvbench]] |
@@ -26,13 +26,13 @@ Risultati selezionati zero-shot:
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — confronto certificate length.
-- [[zhang-2024-llovi]] — citato come benchmark short-clip.
-- [[li-2024-mvbench]] — valuta VideoChat2 zero-shot.
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3.
+- [[mangalam-2023-egoschema]] — certificate length comparison.
+- [[zhang-2024-llovi]] — cited as a short-clip benchmark.
+- [[li-2024-mvbench]] — evaluates VideoChat2 zero-shot.
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3.
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[next-qa]], [[mvbench]] — benchmark adiacenti.
-- [[certificate-length]] — metrica di confronto.
+- [[next-qa]], [[mvbench]] — adjacent benchmarks.
+- [[certificate-length]] — comparison metric.

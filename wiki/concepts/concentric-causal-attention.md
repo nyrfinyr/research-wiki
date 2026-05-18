@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Concentric Causal Attention
 
-Concentric Causal Attention (Xing et al.) è una variante training-based della causal mask in MLLM in cui i token visivi sono organizzati in "anelli concentrici" attorno alla regione di interesse e l'attenzione è ridefinita per rispettare questa struttura spaziale, riducendo bias posizionali introdotti dalla causal mask standard.
+Concentric Causal Attention (Xing et al.) is a training-based variant of the causal mask in MLLMs in which visual tokens are organized into "concentric rings" around the region of interest and attention is redefined to respect this spatial structure, reducing positional biases introduced by the standard causal mask.
 
-Nel wiki è citata come competitor training-based dei metodi training-free di modifica della causal mask di Pei 2025 e Liu 2026.
+In the wiki it is cited as a training-based competitor of the training-free causal-mask modification methods of Pei 2025 and Liu 2026.
 
 ## Sources
 
-- [[pei-2025-causal-mask-attention]] — competitor training-based
-- [[liu-2026-adaptive-information-flow]] — confronto con CCA
+- [[pei-2025-causal-mask-attention]] — training-based competitor
+- [[liu-2026-adaptive-information-flow]] — comparison with CCA

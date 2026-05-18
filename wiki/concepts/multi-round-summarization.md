@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Multi-round Summarization
 
-La multi-round summarization è la strategia di prompting in cui un LLM riceve una sequenza molto lunga di caption (o trascrizioni di clip video) e procede a riassumerle a passi successivi — riassunti di riassunti — fino a comprimerle in una rappresentazione utilizzabile per rispondere alla domanda finale. Aggira il limite di context senza fine-tuning.
+Multi-round summarization is a prompting strategy in which an LLM receives a very long sequence of captions (or transcripts of video clips) and summarizes them in successive passes — summaries of summaries — until it compresses them into a representation usable to answer the final question. It bypasses the context limit without fine-tuning.
 
-Nel wiki è il concetto centrale di LLoVi per il long-video VQA basato su caption.
+In the wiki it is the central concept of LLoVi for caption-based long-video VQA.
 
 ## Sources
 
-- [[zhang-2024-llovi]] — concetto centrale del prompt strategy
+- [[zhang-2024-llovi]] — central concept of the prompt strategy

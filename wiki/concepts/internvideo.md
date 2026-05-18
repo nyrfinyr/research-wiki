@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # InternVideo
 
-Family di video foundation models di Shanghai AI Lab (Wang et al., 2022): combina masked video modeling e video-language contrastive learning su larga scala. Best zero-shot baseline su EgoSchema fra i modelli valutati nel paper originale (32.1%).
+Family of video foundation models from Shanghai AI Lab (Wang et al., 2022): combines masked video modeling and video-language contrastive learning at large scale. Best zero-shot baseline on EgoSchema among the models evaluated in the original paper (32.1%).
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — best zero-shot 32.1% su EgoSchema
+- [[mangalam-2023-egoschema]] — best zero-shot 32.1% on EgoSchema
 
-## Concetti correlati
+## Related concepts
 
-- [[clip]], [[eva-clip]] — encoder image alternativi
-- [[umt-l]] — encoder video alternativo
+- [[clip]], [[eva-clip]] — alternative image encoders
+- [[umt-l]] — alternative video encoder

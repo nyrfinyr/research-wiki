@@ -8,12 +8,12 @@ updated: 2026-05-15
 
 # Encoder-Decoder Architecture
 
-Schema standard per [[sequence-transduction]] introdotto nei primi seq2seq (Cho 2014, Sutskever 2014, Bahdanau 2014) e adottato anche dal [[transformer]].
+Standard scheme for [[sequence-transduction]] introduced in the early seq2seq models (Cho 2014, Sutskever 2014, Bahdanau 2014) and adopted by the [[transformer]] as well.
 
-- **Encoder**: mappa la sequenza simbolica in input `(x_1, …, x_n)` in una sequenza di rappresentazioni continue `z = (z_1, …, z_n)`.
-- **Decoder**: dato `z`, genera la sequenza di output `(y_1, …, y_m)` un elemento alla volta. Auto-regressivo: ogni step consuma i simboli generati in precedenza [source: raw/papers/vaswani-2017-attention.pdf §3].
+- **Encoder**: maps the symbolic input sequence `(x_1, …, x_n)` into a sequence of continuous representations `z = (z_1, …, z_n)`.
+- **Decoder**: given `z`, generates the output sequence `(y_1, …, y_m)` one element at a time. Auto-regressive: each step consumes the previously generated symbols [source: raw/papers/vaswani-2017-attention.pdf §3].
 
-In [[transformer]] ognuna delle due parti è uno stack di 6 layer; il decoder ha un sub-layer addizionale di encoder-decoder attention che permette a ogni posizione di output di attendere a tutte le posizioni di input.
+In the [[transformer]], each of the two parts is a stack of 6 layers; the decoder has an additional encoder-decoder attention sub-layer that lets every output position attend to all input positions.
 
 ## Sources
 

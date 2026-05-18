@@ -8,11 +8,11 @@ updated: 2026-05-15
 
 # CountBench
 
-**CountBench** è un benchmark di counting per VLM: contare quanti oggetti di una classe data sono presenti in un'immagine. È un test ricorrente per modelli che fanno grounding open-vocabulary; il *counting* è notoriamente un *joint bottleneck* per i video-LLM (vedi MVBench "Action Count / Moving Count" e Video-MME counting analysis).
+**CountBench** is a counting benchmark for VLMs: count how many objects of a given class are present in an image. It is a recurring test for models that perform open-vocabulary grounding; *counting* is notoriously a *joint bottleneck* for video-LLMs (see MVBench "Action Count / Moving Count" and Video-MME counting analysis).
 
-## Numeri di riferimento
+## Reference numbers
 
-| Modello | CountBench | Fonte |
+| Model | CountBench | Source |
 |---|---|---|
 | Gemini 1.5 Pro | 85.5 | [[qwen2-5-vl-2025-tech-report]] |
 | Molmo 72B | 91.2 | [[qwen2-5-vl-2025-tech-report]] |
@@ -25,11 +25,11 @@ updated: 2026-05-15
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — valuta Qwen2.5-VL.
-- [[qwen3-vl-2025-tech-report]] — valuta Qwen3-VL.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates Qwen2.5-VL.
+- [[qwen3-vl-2025-tech-report]] — evaluates Qwen3-VL.
 
-## Concetti correlati
+## Related concepts
 
-- [[vision-language-model]] — modelli valutati.
-- [[grounding]] — task imparentato.
-- [[mvbench]] — benchmark con sub-task di counting (Action Count, Moving Count).
+- [[vision-language-model]] — evaluated models.
+- [[grounding]] — related task.
+- [[mvbench]] — benchmark with counting sub-tasks (Action Count, Moving Count).

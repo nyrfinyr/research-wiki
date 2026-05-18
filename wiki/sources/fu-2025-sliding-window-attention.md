@@ -18,62 +18,62 @@ year: 2025
 
 ## TL;DR
 
-SWAT propone un layer di attention progettato esplicitamente per essere **addestrato** con sliding window (non solo applicato come fix al momento dell'inferenza). La ricetta sostituisce softmax con **sigmoid** (per prevenire l'attention sink causato dalla varianza della normalizzazione softmax e per evitare la sparsificazione aggressiva che cancella informazione storica), aggiunge una **balanced ALiBi** bidirezionale per dare bias posizionali dentro la finestra, e integra **RoPE** per stabilità di training. Il risultato è un modello con complessità inferenziale lineare `O(N·ω)` che batte sia Transformer++ sia tutte le architetture ricorrenti moderne (RetNet, Mamba/Mamba-2, GLA, DeltaNet, TTT, Gated DeltaNet, Titans) sulla media di 8 benchmark di common-sense reasoning, a 340M e 760M parametri [source: raw/papers/fu-2025-sliding-window-attention.pdf §1, §4.2, Tab. 1].
+SWAT proposes an attention layer designed explicitly to be **trained** with sliding window (not only applied as an inference-time fix). The recipe replaces softmax with **sigmoid** (to prevent the attention sink caused by softmax-normalisation variance and to avoid the aggressive sparsification that erases historical information), adds a **balanced ALiBi** bidirectional bias to inject positional cues inside the window, and integrates **RoPE** for training stability. The result is a model with linear inference complexity `O(N·ω)` that beats both Transformer++ and all modern recurrent architectures (RetNet, Mamba/Mamba-2, GLA, DeltaNet, TTT, Gated DeltaNet, Titans) on the average of 8 common-sense reasoning benchmarks, at 340M and 760M parameters [source: raw/papers/fu-2025-sliding-window-attention.pdf §1, §4.2, Tab. 1].
 
-## Contributo principale
+## Main contribution
 
-- Analisi empirica del **training-inference gap** dello sliding window attention: applicare SWA solo a inference time degrada (Fig. 2: perplexity esplode quando eval-length > training-length anche se la window è fissata) [source: raw/papers/fu-2025-sliding-window-attention.pdf §2.2].
-- Diagnosi: due cause principali — (1) **attention sink** (Gu et al. 2024, [[attention-sink]]) propagato dalla varianza del primo token tramite normalizzazione softmax (Fig. 3); (2) **information loss** della softmax: l'esponenziale concentra massa sul max e schiaccia gli altri token (esempio: logits `[1.5, 5.0, 2.4, 0.5, 1.3]` → softmax `[0.03, 0.88, 0.07, 0.01, 0.02]`) [source: raw/papers/fu-2025-sliding-window-attention.pdf §2.2].
-- Architettura **SWAT** = `sigmoid(QKᵀ/√d + s·(m−n)) · V` con `m−n < ω`, integrata con RoPE; "balanced ALiBi" assegna metà delle teste slope positivo (backward-looking, conserva storia) e metà negativo (forward-looking, recente) [source: raw/papers/fu-2025-sliding-window-attention.pdf §3.2].
+- Empirical analysis of the **training-inference gap** of sliding window attention: applying SWA only at inference time degrades (Fig. 2: perplexity explodes when eval-length > training-length even with a fixed window) [source: raw/papers/fu-2025-sliding-window-attention.pdf §2.2].
+- Diagnosis: two main causes — (1) **attention sink** (Gu et al. 2024, [[attention-sink]]) propagated by the variance of the first token through softmax normalisation (Fig. 3); (2) softmax **information loss**: the exponential concentrates mass on the max and crushes the other tokens (example: logits `[1.5, 5.0, 2.4, 0.5, 1.3]` → softmax `[0.03, 0.88, 0.07, 0.01, 0.02]`) [source: raw/papers/fu-2025-sliding-window-attention.pdf §2.2].
+- **SWAT** architecture = `sigmoid(QKᵀ/√d + s·(m−n)) · V` with `m−n < ω`, integrated with RoPE; "balanced ALiBi" assigns half of the heads a positive slope (backward-looking, preserves history) and half a negative slope (forward-looking, recent) [source: raw/papers/fu-2025-sliding-window-attention.pdf §3.2].
 
-## Metodo
+## Method
 
 ### Sliding Window Attention (§2.1)
 
-Ogni token attende solo i `ω` precedenti ⇒ costo `O(N·ω)` (vs `O(N²)`). Tokens "evicted" sono classificati in (Fig. 1):
-- **active** (dentro la window corrente),
-- **residual** (fuori window all'embedding ma con informazione propagata attraverso layer superiori),
-- **past** (informazione persa).
+Each token attends only to the `ω` previous ones ⇒ cost `O(N·ω)` (vs. `O(N²)`). Evicted tokens are classified as (Fig. 1):
+- **active** (inside the current window),
+- **residual** (outside the embedding window but with information propagated through higher layers),
+- **past** (lost information).
 
-Range informativo di un token al layer `l`: `1 + (ω−1)·l`. Massimo: `1 + (ω−1)·L`.
+Informative range of a token at layer `l`: `1 + (ω−1)·l`. Maximum: `1 + (ω−1)·L`.
 
-### Perché SWA-at-inference fallisce (§2.2)
+### Why SWA-at-inference fails (§2.2)
 
-- Su LLaMA-2-7B, LLaMA-3.1-8B, Qwen2-7B, Mistral-7B con PG-19 (Fig. 2): perplexity ottimale solo quando `eval-length = train-length`; quando l'eval supera il train, PPL cresce anche con window costante.
-- Heatmap (Fig. 3): la **varianza del primo token** (sopra) e l'**attention sink** (sotto) co-variano fortemente. Anche con RoPE, l'informazione di posizione assoluta viene riassorbita attraverso la varianza del normalizer softmax (Chi et al. 2023).
-- Conclusione: bisogna **trainare** con SWA per chiudere il gap.
+- On LLaMA-2-7B, LLaMA-3.1-8B, Qwen2-7B, Mistral-7B with PG-19 (Fig. 2): perplexity is optimal only when `eval-length = train-length`; when eval exceeds train, PPL grows even with a constant window.
+- Heatmap (Fig. 3): the **variance of the first token** (top) and the **attention sink** (bottom) co-vary strongly. Even with RoPE, absolute-position information is reabsorbed through the variance of the softmax normaliser (Chi et al. 2023).
+- Conclusion: one must **train** with SWA to close the gap.
 
 ### SWAT layer (§3.2)
 
-1. Sostituire softmax con **sigmoid**:
+1. Replace softmax with **sigmoid**:
    `Attention(Q,K,V) = σ(QKᵀ/√d) V`.
-   Vantaggi: attention dense (token non si sopprimono a vicenda), niente normalizzazione ⇒ niente attention sink propagato via softmax-variance.
-2. **Balanced ALiBi**: bias `s·(m−n)` aggiunto ai logit; per le `h/2` teste "forward" `s_k = −2⁻ᵏ`, per le altre `h/2` "backward" `s_k = 2⁻ᵏ`. Il segno positivo permette di privilegiare token *più lontani* nella finestra ⇒ conservare storia (Eq. 4). 
-3. **RoPE** mantenuto per dare segnale posizionale esplicito agli hidden states e stabilizzare il training (sigmoid + balanced ALiBi soli sono instabili — Fig. 5).
+   Advantages: dense attention (tokens do not suppress each other), no normalisation ⇒ no attention sink propagated via softmax variance.
+2. **Balanced ALiBi**: bias `s·(m−n)` added to the logits; for the `h/2` "forward" heads `s_k = −2⁻ᵏ`, for the other `h/2` "backward" heads `s_k = 2⁻ᵏ`. The positive sign allows privileging tokens *further* in the window ⇒ preserving history (Eq. 4).
+3. **RoPE** kept to provide explicit positional signal to the hidden states and stabilise training (sigmoid + balanced ALiBi alone are unstable — Fig. 5).
 
-Formula finale (Eq. 5):
+Final formula (Eq. 5):
 ```
 Attention(Q,K,V)_m = Σ_{n=m−ω+1}^{m} σ((R^d_{Θ,m} q_m)ᵀ (R^d_{Θ,n} k_n) / √d_k + s·(m−n)) · v_n
 ```
 
-### Inferenza (§3.3)
+### Inference (§3.3)
 
-Costo `O(N·ω·(1+δ_ALiBi))` con `δ_ALiBi ≪ 1`. Comparabile per token al Transformer denso, ma globalmente lineare in `N`.
+Cost `O(N·ω·(1+δ_ALiBi))` with `δ_ALiBi ≪ 1`. Per-token comparable to dense Transformer, but globally linear in `N`.
 
 ### Training (§4.1)
 
 - Dataset: FineWeb-Edu 100BT (high-quality educational).
-- Modelli: 340M (15B token), 760M (30B token).
-- Vocab Llama-2, seq 4096, batch 0.5M token.
+- Models: 340M (15B tokens), 760M (30B tokens).
+- Llama-2 vocab, seq 4096, batch 0.5M tokens.
 
-## Risultati chiave
+## Key results
 
 ### Common-sense reasoning (Tab. 1, §4.2)
 
-Media di 8 task (Wiki/LMB ppl, PIQA, Hellaswag, Wino, ARC-e/c, SIQA, BoolQ acc):
+Average over 8 tasks (Wiki/LMB ppl, PIQA, Hellaswag, Wino, ARC-e/c, SIQA, BoolQ acc):
 
 **340M / 15B tokens** (top-3):
-| Modello | Avg |
+| Model | Avg |
 |---|---|
 | **SWAT (-)** (forward-looking) | **46.88** |
 | SWAT (-+) (balanced) | 45.85 |
@@ -82,7 +82,7 @@ Media di 8 task (Wiki/LMB ppl, PIQA, Hellaswag, Wino, ARC-e/c, SIQA, BoolQ acc):
 | Transformer++ | 42.92 |
 
 **760M / 30B tokens**:
-| Modello | Avg |
+| Model | Avg |
 |---|---|
 | **SWAT (-)** | **51.85** |
 | Titans | 51.56 |
@@ -90,46 +90,46 @@ Media di 8 task (Wiki/LMB ppl, PIQA, Hellaswag, Wino, ARC-e/c, SIQA, BoolQ acc):
 | Transformer++ | 48.69 |
 | Mamba | 47.22 |
 
-SWAT (-+) bilanciato eccelle su **BoolQ** (62.11%, miglior risultato): conferma che le teste backward-looking sono cruciali quando il contesto storico è discriminante.
+Balanced SWAT (-+) excels on **BoolQ** (62.11%, best result): confirms that backward-looking heads are crucial when historical context is discriminative.
 
-### SWA training vs vanilla (Tab. 2, §4.3)
+### SWA training vs. vanilla (Tab. 2, §4.3)
 
-Llama2-style su OpenWebText, PG-19, OpenOrca, sequenze di eval fino a 16,384:
-- **Vanilla 128/128** crolla a 4.84 PPL su OpenWebText a 16K eval.
-- **Sliding-Window 128 (train=1024)** raggiunge 3.00 a 16K — **stabile** al crescere dell'eval-length.
-- Vanilla 1024 con eval > training-length aumenta in PPL (3.06 → 3.55 a 16K se eval-window > train-window).
+Llama2-style on OpenWebText, PG-19, OpenOrca, eval sequences up to 16,384:
+- **Vanilla 128/128** collapses to 4.84 PPL on OpenWebText at 16K eval.
+- **Sliding-Window 128 (train=1024)** reaches 3.00 at 16K — **stable** as eval-length grows.
+- Vanilla 1024 with eval > training-length grows in PPL (3.06 → 3.55 at 16K if eval-window > train-window).
 
-Takeaway: il training con SWA forza la rete a **comprimere informazione storica** nei residual token; il Vanilla, che vede tutto, non sviluppa questa capacità e si rompe fuori distribuzione.
+Takeaway: training with SWA forces the network to **compress historical information** into residual tokens; vanilla, which sees everything, does not develop this ability and breaks out of distribution.
 
 ### Ablation (Tab. 3, §4.4)
 
-11 configurazioni testate su seq di eval. Sintesi:
-- Sigmoid puro su Vanilla 128/128 fallisce (PPL 14.26 vs 5.51 softmax): senza positional bias l'informazione si sovrappone (No.2).
-- Sigmoid + balanced ALiBi (No.6, 6:6) recupera ma è instabile a lungo (Fig. 5).
-- Sigmoid + **AliRope-6:6** (No.8) ottiene loss medio più basso (2.51) e training **stabile** (Fig. 5).
-- Estendere training length 1024→2048 a parità di window non aiuta (No.7).
-- Aumentare il training window a 1024 (No.9) mantiene il vantaggio.
+11 configurations tested across eval sequences. Summary:
+- Pure sigmoid on Vanilla 128/128 fails (PPL 14.26 vs. 5.51 softmax): without positional bias information overlaps (No.2).
+- Sigmoid + balanced ALiBi (No.6, 6:6) recovers but is unstable in the long run (Fig. 5).
+- Sigmoid + **AliRope-6:6** (No.8) obtains the lowest mean loss (2.51) and **stable** training (Fig. 5).
+- Extending training length 1024→2048 at the same window does not help (No.7).
+- Increasing the training window to 1024 (No.9) preserves the advantage.
 
-## Limitazioni dichiarate dagli autori
+## Stated limitations
 
-- **Sensibilità agli iperparametri**: window size, depth, distribuzione delle slope ALiBi richiedono ricerca dedicata (§7).
-- A modelli grandi (oltre il loro 760M) potrebbero esserci **diminishing returns**: con più parametri il modello memorizza più dati di training ⇒ meno bisogno di "informazione trasmessa" via residual token ⇒ il meccanismo SWA può degradare. Lasciato a future work con caching tra step (§7).
-- **Maximum attention distance** intrinsecamente limitata a `1 + (ω−1)·L`: per task che richiedono retrieval esatto di token molto lontani, SWAT non basta — servono ibridi o memoria esplicita (§7).
+- **Hyperparameter sensitivity**: window size, depth, ALiBi slope distribution require dedicated search (§7).
+- At larger scale (beyond their 760M) there might be **diminishing returns**: with more parameters the model memorises more training data ⇒ less need for "information passed via residual tokens" ⇒ the SWA mechanism may degrade. Left to future work with cross-step caching (§7).
+- **Maximum attention distance** intrinsically limited to `1 + (ω−1)·L`: for tasks that require exact retrieval of very distant tokens, SWAT alone is insufficient — hybrid or explicit memory architectures are needed (§7).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Confronto **a parità di compute** con FlashAttention-style training non riportato (lo speedup wall-clock di SWAT vs Transformer++ con FlashAttention2 sul medesimo hardware è desiderabile).
-- Nessun test su lunghi contesti `>16K` né su retrieval (needle-in-a-haystack): l'affermazione "compress arbitrarily long texts" è motivazionale, non quantificata oltre 16K.
-- Scaling oltre 760M: la stessa architettura regge a 7B? Mistral usa SWA solo a inference, non in training.
-- L'effetto della **balanced ALiBi** è plausibile ma è una euristica: manca una giustificazione formale di perché slope positivo conservi *meglio* di slope negativo.
-- Generalizzazione a **multimodal / non-causal**: SWAT è progettato per decoder-only; encoder o cross-attention non discussi.
-- Connessione con `Sink^ε` di [[gu-2024-attention-sink]]: non viene misurata direttamente per SWAT, ma è coerente con la previsione (sigmoid + no normalizzazione → niente sink).
+- A comparison **at matched compute** with FlashAttention-style training is not reported (the wall-clock speedup of SWAT vs. Transformer++ with FlashAttention2 on the same hardware would be desirable).
+- No test on long contexts `>16K` nor on retrieval (needle-in-a-haystack): the claim "compress arbitrarily long texts" is motivational, not quantified beyond 16K.
+- Scaling beyond 760M: does the same architecture hold at 7B? Mistral uses SWA only at inference, not in training.
+- The effect of **balanced ALiBi** is plausible but a heuristic: there is no formal justification of why positive slope preserves *better* than negative slope.
+- Generalisation to **multimodal / non-causal**: SWAT is designed for decoder-only; encoder or cross-attention are not discussed.
+- Connection with `Sink^ε` from [[gu-2024-attention-sink]]: not directly measured for SWAT, but consistent with the prediction (sigmoid + no normalisation → no sink).
 
-## Concetti citati
+## Cited concepts
 
 [[sliding-window-attention]], [[sigmoid-attention]], [[alibi]], [[rotary-position-embedding]], [[attention-sink]], [[long-context]], [[linear-complexity]], [[transformer]], [[self-attention]], [[scaled-dot-product-attention]], [[longformer]], [[mamba]], [[state-space-models]], [[retnet]], [[gated-linear-attention]], [[deltanet]], [[titans]], [[fineweb-edu]], [[pg-19]], [[piqa]], [[hellaswag]], [[boolq]].
 
-## Citazioni dirette rilevanti
+## Relevant direct quotes
 
 > "Current researches on SWA predominantly focus on solving the attention sink problem within the inference phase ... However, they leave the training process unchanged, thereby creating a gap between inference and training." (§1)
 

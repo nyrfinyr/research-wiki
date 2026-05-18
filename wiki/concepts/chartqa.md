@@ -8,12 +8,12 @@ updated: 2026-05-16
 
 # ChartQA
 
-ChartQA è un benchmark di VQA su grafici (bar, line, pie chart) che richiede al modello di leggere etichette, assi e valori numerici e di rispondere sia a domande estrattive sia a domande che implicano semplici operazioni aritmetiche o di confronto. Stressa OCR fine, comprensione strutturale del grafico e ragionamento numerico.
+ChartQA is a VQA benchmark on charts (bar, line, pie chart) that requires the model to read labels, axes and numerical values and to answer both extractive questions and questions involving simple arithmetic or comparison operations. It stresses fine-grained OCR, structural chart understanding and numeric reasoning.
 
-Compare come bench standard nei report di MLLM generalisti e nei lavori che valutano evidence-highlighting su scene text-rich.
+It appears as a standard bench in generalist MLLM reports and in works that evaluate evidence-highlighting on text-rich scenes.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra i benchmark OCR/chart
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA
-- [[morini-2026-look-twice]] — citato fra i bench text-rich
+- [[qwen3-vl-2025-tech-report]] — among the OCR/chart benchmarks
+- [[zhang-2025-videollama-3]] — cited as an image-VQA benchmark
+- [[morini-2026-look-twice]] — cited among the text-rich benches

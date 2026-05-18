@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Uniform Sampling
 
-Lo uniform sampling è la strategia più semplice di selezione di frame in un video-LLM: dato un budget di N frame, si scelgono N indici equispaziati sull'asse temporale, indipendentemente dal contenuto o dalla query. È la baseline naturale contro cui si misurano metodi adattivi di [[keyframe-sampling]].
+Uniform sampling is the simplest frame-selection strategy in a video-LLM: given a budget of N frames, N equispaced indices are chosen along the temporal axis, regardless of content or query. It is the natural baseline against which adaptive [[keyframe-sampling]] methods are measured.
 
-Nel wiki è la baseline esplicita di [[adaptive-keyframe-sampling]] e degli altri lavori di token reduction.
+In the wiki it is the explicit baseline of [[adaptive-keyframe-sampling]] and of other token-reduction works.
 
 ## Sources
 
-- [[tang-2025-adaptive-keyframe-sampling]] — citato come baseline
+- [[tang-2025-adaptive-keyframe-sampling]] — cited as baseline

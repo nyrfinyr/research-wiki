@@ -8,17 +8,17 @@ updated: 2026-05-15
 
 # BLIP-2
 
-MLLM paradigmatico (Salesforce, 2023) che congela un vision encoder e un LLM e li collega tramite il **Q-Former**, addestrato in due stage (image-text matching/contrastive + generative). Capostipite della famiglia di modelli con bottleneck di query learnable; usato come baseline e come scorer image-text in pipeline di keyframe selection.
+Paradigmatic MLLM (Salesforce, 2023) that freezes a vision encoder and an LLM and connects them via the **Q-Former**, trained in two stages (image-text matching/contrastive + generative). Founder of the family of models with a learnable-query bottleneck; used as a baseline and as an image-text scorer in keyframe selection pipelines.
 
 ## Sources
 
 - [[zhang-2024-llovi]] — image-level captioner
-- [[fu-2025-video-mme]] — citato come predecessore con Q-Former
-- [[li-2024-mvbench]] — confronto baseline
-- [[tang-2025-adaptive-keyframe-sampling]] — scorer per Image-Text Matching nella keyframe selection
+- [[fu-2025-video-mme]] — cited as Q-Former predecessor
+- [[li-2024-mvbench]] — baseline comparison
+- [[tang-2025-adaptive-keyframe-sampling]] — scorer for Image-Text Matching in keyframe selection
 
-## Concetti correlati
+## Related concepts
 
-- [[q-former]] — modulo introdotto
-- [[instructblip]] — versione instruction-tuned
-- [[clip]] — encoder visivo nelle prime versioni
+- [[q-former]] — module introduced
+- [[instructblip]] — instruction-tuned version
+- [[clip]] — visual encoder in the early versions

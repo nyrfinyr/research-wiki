@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Logit Lens
 
-Logit lens (Nostalgebraist) è una tecnica di probing che proietta gli hidden state intermedi di un transformer attraverso la unembedding matrix dell'ultimo layer, ottenendo una distribuzione su vocabolario layer-per-layer. Permette di tracciare quando, lungo la profondità, il modello "decide" la risposta e a quale layer l'informazione semantica diventa leggibile.
+Logit lens (Nostalgebraist) is a probing technique that projects the intermediate hidden states of a transformer through the unembedding matrix of the final layer, yielding a vocabulary distribution layer-by-layer. It allows tracking when, along the depth, the model "decides" the answer and at which layer semantic information becomes readable.
 
-Nel wiki è uno degli strumenti meccanicistici usati dai lavori di Kim sui video-LLM.
+In the wiki it is one of the mechanistic tools used in Kim's work on video-LLMs.
 
 ## Sources
 
-- [[kim-2025-map-the-flow]] — usato come strumento di probing
-- [[kim-2026-sink-token-aware-pruning]] — usato per analisi dei sink token
+- [[kim-2025-map-the-flow]] — used as a probing tool
+- [[kim-2026-sink-token-aware-pruning]] — used for sink token analysis

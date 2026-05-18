@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Ripley's K Function
 
-La funzione K di Ripley è una statistica spaziale che misura, dato un insieme di punti, quanti altri punti cadono entro una distanza r da ciascuno, normalizzata sull'intensità attesa di un processo uniforme. Permette di quantificare clustering vs uniformità di una distribuzione di campioni.
+Ripley's K function is a spatial statistic that measures, given a set of points, how many other points fall within a distance r of each, normalized by the expected intensity of a uniform process. It quantifies clustering vs. uniformity of a sample distribution.
 
-Nel wiki è il formalismo che AKS adotta per definire e ottimizzare la "coverage" temporale dei keyframe scelti.
+In the wiki it is the formalism AKS adopts to define and optimize the temporal "coverage" of the chosen keyframes.
 
 ## Sources
 
-- [[tang-2025-adaptive-keyframe-sampling]] — formalizzazione della coverage
+- [[tang-2025-adaptive-keyframe-sampling]] — formalization of coverage

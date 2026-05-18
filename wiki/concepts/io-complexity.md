@@ -8,34 +8,34 @@ updated: 2026-05-15
 
 # IO Complexity
 
-Paradigma di analisi algoritmica (Aggarwal-Vitter 1988) che conta i **memory transfers** fra due livelli della gerarchia di memoria — tipicamente *fast small* (cache/SRAM) e *slow large* (DRAM/HBM) — invece di contare i FLOPs. Per la self-attention dei [[transformer]] su GPU, Dao et al. (2022) hanno mostrato che il bottleneck non sono i FLOPs ma gli accessi a HBM, e hanno usato l'analisi IO per dimostrare che [[flash-attention]] è asintoticamente ottimo: nessun algoritmo esatto può fare `o(N²d²/M)` accessi HBM per `M ∈ [d, Nd]` [source: raw/papers/dao-2022-flashattention.pdf §3.2, Theorem 2, Prop. 3].
+Algorithmic analysis paradigm (Aggarwal-Vitter 1988) that counts **memory transfers** between two levels of the memory hierarchy — typically *fast small* (cache/SRAM) and *slow large* (DRAM/HBM) — instead of counting FLOPs. For [[transformer]] self-attention on GPU, Dao et al. (2022) showed that the bottleneck is not FLOPs but HBM accesses, and used IO analysis to prove that [[flash-attention]] is asymptotically optimal: no exact algorithm can do `o(N²d²/M)` HBM accesses for `M ∈ [d, Nd]` [source: raw/papers/dao-2022-flashattention.pdf §3.2, Theorem 2, Prop. 3].
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **Setup**: si modella una gerarchia con SRAM rapida ma piccola (`M` parole) e HBM grande ma lenta. Il costo dell'algoritmo è il numero di word-transfer fra i due livelli; FLOPs eseguiti in SRAM sono "free" per il conteggio IO.
-- **Esempio GPU A100** (Fig. 1 di Dao): HBM 40-80 GB a 1.5-2.0 TB/s; SRAM on-chip ~192 KB per SM (108 SM) a ~19 TB/s ⇒ SRAM è ~10× più veloce e ~10⁵× più piccola. Le operazioni di attention (softmax, dropout, mask) sono **memory-bound**: arithmetic intensity bassa ⇒ il tempo è dominato dagli accessi a HBM [source: raw/papers/dao-2022-flashattention.pdf §2.1].
-- **Standard attention IO**: tre passi che ciascuno scrive/legge `O(N²)` su HBM (scrivi `S = QKᵀ`, leggi `S`/scrivi `P = softmax(S)`, leggi `P`/calcola `O = PV`). Totale `Θ(Nd + N²)` HBM accesses. GPT-2 con `N=1024, d=64`: 40.3 GB HBM R/W per 66.6 GFLOPs ⇒ memory-bound [source: raw/papers/dao-2022-flashattention.pdf §2.2].
-- **FlashAttention IO** (Theorem 2): per `d ≤ M ≤ Nd`, FlashAttention richiede `Θ(N²d²/M)` accessi HBM. Per `d ∈ {64, 128}` e `M ≈ 100 KB`, `d²/M ≪ 1` ⇒ fino a **9× meno** HBM accesses [source: raw/papers/dao-2022-flashattention.pdf §3.2, Fig. 2].
-- **Lower bound** (Prop. 3): nessun algoritmo esatto di attention può fare `o(N²d²/M)` accessi HBM per tutti gli `M` nell'intervallo ⇒ FlashAttention è ottimo a meno di costanti.
-- **Block-sparse**: data sparsity `s`, IO scende a `Θ(Nd + N²d²/M · s)`. Per pattern butterfly `s = O(1/√N)` ⇒ `Θ(N√N)` [source: raw/papers/dao-2022-flashattention.pdf §3.3, Prop. 4].
+- **Setup**: a hierarchy is modeled with fast but small SRAM (`M` words) and large but slow HBM. The cost of the algorithm is the number of word-transfers between the two levels; FLOPs executed in SRAM are "free" for IO counting.
+- **GPU A100 example** (Fig. 1 of Dao): HBM 40-80 GB at 1.5-2.0 TB/s; on-chip SRAM ~192 KB per SM (108 SMs) at ~19 TB/s ⇒ SRAM is ~10× faster and ~10⁵× smaller. Attention operations (softmax, dropout, mask) are **memory-bound**: low arithmetic intensity ⇒ time is dominated by HBM accesses [source: raw/papers/dao-2022-flashattention.pdf §2.1].
+- **Standard attention IO**: three passes that each write/read `O(N²)` on HBM (write `S = QKᵀ`, read `S`/write `P = softmax(S)`, read `P`/compute `O = PV`). Total `Θ(Nd + N²)` HBM accesses. GPT-2 with `N=1024, d=64`: 40.3 GB HBM R/W for 66.6 GFLOPs ⇒ memory-bound [source: raw/papers/dao-2022-flashattention.pdf §2.2].
+- **FlashAttention IO** (Theorem 2): for `d ≤ M ≤ Nd`, FlashAttention requires `Θ(N²d²/M)` HBM accesses. For `d ∈ {64, 128}` and `M ≈ 100 KB`, `d²/M ≪ 1` ⇒ up to **9× fewer** HBM accesses [source: raw/papers/dao-2022-flashattention.pdf §3.2, Fig. 2].
+- **Lower bound** (Prop. 3): no exact attention algorithm can do `o(N²d²/M)` HBM accesses for all `M` in the interval ⇒ FlashAttention is optimal up to constants.
+- **Block-sparse**: given sparsity `s`, IO drops to `Θ(Nd + N²d²/M · s)`. For butterfly patterns `s = O(1/√N)` ⇒ `Θ(N√N)` [source: raw/papers/dao-2022-flashattention.pdf §3.3, Prop. 4].
 
-### Confronto IO complexity
+### IO complexity comparison
 
-| Algoritmo | HBM accesses | Memoria extra |
+| Algorithm | HBM accesses | Extra memory |
 |---|---|---|
 | Standard attention | `Θ(Nd + N²)` | `O(N²)` |
 | **FlashAttention** | **`Θ(N²d²/M)`** | **`O(N)`** |
 | Block-sparse FA (sparsity `s`) | `Θ(Nd + N²d²·s/M)` | `O(N)` |
-| Lower bound (qualunque esatto) | `Ω(N²d²/M)` | — |
+| Lower bound (any exact) | `Ω(N²d²/M)` | — |
 
 [source: raw/papers/dao-2022-flashattention.pdf §3.2-3.3]
 
-## Concetti correlati
+## Related concepts
 
-- [[flash-attention]] — implementazione che raggiunge il lower bound IO.
-- [[scaled-dot-product-attention]] — operazione su cui si applica l'analisi IO.
-- [[sliding-window-attention]] — alternativa ad approccio IO-aware (riduce `N` invece di `M`).
+- [[flash-attention]] — implementation that reaches the IO lower bound.
+- [[scaled-dot-product-attention]] — operation on which IO analysis is applied.
+- [[sliding-window-attention]] — alternative to IO-aware approach (reduces `N` instead of `M`).
 
 ## Sources
 
-- [[dao-2022-flashattention]] — applica IO complexity all'attention; dimostra lower bound `Ω(N²d²/M)`.
+- [[dao-2022-flashattention]] — applies IO complexity to attention; proves lower bound `Ω(N²d²/M)`.

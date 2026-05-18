@@ -18,210 +18,210 @@ year: 2023
 
 ## TL;DR
 
-EgoSchema è un dataset diagnostico per il *very long-form* video question-answering: > 5.000 QA a scelta multipla (5 opzioni), ognuna basata su una clip egocentrica di **3 minuti** estratta da [[ego4d]], per un totale di **>250 ore** di video. Il contributo concettuale chiave è la nozione di **temporal certificate set** — il sottoinsieme minimo di subclip che un verificatore umano deve guardare per essere convinto della correttezza della risposta. Su 15 dataset di video understanding, EgoSchema ha una median certificate length di ~100 s, **5.7× più lunga del secondo dataset** (LVU) e **25–100× più lunga** di tutti gli altri. Risultato sperimentale: i migliori MLLM zero-shot del 2023 (FrozenBiLM, mPLUG-Owl, InternVideo, VIOLET) restano sotto il **33 %** di accuracy (random = 20 %), mentre gli umani raggiungono **76 %** [source: raw/papers/mangalam-2023-egoschema.pdf §1, §4.1, §4.2, Tab. 6–7].
+EgoSchema is a diagnostic dataset for *very long-form* video question-answering: > 5,000 multiple-choice QAs (5 options), each based on a **3-minute** egocentric clip drawn from [[ego4d]], for a total of **>250 hours** of video. The key conceptual contribution is the notion of **temporal certificate set** — the minimum subset of subclips a human verifier must watch to be convinced of the answer's correctness. Across 15 video-understanding datasets, EgoSchema has a median certificate length of ~100 s, **5.7× longer than the second dataset** (LVU) and **25–100× longer** than all the others. Experimental result: the best zero-shot MLLMs of 2023 (FrozenBiLM, mPLUG-Owl, InternVideo, VIOLET) stay below **33%** accuracy (random = 20%), while humans reach **76%** [source: raw/papers/mangalam-2023-egoschema.pdf §1, §4.1, §4.2, Tab. 6–7].
 
-## Contributo principale
+## Main contribution
 
-- **Temporal certificate length**: nuova metrica che misura la difficoltà temporale *intrinseca* di un task video, disaccoppiata dalla durata della clip. Applicabile a action classification, detection, localization, QA, captioning. Mostra che la lunghezza della clip è solo *debolmente correlata* con la difficoltà temporale reale (Fig. 3).
-- **Dataset EgoSchema**: 5.063 QA su clip da 3 minuti, ognuna con 5 opzioni, **median certificate length ~100 s** — il primo dataset "very long-form" secondo la tassonomia degli autori (short ~1 s, long-form ~10 s, very long-form ~100 s).
-- **Pipeline di costruzione a 4 stadi** con LLM-in-the-loop: filtering narrazioni → generazione LLM (Q(AW)-shot) → filtraggio LLM (blind baseline) → curazione manuale a 2 round. Genera dati di alta qualità minimizzando costo umano.
-- **Benchmark zero-shot** dei principali MLLM video del 2023: tutti < 33 % accuracy; umani 76 %; first-of-its-kind gap quantification che ha motivato gran parte della successiva ricerca su long-video MLLM.
+- **Temporal certificate length**: a new metric that measures the *intrinsic* temporal difficulty of a video task, decoupled from clip duration. Applicable to action classification, detection, localization, QA, captioning. Shows that clip length is only *weakly correlated* with real temporal difficulty (Fig. 3).
+- **EgoSchema dataset**: 5,063 QAs over 3-minute clips, each with 5 options, **median certificate length ~100 s** — the first "very long-form" dataset according to the authors' taxonomy (short ~1 s, long-form ~10 s, very long-form ~100 s).
+- **4-stage construction pipeline** with LLM-in-the-loop: narration filtering → LLM generation (Q(AW)-shot) → LLM filtering (blind baseline) → 2-round manual curation. Produces high-quality data while minimizing human cost.
+- **Zero-shot benchmark** of the main 2023 video MLLMs: all < 33% accuracy; humans 76%; first-of-its-kind gap quantification that motivated much of the subsequent research on long-video MLLMs.
 
-## Metodo
+## Method
 
-### Nozione di temporal certificate (§3.2)
+### Temporal certificate notion (§3.2)
 
-Definizione: dato un (video, label) e un task, il **certificate set** è il sottoinsieme minimo di sub-clip *necessario e sufficiente* a convincere un verificatore umano della correttezza della label, senza guardare il resto del video. La **certificate length** = somma delle lunghezze temporali delle subclip del set.
+Definition: given a (video, label) and a task, the **certificate set** is the minimum subset of sub-clips *necessary and sufficient* to convince a human verifier of the label's correctness, without watching the rest of the video. The **certificate length** = sum of the temporal lengths of the subclips in the set.
 
-Tassonomia temporale derivata:
-- *short video task*: certificate length ~1 s (es. action classification su Kinetics).
-- *long-form video task*: ~10 s (es. AGQA, NextQA).
-- *very long-form video task*: ~100 s (solo EgoSchema in Fig. 3).
+Derived temporal taxonomy:
+- *short video task*: certificate length ~1 s (e.g. action classification on Kinetics).
+- *long-form video task*: ~10 s (e.g. AGQA, NextQA).
+- *very long-form video task*: ~100 s (only EgoSchema in Fig. 3).
 
-**Meta-rules**: convenzioni implicite del dataset che il verificatore può usare (es. mutua esclusività delle 400 classi Kinetics). Riducono significativamente la certificate length.
+**Meta-rules**: implicit dataset conventions the verifier can use (e.g. mutual exclusivity of the 400 Kinetics classes). They significantly reduce certificate length.
 
-**Certificate conventions**: minimo 0.1 s per certificate; due certificati non contigui si fondono se i loro estremi più vicini sono < 5 s.
+**Certificate conventions**: minimum 0.1 s per certificate; two non-contiguous certificates are merged if their closest endpoints are < 5 s apart.
 
-### Pipeline di costruzione del dataset (§3.1, Fig. 4)
+### Dataset construction pipeline (§3.1, Fig. 4)
 
 **Stage I — Raw Data Filtering**.
 
-Ego4D fornisce 3670 h di RGB con 3.85M narrazioni dense (1772 verbi, 4336 nomi unici). Si filtrano **clip non-overlapping di 3 minuti** con **≥ 30 narrazioni** ciascuna (timestamp + frase) per garantire densità narrativa sufficiente.
+Ego4D provides 3670 h of RGB with 3.85M dense narrations (1772 verbs, 4336 unique nouns). The pipeline filters **non-overlapping 3-minute clips** with **≥ 30 narrations** each (timestamp + sentence) to ensure sufficient narration density.
 
 **Stage II — Question-Answer Generation**.
 
-Le narrazioni vengono passate a un LLM per generare *N = 3* triplette (Q, A, W) per clip, ognuna con **M = 4 distrattori** + 1 risposta corretta (5 opzioni totali). Schemi di prompting testati:
+Narrations are passed to an LLM to generate *N = 3* (Q, A, W) triplets per clip, each with **M = 4 distractors** + 1 correct answer (5 options total). Prompting schemes tested:
 
-| Schema | Inference calls | Pro | Contro |
+| Scheme | Inference calls | Pros | Cons |
 |---|---|---|---|
-| One-shot | 1 | Più economico | Bassa qualità, alto FP/FN |
-| N-shot | N | Migliora FP/FN | Domande simili tra loro |
-| QAW-shot | 3 chained | Q distinte, A distinte | Cascading failure |
-| **Q(AW)-shot** (chosen) | **2 chained** | Q distinte; A jointly with W; 30% più economico | — |
+| One-shot | 1 | Cheapest | Low quality, high FP/FN |
+| N-shot | N | Improves FP/FN | Similar-looking questions |
+| QAW-shot | 3 chained | Distinct Q, distinct A | Cascading failure |
+| **Q(AW)-shot** (chosen) | **2 chained** | Distinct Q; A jointly with W; 30% cheaper | — |
 
-LLM scelti per qualità: GPT-4, Bard, Claude. GPT-3 e ChatGPT scartati per qualità insufficiente. Iterazione manuale ~85 prompt seed prima di convergere su PQ + PAW finali.
+LLMs chosen for quality: GPT-4, Bard, Claude. GPT-3 and ChatGPT discarded for insufficient quality. Manual iteration on ~85 seed prompts before converging on the final PQ + PAW.
 
 **Stage III — Generated QAW Filtering**.
 
-- *Rule-based*: scarta output con parole-chiave del prompt (`long-term`, `narrations`, `timestamp`) che leakano in QAW.
-- *LLM blind filter*: si dà solo la domanda + opzioni (senza narrazioni) a un LLM; se indovina, la domanda è risolvibile senza video → scartata. Ottimizza precision su recall.
-- *No-Q baseline* (testato ma non usato): dare narrazioni senza domanda → accuracy ~20 % (random), segno che le opzioni W sono già plausibili.
+- *Rule-based*: discard outputs containing prompt keywords (`long-term`, `narrations`, `timestamp`) that leak into QAW.
+- *LLM blind filter*: give only the question + options (no narrations) to an LLM; if it guesses correctly, the question is solvable without video → discarded. Optimizes precision over recall.
+- *No-Q baseline* (tested but not used): give narrations without the question → ~20% accuracy (random), evidence that the W options are already plausible.
 
 **Stage IV — Manual QAW Curation**.
 
-Due round di annotatori umani; ogni QAW deve passare 3 condizioni:
+Two rounds of human annotators; each QAW must pass 3 conditions:
 
-1. Q ben formata e A è davvero la risposta corretta;
-2. tutti i 4 distrattori W sono davvero errati;
-3. la **temporal certificate length** è **≥ 30 s**.
+1. Q is well-formed and A is truly the correct answer;
+2. all 4 distractors W are actually wrong;
+3. the **temporal certificate length** is **≥ 30 s**.
 
-Il primo round riduce 4–5× il numero di QAW. Il secondo round conferma > 97 % delle domande del primo.
+The first round shrinks the QAW count by 4–5×. The second round confirms > 97% of the questions from the first.
 
-### Statistiche finali di EgoSchema
+### Final EgoSchema statistics
 
-- **5.063 QA pairs** su **~250 h** di video Ego4D filtrato.
-- Clip di **3 min** ognuna; **5 opzioni** per QA (random baseline = 20 %).
-- **Median certificate length ~100 s**; certificate length **5.7×** più lunga di LVU [50] (secondo posto), **25–100×** più lunga di NextQA, AGQA, IVQA, MSRVTT, ActivityNet-QA, AVA, Kinetics, UCF101, HVU, Youtube-8M, Something-Something (Fig. 3).
-- Esiste un **subset di 500 QA** (Subset) con ground-truth pubblica e un **fullset di ~5000** con eval server-side.
+- **5,063 QA pairs** over **~250 h** of filtered Ego4D video.
+- **3-min** clips each; **5 options** per QA (random baseline = 20%).
+- **Median certificate length ~100 s**; certificate length **5.7×** longer than LVU [50] (second place), **25–100×** longer than NextQA, AGQA, IVQA, MSRVTT, ActivityNet-QA, AVA, Kinetics, UCF101, HVU, Youtube-8M, Something-Something (Fig. 3).
+- A **500-QA subset** (Subset) exists with public ground-truth, and a **~5000 fullset** with server-side eval.
 
-### Protocollo di valutazione (§4.2)
+### Evaluation protocol (§4.2)
 
-Zero-shot setting per ogni modello. Due configurazioni per ogni MLLM:
+Zero-shot setting for each model. Two configurations per MLLM:
 
-1. Stesso #frame del training.
-2. Numero massimo di frame eseguibili su una A100-80G senza OOM.
+1. Same #frames as training.
+2. Maximum number of frames runnable on an A100-80G without OOM.
 
-Frame campionati uniformemente dalla clip di 3 min. Accuracy = QA accuracy multiple-choice. Per modelli che non supportano nativamente MCQ:
+Frames uniformly sampled from the 3-min clip. Accuracy = multiple-choice QA accuracy. For models without native MCQ support:
 
-- **mPLUG-Owl**: prompt "Given question Q, is answer X correct?" → si sceglie l'opzione col più alto softmax di "Yes".
-- **InternVideo** (MSRVTT-finetuned): "Question: Q? Is it X?" → opzione con miglior score.
+- **mPLUG-Owl**: prompt "Given question Q, is answer X correct?" → pick the option with the highest softmax of "Yes".
+- **InternVideo** (MSRVTT-finetuned): "Question: Q? Is it X?" → option with the best score.
 
 ### Human baseline (§4.2, Tab. 7)
 
-Cinque setting:
+Five settings:
 
 | Setting | QA Accuracy |
 |---|---|
-| 180 frames (1 fps) | 67.2 % |
-| In < 1 min | 67.0 % |
-| In < 3 min | 68.0 % |
-| No constraint | 75.0 % |
-| Video → Text (no re-watch) | **76.2 %** |
+| 180 frames (1 fps) | 67.2% |
+| In < 1 min | 67.0% |
+| In < 3 min | 68.0% |
+| No constraint | 75.0% |
+| Video → Text (no re-watch) | **76.2%** |
 
-Sorprese:
-- 1 fps è quasi-equivalente a guardare il video intero (67.2 vs 75.0).
-- 1 min di tempo umano è quasi-equivalente a 3 min (67.0 vs 68.0).
-- "Video → Text" (guardare il video senza testo, poi rispondere senza re-watch) **batte** il setting "no constraint" (76.2 vs 75.0): l'attenzione non divisa aiuta.
+Surprises:
+- 1 fps is nearly equivalent to watching the full video (67.2 vs 75.0).
+- 1 min of human time is nearly equivalent to 3 min (67.0 vs 68.0).
+- "Video → Text" (watch the video without text, then answer without re-watching) **beats** the "no constraint" setting (76.2 vs 75.0): undivided attention helps.
 
-## Risultati chiave
+## Key results
 
-### Certificate length su 15 dataset (Fig. 3)
+### Certificate length across 15 datasets (Fig. 3)
 
-EgoSchema è isolato in alto-destra:
+EgoSchema sits isolated in the upper right:
 
-- EgoSchema: ~100 s mediana, clip 180 s.
+- EgoSchema: ~100 s median, clip 180 s.
 - LVU: ~17 s, clip 1–3 min.
 - NextQA / AGQA: ~5 s.
 - MSRVTT / ActivityNet-QA / IVQA / HOW2QA: ~1–3 s.
 - Action class. (Kinetics, UCF101, HVU-Action): < 1 s.
 - Detection (AVA): < 1 s.
-- Concept class. (HVU-Concept), Youtube-8M, Something-Something: tutti ~0.5–2 s.
+- Concept class. (HVU-Concept), Youtube-8M, Something-Something: all ~0.5–2 s.
 
-### Benchmark MLLM zero-shot (Tab. 6, sul fullset)
+### Zero-shot MLLM benchmark (Tab. 6, on the fullset)
 
 | Model | Release | Params | #frame | QA Acc |
 |---|---|---|---|---|
-| Random | — | — | — | 20.0 % |
-| **FrozenBiLM** [57] | Oct 2022 | 1.2B | 10 | 26.4 % |
-|  |  |  | 90 | 26.9 % |
-| **VIOLET** [14] | Sept 2022 | 198M | 5 | 19.9 % |
-|  |  |  | 75 | 19.6 % |
-| **mPLUG-Owl** [59] | May 2023 | 7.2B | 1 | 27.0 % |
-|  |  |  | **5** | **31.1 %** |
-|  |  |  | 10 | 29.6 % |
-|  |  |  | 15 | 28.7 % |
-|  |  |  | 30 | 20.0 % |
-| **InternVideo** [48] | Dec 2022 | 478M | 10 | 31.4 % |
-|  |  |  | 30 | 31.8 % |
-|  |  |  | 90 | **32.1 %** |
-| **Human** | — | — | — | **76.0 %** |
+| Random | — | — | — | 20.0% |
+| **FrozenBiLM** [57] | Oct 2022 | 1.2B | 10 | 26.4% |
+|  |  |  | 90 | 26.9% |
+| **VIOLET** [14] | Sept 2022 | 198M | 5 | 19.9% |
+|  |  |  | 75 | 19.6% |
+| **mPLUG-Owl** [59] | May 2023 | 7.2B | 1 | 27.0% |
+|  |  |  | **5** | **31.1%** |
+|  |  |  | 10 | 29.6% |
+|  |  |  | 15 | 28.7% |
+|  |  |  | 30 | 20.0% |
+| **InternVideo** [48] | Dec 2022 | 478M | 10 | 31.4% |
+|  |  |  | 30 | 31.8% |
+|  |  |  | 90 | **32.1%** |
+| **Human** | — | — | — | **76.0%** |
 
 Findings:
 
-- Nessun modello supera il 33 %; gap umano-macchina **>40 punti**.
-- InternVideo scala monotonicamente con #frame ma satura intorno a 30 frame.
-- mPLUG-Owl è non-monotonico: 5 frame è il sweet spot, 30 frame degrada a random (20 %).
-- VIOLET (198M params) resta a chance level — i parametri da soli non bastano.
-- FrozenBiLM, pre-2023 SOTA su 8 QA dataset, qui appena sopra random.
+- No model exceeds 33%; human–machine gap **>40 points**.
+- InternVideo scales monotonically with #frame but saturates around 30 frames.
+- mPLUG-Owl is non-monotonic: 5 frames is the sweet spot, 30 frames degrades to random (20%).
+- VIOLET (198M params) stays at chance level — parameters alone are not enough.
+- FrozenBiLM, pre-2023 SOTA on 8 QA datasets, is barely above random here.
 
-### Confronto con benchmark seguenti
+### Comparison with follow-on benchmarks
 
-- [[mvbench]] (2024) usa pipeline diversa (LLM-generated da 11 dataset, no certificate length, clip 5–35 s) e raggiunge accuracy > 60 % con VideoChat2-Mistral; ma su EgoSchema fullset VideoChat2-Mistral arriva a 54.4 % (con 16 frame) — ancora ben sotto l'umano.
-- [[video-mme]] (2025) adotta il concetto di certificate length per le sue fasce short/medium/long (26/164/890 s mediana) — EgoSchema (~100 s) si colloca tra short e medium di Video-MME.
-- [[lvbench]] (2025) usa un concetto analogo ("clue duration") ma su clip multi-ora.
+- [[mvbench]] (2024) uses a different pipeline (LLM-generated from 11 datasets, no certificate length, 5–35 s clips) and reaches > 60% accuracy with VideoChat2-Mistral; but on the EgoSchema fullset VideoChat2-Mistral reaches 54.4% (with 16 frames) — still well below human.
+- [[video-mme]] (2025) adopts the certificate-length idea for its short/medium/long bands (26/164/890 s median) — EgoSchema (~100 s) sits between Video-MME's short and medium.
+- [[lvbench]] (2025) uses a similar concept ("clue duration") but over multi-hour clips.
 
-## Limitazioni dichiarate
+## Stated limitations
 
-- Bias egocentrico ereditato da [[ego4d]] (sport, household tasks, cooking, ecc.); non rappresenta video web in third-person.
-- Bias linguistico ereditato dagli LLM usati in generazione (GPT-4, Bard, Claude); possibili artefatti.
-- Curazione manuale non perfetta: pur con 2 round, alcuni QA possono restare ill-formed.
-- Errata board pianificata ma non ancora attiva al momento del release.
+- Egocentric bias inherited from [[ego4d]] (sports, household tasks, cooking, etc.); does not represent third-person web video.
+- Linguistic bias inherited from the LLMs used in generation (GPT-4, Bard, Claude); possible artifacts.
+- Imperfect manual curation: even with 2 rounds, some QAs may remain ill-formed.
+- Errata board planned but not yet active at release time.
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- La certificate length è stimata su **100 QA totali** (5 h di video) per EgoSchema, e su solo ~2 h di sforzo umano per ognuno dei 14 altri dataset. Errore di stima alto; il fattore 5.7× rispetto a LVU è basato su pochi campioni.
-- Il blind LLM filter assume che l'LLM rifletta il prior testuale "tipico" → false negatives (domande effettivamente difficili ma indovinabili per fortuna) potrebbero essere eliminate ingiustamente. Gli autori riconoscono che ottimizzano precision su recall.
-- I distrattori sono generati dal medesimo LLM che genera la risposta corretta → possibile bias stilistico che un MLLM ben tarato (es. che riconosce lo stile GPT-4) potrebbe sfruttare.
-- Il numero di clip distinte è limitato dalle clip di 3 min con ≥ 30 narrazioni da Ego4D; copre solo una porzione dei domini Ego4D (cooking, household, ecc.).
-- Human baseline su solo 5–9 h di video (~100–180 QA) → CI ampio (~±5 %).
-- Il claim "10× to 100× longer" è basato sulla *median* certificate length, ma la distribuzione (Fig. 2) ha mass anche su valori < 50 s — il dataset stesso ha QA "facili".
-- Pipeline LLM-heavy: replicabilità minata se i modelli GPT-4/Bard/Claude del 2023 non sono più accessibili.
-- Le 5 opzioni (vs 4 di Video-MME/MVBench/LVBench) abbassano il random baseline (20 % vs 25 %) ma rendono le domande più ambigue per modelli che faticano a discriminare tra distrattori simili.
+- Certificate length is estimated on **100 QAs total** (5 h of video) for EgoSchema, and on only ~2 h of human effort for each of the other 14 datasets. High estimation error; the 5.7× factor relative to LVU is based on few samples.
+- The blind LLM filter assumes the LLM reflects the "typical" textual prior → false negatives (actually-hard questions that happen to be guessable) might be unfairly removed. The authors acknowledge optimizing precision over recall.
+- Distractors are generated by the same LLM that generates the correct answer → possible stylistic bias that a well-tuned MLLM (e.g. one that recognizes GPT-4 style) could exploit.
+- The number of distinct clips is bounded by 3-min Ego4D clips with ≥ 30 narrations; it covers only part of the Ego4D domains (cooking, household, etc.).
+- Human baseline on only 5–9 h of video (~100–180 QAs) → wide CI (~±5%).
+- The "10× to 100× longer" claim is based on *median* certificate length, but the distribution (Fig. 2) has mass even on values < 50 s — the dataset itself contains "easy" QAs.
+- LLM-heavy pipeline: replicability is undermined if the 2023 GPT-4/Bard/Claude models are no longer accessible.
+- The 5 options (vs 4 in Video-MME/MVBench/LVBench) lower the random baseline (20% vs 25%) but make questions more ambiguous for models that struggle to discriminate among similar distractors.
 
-## Concetti citati
+## Cited concepts
 
-- [[temporal-certificate-length]] — nozione introdotta nel paper, centrale.
-- [[very-long-form-video-understanding]] — categoria temporale definita dagli autori (~100 s certificate).
-- [[long-form-video-understanding]] — categoria temporale (~10 s certificate).
-- [[short-video-task]] — categoria temporale (~1 s certificate).
-- [[ego4d]] — sorgente del video data.
-- [[egocentric-video]] — natura dei video.
+- [[temporal-certificate-length]] — concept introduced in the paper, central.
+- [[very-long-form-video-understanding]] — temporal category defined by the authors (~100 s certificate).
+- [[long-form-video-understanding]] — temporal category (~10 s certificate).
+- [[short-video-task]] — temporal category (~1 s certificate).
+- [[ego4d]] — source of the video data.
+- [[egocentric-video]] — nature of the videos.
 - [[video-question-answering]] — task.
-- [[multiple-choice-qa]] — formato (5 opzioni).
-- [[multimodal-large-language-model]] — oggetto di valutazione.
-- [[frozenbilm]] — modello valutato.
-- [[violet]] — modello valutato.
-- [[mplug-owl]] — modello valutato (best non-Internvideo, 31.1 %).
-- [[internvideo]] — modello valutato (best zero-shot, 32.1 %).
-- [[gpt-4]] — LLM usato per generazione QAW.
-- [[bard]] — LLM usato per generazione QAW.
-- [[claude]] — LLM usato per generazione QAW.
-- [[chatgpt]] — testato ma scartato per qualità.
-- [[gpt-3]] — testato ma scartato per qualità.
-- [[bleu]] — citato come metrica con shortcomings.
-- [[rouge]] — citato come metrica con shortcomings.
-- [[mvbench]] — benchmark successivo che lo cita.
-- [[video-mme]] — benchmark successivo che adotta certificate length.
-- [[lvbench]] — benchmark successivo che adotta clue duration.
-- [[next-qa]] — confronto certificate length.
-- [[agqa]] — confronto certificate length.
-- [[lvu]] — secondo dataset più lungo nella mappa certificate length.
-- [[kinetics]] — confronto certificate length.
-- [[ucf101]] — confronto certificate length.
-- [[something-something]] — confronto certificate length.
-- [[hvu]] — confronto certificate length.
-- [[ava-dataset]] — confronto certificate length.
-- [[howto100m]] — citato come pre-training dataset.
-- [[howto100m-vqa]] / [[how2vqa69m]] — citato come pre-training dataset.
-- [[ivqa]] — confronto.
-- [[msrvtt]] — confronto.
-- [[activitynet-qa]] — confronto.
-- [[movieqa]] — citato come dataset open-ended con bias text-only.
-- [[mad-dataset]] — citato come grounding long-video dataset.
-- [[youtube-8m]] — confronto.
-- [[datasheets-for-datasets]] — pratica citata per documentazione del dataset.
+- [[multiple-choice-qa]] — format (5 options).
+- [[multimodal-large-language-model]] — object of evaluation.
+- [[frozenbilm]] — evaluated model.
+- [[violet]] — evaluated model.
+- [[mplug-owl]] — evaluated model (best non-InternVideo, 31.1%).
+- [[internvideo]] — evaluated model (best zero-shot, 32.1%).
+- [[gpt-4]] — LLM used for QAW generation.
+- [[bard]] — LLM used for QAW generation.
+- [[claude]] — LLM used for QAW generation.
+- [[chatgpt]] — tested but discarded for quality.
+- [[gpt-3]] — tested but discarded for quality.
+- [[bleu]] — cited as a metric with shortcomings.
+- [[rouge]] — cited as a metric with shortcomings.
+- [[mvbench]] — follow-on benchmark that cites it.
+- [[video-mme]] — follow-on benchmark adopting certificate length.
+- [[lvbench]] — follow-on benchmark adopting clue duration.
+- [[next-qa]] — certificate-length comparison.
+- [[agqa]] — certificate-length comparison.
+- [[lvu]] — second longest dataset in the certificate-length map.
+- [[kinetics]] — certificate-length comparison.
+- [[ucf101]] — certificate-length comparison.
+- [[something-something]] — certificate-length comparison.
+- [[hvu]] — certificate-length comparison.
+- [[ava-dataset]] — certificate-length comparison.
+- [[howto100m]] — cited as a pre-training dataset.
+- [[howto100m-vqa]] / [[how2vqa69m]] — cited as a pre-training dataset.
+- [[ivqa]] — comparison.
+- [[msrvtt]] — comparison.
+- [[activitynet-qa]] — comparison.
+- [[movieqa]] — cited as an open-ended dataset with text-only bias.
+- [[mad-dataset]] — cited as a long-video grounding dataset.
+- [[youtube-8m]] — comparison.
+- [[datasheets-for-datasets]] — practice cited for dataset documentation.
 
-## Citazioni dirette
+## Direct quotes
 
 > "EgoSchema, with its long intrinsic temporal structures and diverse complexity, would serve as a valuable evaluation probe for developing effective long-term video understanding systems in the future." (Abstract, p. 1)
 

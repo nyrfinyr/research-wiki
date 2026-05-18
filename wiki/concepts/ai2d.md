@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # AI2D
 
-AI2D (Allen Institute Diagram dataset) è un benchmark di question answering su diagrammi scientifici di livello scolastico, con domande a scelta multipla che richiedono di interpretare frecce, etichette e strutture grafiche tipiche dei diagrammi didattici. È usato come bench standard per la comprensione di figure schematiche.
+AI2D (Allen Institute Diagram dataset) is a question answering benchmark on school-level scientific diagrams, with multiple-choice questions that require interpreting arrows, labels and graphical structures typical of didactic diagrams. It is used as a standard bench for understanding schematic figures.
 
-Nel wiki appare come bench "diagram / document" di valutazione per MLLM generalisti.
+In the wiki it appears as a "diagram / document" evaluation bench for generalist MLLMs.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra i benchmark OCR/document
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA
+- [[qwen3-vl-2025-tech-report]] — among the OCR/document benchmarks
+- [[zhang-2025-videollama-3]] — cited as an image-VQA benchmark

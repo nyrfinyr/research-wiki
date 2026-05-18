@@ -8,22 +8,22 @@ updated: 2026-05-15
 
 # Qwen2.5-VL
 
-MLLM frontier open-source di Alibaba (2025), evoluzione di Qwen2-VL: ViT con window attention, native dynamic resolution, M-RoPE estesa, training a più stage (CLIP/SigLIP pretraining → SFT con ChatML → DPO/CoT rejection sampling). Backbone enormemente diffuso in lavori 2025-2026 su long-video QA, token pruning, evidence highlighting.
+Open-source frontier MLLM from Alibaba (2025), evolution of Qwen2-VL: ViT with window attention, native dynamic resolution, extended M-RoPE, multi-stage training (CLIP/SigLIP pretraining → SFT with ChatML → DPO/CoT rejection sampling). Widely adopted backbone in 2025-2026 work on long-video QA, token pruning, and evidence highlighting.
 
-Vedere il source page [[qwen2-5-vl-2025-tech-report]] per architettura, pipeline di training e numeri completi.
+See the source page [[qwen2-5-vl-2025-tech-report]] for architecture, training pipeline, and full numbers.
 
 ## Sources
 
 - [[qwen2-5-vl-2025-tech-report]] — paper/tech report
-- [[morini-2026-look-twice]] — backbone testato
-- [[doorenbos-2026-video-panels]] — backbone per video paneling
-- [[arnab-2025-temporal-chain-of-thought]] — backbone secondario
+- [[morini-2026-look-twice]] — tested backbone
+- [[doorenbos-2026-video-panels]] — backbone for video paneling
+- [[arnab-2025-temporal-chain-of-thought]] — secondary backbone
 - [[kim-2026-sink-token-aware-pruning]] — backbone
-- [[wang-2025-lvbench]] — modello valutato
-- [[qwen3-vl-2025-tech-report]] — predecessore della linea Qwen3-VL
+- [[wang-2025-lvbench]] — evaluated model
+- [[qwen3-vl-2025-tech-report]] — predecessor of the Qwen3-VL line
 
-## Concetti correlati
+## Related concepts
 
-- [[qwen2-vl]] — predecessore
-- [[qwen]] — famiglia LLM
+- [[qwen2-vl]] — predecessor
+- [[qwen]] — LLM family
 - [[siglip]] / [[clip]] — vision encoder pretraining

@@ -8,28 +8,28 @@ updated: 2026-05-15
 
 # Certificate Length
 
-**Temporal certificate length** è una metrica introdotta da [[mangalam-2023-egoschema]] (§3.2) per misurare la **difficoltà temporale intrinseca** di un task video, *disaccoppiata* dalla durata della clip. Definizione: dato un (video, label) e un task, il **certificate set** è il sottoinsieme minimo di sub-clip *necessario e sufficiente* a convincere un verificatore umano della correttezza della label senza guardare il resto del video; la **certificate length** = somma delle lunghezze temporali delle subclip del set.
+**Temporal certificate length** is a metric introduced by [[mangalam-2023-egoschema]] (§3.2) to measure the **intrinsic temporal difficulty** of a video task, *decoupled* from clip duration. Definition: given a (video, label) and a task, the **certificate set** is the minimal subset of sub-clips *necessary and sufficient* to convince a human verifier of the label's correctness without watching the rest of the video; the **certificate length** = sum of the temporal lengths of the sub-clips in the set.
 
-Convenzioni: minimo 0.1 s per certificate; due certificati non contigui si fondono se i loro estremi più vicini sono < 5 s.
+Conventions: minimum 0.1 s per certificate; two non-contiguous certificates are merged if their nearest endpoints are < 5 s apart.
 
-Tassonomia temporale derivata [source: raw/papers/mangalam-2023-egoschema.pdf §3]:
+Derived temporal taxonomy [source: raw/papers/mangalam-2023-egoschema.pdf §3]:
 - *short video task*: certificate ~1 s (Kinetics, UCF101, AVA).
 - *long-form video task*: ~10 s (AGQA, NextQA, MSRVTT).
-- *very long-form video task*: ~100 s (EgoSchema, isolato in Fig. 3).
+- *very long-form video task*: ~100 s (EgoSchema, isolated in Fig. 3).
 
-Adottato esplicitamente da:
-- **[[fu-2025-video-mme]]**: mediana 26 / 165 / 891 s per short/medium/long; EgoSchema (~100 s) si colloca tra short e medium di Video-MME.
-- **[[wang-2025-lvbench]]**: concetto analogo "clue duration", annotato manualmente per ogni QA.
+Explicitly adopted by:
+- **[[fu-2025-video-mme]]**: median 26 / 165 / 891 s for short/medium/long; EgoSchema (~100 s) sits between Video-MME's short and medium.
+- **[[wang-2025-lvbench]]**: analogous concept "clue duration", manually annotated for each QA.
 
 ## Sources
 
-- [[mangalam-2023-egoschema]] — introduce la metrica.
-- [[fu-2025-video-mme]] — adotta come misura comparativa di difficoltà.
-- [[wang-2025-lvbench]] — annota clue duration con concetto analogo.
+- [[mangalam-2023-egoschema]] — introduces the metric.
+- [[fu-2025-video-mme]] — adopts it as a comparative difficulty measure.
+- [[wang-2025-lvbench]] — annotates clue duration with an analogous concept.
 
-## Concetti correlati
+## Related concepts
 
-- [[egoschema]] — benchmark in cui è definita.
-- [[long-video-understanding]] — task target.
-- [[keyframe-sampling]] — pratica che cerca di approssimare il certificate set.
-- [[video-question-answering]] — paradigma di applicazione.
+- [[egoschema]] — benchmark in which it is defined.
+- [[long-video-understanding]] — target task.
+- [[keyframe-sampling]] — practice that tries to approximate the certificate set.
+- [[video-question-answering]] — application paradigm.

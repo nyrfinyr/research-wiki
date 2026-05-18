@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # mPLUG-Owl3
 
-Terza iterazione della serie mPLUG-Owl di Alibaba (2024) con focus su long image sequences e video. Architettura con Hyper Attention per integrare token visivi e testuali a basso costo. Valutato su benchmark long-video.
+Third iteration of Alibaba's mPLUG-Owl series (2024) with focus on long image sequences and video. Architecture with Hyper Attention to integrate visual and textual tokens at low cost. Evaluated on long-video benchmarks.
 
 ## Sources
 
-- [[wang-2025-lvbench]] — modello valutato su LVBench
+- [[wang-2025-lvbench]] — model evaluated on LVBench
 
-## Concetti correlati
+## Related concepts
 
-- [[mplug-owl]] — versione iniziale
-- [[llava-onevision]], [[qwen2-5-vl]] — competitor contemporanei
+- [[mplug-owl]] — initial version
+- [[llava-onevision]], [[qwen2-5-vl]] — contemporary competitors

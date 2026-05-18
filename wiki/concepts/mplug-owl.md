@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # mPLUG-Owl
 
-MLLM open-source di Alibaba DAMO (Ye et al., 2023): vision encoder ViT + abstractor visivo + LLM, training a due stage (allineamento + instruction tuning). Capostipite della serie mPLUG-Owl (poi mPLUG-Owl2, mPLUG-Owl3).
+Open-source MLLM from Alibaba DAMO (Ye et al., 2023): ViT vision encoder + visual abstractor + LLM, two-stage training (alignment + instruction tuning). Founder of the mPLUG-Owl series (later mPLUG-Owl2, mPLUG-Owl3).
 
 ## Sources
 
-- [[li-2024-mvbench]] — modello di confronto
-- [[mangalam-2023-egoschema]] — best non-InternVideo a 31.1% su EgoSchema
+- [[li-2024-mvbench]] — comparison model
+- [[mangalam-2023-egoschema]] — best non-InternVideo at 31.1% on EgoSchema
 
-## Concetti correlati
+## Related concepts
 
-- [[mplug-owl3]] — versione successiva
-- [[llava]] — alternativa contemporanea
+- [[mplug-owl3]] — later version
+- [[llava]] — contemporary alternative

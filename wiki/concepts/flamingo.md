@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Flamingo
 
-VLM seminale di DeepMind (Alayrac et al., 2022): unisce un vision encoder frozen e un LLM frozen tramite **gated cross-attention** addestrabile, supportando few-shot multimodal learning su immagini e video. Precursore architetturale di molte famiglie successive (Otter/OpenFlamingo).
+Seminal VLM from DeepMind (Alayrac et al., 2022): connects a frozen vision encoder and a frozen LLM through trainable **gated cross-attention**, supporting few-shot multimodal learning on images and video. Architectural precursor to many later families (Otter/OpenFlamingo).
 
 ## Sources
 
-- [[fu-2025-video-mme]] — citato come precursore con gated cross-attention
+- [[fu-2025-video-mme]] — cited as precursor with gated cross-attention
 
-## Concetti correlati
+## Related concepts
 
-- [[otter]] — derivato open-source
-- [[blip-2]] — paradigma alternativo (Q-Former)
+- [[otter]] — open-source derivative
+- [[blip-2]] — alternative paradigm (Q-Former)

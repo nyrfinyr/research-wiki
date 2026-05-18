@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # Long Context
 
-Per long context si intende la capacità di un LLM o MLLM di gestire sequenze di input molto lunghe (decine o centinaia di migliaia di token) mantenendo qualità predittiva. È il regime in cui emergono problemi di [[attention-sink]], degrado posizionale e costo quadratico dell'attenzione, e in cui diventano rilevanti varianti come [[sliding-window-attention]], [[ring-attention]] e [[alibi]].
+Long context refers to the ability of an LLM or MLLM to handle very long input sequences (tens or hundreds of thousands of tokens) while maintaining predictive quality. It is the regime in which problems of [[attention-sink]], positional degradation and quadratic attention cost emerge, and in which variants such as [[sliding-window-attention]], [[ring-attention]] and [[alibi]] become relevant.
 
-Nel wiki è asse di valutazione centrale per i report Qwen3-VL e per i lavori su attention efficiente.
+In the wiki it is a central evaluation axis for the Qwen3-VL reports and for work on efficient attention.
 
 ## Sources
 
-- [[fu-2025-sliding-window-attention]] — citato come regime di interesse
-- [[qwen3-vl-2025-tech-report]] — capacità target del modello
+- [[fu-2025-sliding-window-attention]] — cited as a regime of interest
+- [[qwen3-vl-2025-tech-report]] — target capability of the model

@@ -8,10 +8,10 @@ updated: 2026-05-16
 
 # Attention Knockout
 
-Attention knockout (Geva et al. 2023) è una tecnica di intervento meccanicistico in cui si "spegne" un sottoinsieme di edge dell'attenzione (forzando a zero gli score da un set di token sorgente verso un token target a un dato layer) per misurare causalmente il contributo di quei percorsi sull'output. È strumento standard per isolare information pathway in un transformer.
+Attention knockout (Geva et al. 2023) is a mechanistic intervention technique in which a subset of attention edges is "switched off" (forcing to zero the scores from a set of source tokens to a target token at a given layer) to causally measure the contribution of those pathways on the output. It is a standard tool for isolating information pathways in a transformer.
 
-Nel wiki è il metodo usato da Map-the-Flow per individuare i percorsi attivi nei video-LLM.
+In the wiki it is the method used by Map-the-Flow to identify the active pathways in video-LLMs.
 
 ## Sources
 
-- [[kim-2025-map-the-flow]] — usato per individuare effective pathway
+- [[kim-2025-map-the-flow]] — used to identify effective pathways

@@ -8,9 +8,9 @@ updated: 2026-05-15
 
 # Sequence Transduction
 
-Classe di problemi in cui un modello mappa una sequenza di input in una sequenza di output. Esempi prototipici: traduzione automatica, summarization, speech-to-text, constituency parsing.
+Class of problems in which a model maps an input sequence to an output sequence. Prototypical examples: machine translation, summarization, speech-to-text, constituency parsing.
 
-Storicamente affrontata con RNN/LSTM/GRU ([[encoder-decoder-architecture]] con attention, vedi Bahdanau 2014) o con CNN (ConvS2S, ByteNet). [[vaswani-2017-attention]] propone il [[transformer]], primo modello di sequence transduction **interamente basato su attention**, senza ricorrenza né convoluzione [source: raw/papers/vaswani-2017-attention.pdf §1].
+Historically addressed with RNN/LSTM/GRU ([[encoder-decoder-architecture]] with attention, see Bahdanau 2014) or with CNN (ConvS2S, ByteNet). [[vaswani-2017-attention]] proposes the [[transformer]], the first sequence transduction model **entirely based on attention**, with no recurrence or convolution [source: raw/papers/vaswani-2017-attention.pdf §1].
 
 ## Sources
 

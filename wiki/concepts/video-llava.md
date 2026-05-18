@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Video-LLaVA
 
-MLLM open-source (Lin et al., 2023) della famiglia LLaVA che allinea immagini e video in uno spazio rappresentazionale comune tramite LanguageBind encoder prima della proiezione nell'LLM. Permette inferenza congiunta image+video.
+Open-source MLLM (Lin et al., 2023) of the LLaVA family that aligns images and videos into a common representational space via a LanguageBind encoder before projection into the LLM. Enables joint image+video inference.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — MLLM video open-source valutato
+- [[fu-2025-video-mme]] — open-source video MLLM evaluated
 
-## Concetti correlati
+## Related concepts
 
-- [[llava]] — famiglia di appartenenza
-- [[llava-next-video]] — alternativa video successiva
+- [[llava]] — parent family
+- [[llava-next-video]] — later video alternative

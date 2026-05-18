@@ -18,81 +18,81 @@ year: 2025
 
 ## TL;DR
 
-VideoLLaMA 3 è un MLLM frontier (2B e 7B) sviluppato da DAMO Academy / Alibaba per la comprensione congiunta di immagini e video. Il paper propone un paradigma di addestramento **vision-centric**: invece di accumulare dati video-text rumorosi, si parte da grandi corpora image-text di alta qualità per costruire un encoder visivo robusto, e si addestra il video understanding in coda. Architetturalmente, due novità chiave: (1) **Any-resolution Vision Tokenization (AVT)**, che adatta [[siglip]] con 2D-RoPE per accettare immagini di qualsiasi risoluzione producendo un numero variabile di vision token; (2) **Differential Frame Pruner (DiffFP)**, che elimina patch video temporalmente ridondanti basandosi sulla distanza 1-norm in pixel space. Il training si articola in 4 stage (Vision Encoder Adaptation → Vision-Language Alignment → Multi-task Fine-tuning → Video-centric Fine-tuning) con backbone LLM Qwen2.5. Raggiunge SOTA su VideoMME, MLVU, LongVideoBench, LVBench, PerceptionTest, NextQA e su benchmark immagine come InfoVQA, MathVista, MathVision [source: raw/papers/zhang-2025-videollama-3.pdf §1].
+VideoLLaMA 3 is a frontier MLLM (2B and 7B) developed by DAMO Academy / Alibaba for joint image and video understanding. The paper proposes a **vision-centric** training paradigm: instead of accumulating noisy video-text data, it starts from large high-quality image-text corpora to build a robust visual encoder, and trains video understanding at the tail end. Architecturally, two key novelties: (1) **Any-resolution Vision Tokenization (AVT)**, which adapts [[siglip]] with 2D-RoPE to accept images at any resolution while producing a variable number of vision tokens; (2) **Differential Frame Pruner (DiffFP)**, which removes temporally redundant video patches based on the 1-norm distance in pixel space. Training is organized in 4 stages (Vision Encoder Adaptation → Vision-Language Alignment → Multi-task Fine-tuning → Video-centric Fine-tuning) with a Qwen2.5 LLM backbone. Achieves SOTA on VideoMME, MLVU, LongVideoBench, LVBench, PerceptionTest, NextQA and on image benchmarks like InfoVQA, MathVista, MathVision [source: raw/papers/zhang-2025-videollama-3.pdf §1].
 
-## Contributo principale
+## Main contribution
 
-- **Paradigma vision-centric**: l'image understanding scala meglio dell'image-text data, quindi l'asse principale è migliorare l'encoder visivo su immagini di alta qualità; il video understanding è ottenuto come *transfer* da quel foundation, con un solo stage finale video-dominato [source: raw/papers/zhang-2025-videollama-3.pdf §1].
-- **Any-resolution Vision Tokenization (AVT)**: sostituisce gli embedding posizionali assoluti del ViT con [[mrope|2D-RoPE]], permettendo al vision encoder di processare immagini di forma arbitraria e produrre un numero di token proporzionale alla risoluzione [source: raw/papers/zhang-2025-videollama-3.pdf §2.1].
-- **Differential Frame Pruner (DiffFP)**: video compressor che rimuove patch ridondanti tra frame consecutivi sulla base della distanza 1-norm nel pixel space (soglia 0.1, ispirato a RLT), riducendo il context length per video lunghi [source: raw/papers/zhang-2025-videollama-3.pdf §2.2].
-- **VL3-Syn7M**: dataset re-captioned di 7M immagini da COYO-700M, ripulito con filtro aspect ratio + aesthetic score + BLIP2/CLIP similarity + KNN clustering, e re-captioned con InternVL2-8B (short) e InternVL2-26B (detailed) [source: raw/papers/zhang-2025-videollama-3.pdf §2.3].
+- **Vision-centric paradigm**: image understanding scales better than image-text data, so the main axis is improving the visual encoder on high-quality images; video understanding is obtained as *transfer* from that foundation, with a single final video-dominated stage [source: raw/papers/zhang-2025-videollama-3.pdf §1].
+- **Any-resolution Vision Tokenization (AVT)**: replaces the ViT's absolute positional embeddings with [[mrope|2D-RoPE]], allowing the vision encoder to process images of arbitrary shape and produce a number of tokens proportional to the resolution [source: raw/papers/zhang-2025-videollama-3.pdf §2.1].
+- **Differential Frame Pruner (DiffFP)**: video compressor that removes redundant patches between consecutive frames based on the 1-norm distance in pixel space (threshold 0.1, inspired by RLT), shortening context length for long videos [source: raw/papers/zhang-2025-videollama-3.pdf §2.2].
+- **VL3-Syn7M**: re-captioned dataset of 7M images from COYO-700M, cleaned with aspect-ratio + aesthetic-score + BLIP2/CLIP-similarity filter + KNN clustering, and re-captioned with InternVL2-8B (short) and InternVL2-26B (detailed) [source: raw/papers/zhang-2025-videollama-3.pdf §2.3].
 
-## Metodo
+## Method
 
-### Architettura
+### Architecture
 
-Quattro componenti [source: raw/papers/zhang-2025-videollama-3.pdf §3]:
+Four components [source: raw/papers/zhang-2025-videollama-3.pdf §3]:
 
-1. **Vision encoder**: inizializzato da [[siglip]] (`siglip-so400m-patch14-384`), adattato con 2D-RoPE per accettare risoluzioni dinamiche.
-2. **Video compressor**: il modulo DiffFP che pruna patch ridondanti tra frame consecutivi.
-3. **Projector**: MLP a due layer con attivazione GELU, mappa feature visive nello spazio dell'LLM.
-4. **LLM**: [[qwen|Qwen2.5]] — variante 2B (VideoLLaMA3-2B) o 7B (VideoLLaMA3-7B).
+1. **Vision encoder**: initialized from [[siglip]] (`siglip-so400m-patch14-384`), adapted with 2D-RoPE to accept dynamic resolutions.
+2. **Video compressor**: the DiffFP module that prunes redundant patches between consecutive frames.
+3. **Projector**: two-layer MLP with GELU activation, maps visual features into the LLM space.
+4. **LLM**: [[qwen|Qwen2.5]] — 2B (VideoLLaMA3-2B) or 7B (VideoLLaMA3-7B) variant.
 
 ### Any-resolution Vision Tokenization (AVT)
 
-L'ablation table (§4.4) confronta CLIP-ViT-L/336, DFN5B-CLIP-H/378 e SigLIP-SO400M/384 a risoluzione fissa: SigLIP vince soprattutto sui task fine-grained text-related (ChartQA 22.4 vs 18.3/16.4; DocVQA 31.3 vs 24.9/23.1) [source: raw/papers/zhang-2025-videollama-3.pdf §4.4, Tab. 9]. Su questa base si rimpiazzano gli embedding posizionali assoluti del ViT con 2D-RoPE (vedi [[positional-encoding]]) e si fine-tuna l'encoder durante lo stage 1 in modo che generalizzi a risoluzioni e aspect ratio arbitrari.
+The ablation table (§4.4) compares CLIP-ViT-L/336, DFN5B-CLIP-H/378, and SigLIP-SO400M/384 at fixed resolution: SigLIP wins especially on fine-grained text-related tasks (ChartQA 22.4 vs 18.3/16.4; DocVQA 31.3 vs 24.9/23.1) [source: raw/papers/zhang-2025-videollama-3.pdf §4.4, Tab. 9]. Building on this, the ViT's absolute positional embeddings are replaced by 2D-RoPE (see [[positional-encoding]]) and the encoder is fine-tuned during stage 1 so that it generalizes to arbitrary resolutions and aspect ratios.
 
 ### Differential Frame Pruner (DiffFP)
 
-Algoritmo, ispirato a RLT [source: raw/papers/zhang-2025-videollama-3.pdf §2.2]:
+Algorithm, inspired by RLT [source: raw/papers/zhang-2025-videollama-3.pdf §2.2]:
 
-1. Calcola la distanza 1-norm tra patch temporalmente consecutive in pixel space.
-2. Patch con distanza sotto la soglia (default `0.1`) sono considerate ridondanti e prunate dal frame successivo.
-3. Inoltre applica un downsampling spaziale `2×2` bilineare per limitare il context length.
+1. Compute the 1-norm distance between temporally consecutive patches in pixel space.
+2. Patches with distance below the threshold (default `0.1`) are considered redundant and pruned from the next frame.
+3. Also applies a bilinear `2×2` spatial downsample to bound the context length.
 
-Applicato negli stage 3 e 4 (cioè dove c'è dato video).
+Applied in stages 3 and 4 (i.e. where video data is present).
 
-### Pipeline di costruzione VL3-Syn7M
+### VL3-Syn7M construction pipeline
 
-A partire da COYO-700M [source: raw/papers/zhang-2025-videollama-3.pdf §2.3]:
+Starting from COYO-700M [source: raw/papers/zhang-2025-videollama-3.pdf §2.3]:
 
-1. **Aspect Ratio Filtering** — rimozione immagini con AR estremi.
-2. **Aesthetic Score Filtering** — soglia su modello di scoring estetico.
-3. **Text-Image Similarity** — BLIP2 genera caption iniziali, CLIP misura la similarity, scarta low-similarity.
-4. **Visual Feature Clustering** — embedding CLIP + k-NN, sample bilanciati per cluster.
-5. **Re-caption** — short captions con InternVL2-8B, detailed captions con InternVL2-26B → `VL3-Syn7M-short` e `VL3-Syn7M-detailed`.
+1. **Aspect Ratio Filtering** — removal of images with extreme ARs.
+2. **Aesthetic Score Filtering** — threshold over an aesthetic scoring model.
+3. **Text-Image Similarity** — BLIP2 generates initial captions, CLIP measures similarity, low-similarity items discarded.
+4. **Visual Feature Clustering** — CLIP embedding + k-NN, samples balanced per cluster.
+5. **Re-caption** — short captions with InternVL2-8B, detailed captions with InternVL2-26B → `VL3-Syn7M-short` and `VL3-Syn7M-detailed`.
 
-### Training: quattro stage
+### Training: four stages
 
-I dettagli quantitativi (§3.2):
+Quantitative details (§3.2):
 
-| Stage | Obiettivo | Tokens trainable | Dati (M) | Composizione |
+| Stage | Goal | Trainable | Data (M) | Composition |
 |-------|-----------|------------------|----------|--------------|
-| 1. Vision Encoder Adaptation | adattare SigLIP a risoluzioni dinamiche | ViT + projector | 15.57 | scene image 11.84M, doc 2.80M, scene text 0.93M |
-| 2. Vision-Language Alignment | integrare conoscenza multimodale | tutti | 21.97 | scene 12.56M, doc 2.68M, scene text 4.69M, chart 0.04M, fine-grained 1.0M, text-only 6.25M |
-| 3. Multi-task Fine-tuning | instruction tuning + intro video | tutti | 19.05 | image 14.92M (general/doc/chart/OCR/grounding/multi-image/text-only) + video 2.92M |
-| 4. Video-centric Fine-tuning | specializzazione video | tutti | 5.71 | general video 3.03M, streaming 36.2K, temporal grounding 0.21M, image-only 0.88M, text-only 1.56M |
+| 1. Vision Encoder Adaptation | adapt SigLIP to dynamic resolutions | ViT + projector | 15.57 | scene image 11.84M, doc 2.80M, scene text 0.93M |
+| 2. Vision-Language Alignment | integrate multimodal knowledge | all | 21.97 | scene 12.56M, doc 2.68M, scene text 4.69M, chart 0.04M, fine-grained 1.0M, text-only 6.25M |
+| 3. Multi-task Fine-tuning | instruction tuning + intro video | all | 19.05 | image 14.92M (general/doc/chart/OCR/grounding/multi-image/text-only) + video 2.92M |
+| 4. Video-centric Fine-tuning | video specialization | all | 5.71 | general video 3.03M, streaming 36.2K, temporal grounding 0.21M, image-only 0.88M, text-only 1.56M |
 
-Iperparametri (§3.3):
+Hyperparameters (§3.3):
 - Cosine LR scheduler, warmup ratio `0.03`.
-- Max token length: **16384**; max vision token length: **10240** (a video evaluation si espande a 16K).
+- Max token length: **16384**; max vision token length: **10240** (expanded to 16K at video evaluation).
 - Stage 1: LR ViT `1e-5`, projector `1e-3` (LLM frozen).
-- Stage 2-4: LR LLM `1e-5`, projector `1e-5`, ViT `2e-6`.
-- DiffFP threshold `0.1`, downsample spaziale `2×2`.
-- Video: campionamento a **1 FPS** con FFmpeg, fino a un massimo di **180 frame** (~3 minuti).
-- VideoLLaMA3-7B inizializza l'encoder dal 2B (già adattato) e LLM Qwen2.5-7B.
+- Stages 2-4: LR LLM `1e-5`, projector `1e-5`, ViT `2e-6`.
+- DiffFP threshold `0.1`, `2×2` spatial downsample.
+- Video: **1 FPS** sampling with FFmpeg, up to **180 frames** (~3 minutes).
+- VideoLLaMA3-7B initializes the encoder from the (already adapted) 2B and the LLM from Qwen2.5-7B.
 
-### Formati di dati (§3.1)
+### Data formats (§3.1)
 
-Tre formati [source: raw/papers/zhang-2025-videollama-3.pdf §3.1]:
+Three formats [source: raw/papers/zhang-2025-videollama-3.pdf §3.1]:
 
-- **Image sequence**: token immagine separati da `\n`.
-- **Video sequence**: ogni frame preceduto da `Time: xxs`, frame separati da `,`, separatore `\n` finale.
-- **Streaming video sequence**: video+text interleavati, `Time:` per i frame e `GPT:` per le risposte assistant.
+- **Image sequence**: image tokens separated by `\n`.
+- **Video sequence**: each frame preceded by `Time: xxs`, frames separated by `,`, final `\n` separator.
+- **Streaming video sequence**: interleaved video+text, `Time:` for frames and `GPT:` for assistant replies.
 
-## Risultati chiave
+## Key results
 
-### Image benchmarks — VideoLLaMA3-2B vs baseline 2B (§4.1, Tab. 5)
+### Image benchmarks — VideoLLaMA3-2B vs 2B baselines (§4.1, Tab. 5)
 
 | Benchmark | SmolVLM-2B | InternVL2.5-2B | Qwen2-VL-2B | **VideoLLaMA3-2B** |
 |---|---|---|---|---|
@@ -107,7 +107,7 @@ Tre formati [source: raw/papers/zhang-2025-videollama-3.pdf §3.1]:
 | RealWorldQA | 48.8 | 60.1 | 62.9 | **67.3** |
 | AI2D | 62.1 | 74.9 | 69.9 | **78.2** |
 
-### Image benchmarks — VideoLLaMA3-7B vs baseline 7-8B (§4.1, Tab. 6)
+### Image benchmarks — VideoLLaMA3-7B vs 7-8B baselines (§4.1, Tab. 6)
 
 | Benchmark | Molmo-7B-D | InternVL2.5-8B | LLaVA-OV-7B | NVILA-8B | Qwen2-VL-7B | **VideoLLaMA3-7B** |
 |---|---|---|---|---|---|---|
@@ -154,42 +154,42 @@ Tre formati [source: raw/papers/zhang-2025-videollama-3.pdf §3.1]:
 | LVBench | 44.7 | 43.2 | 41.5 | 44.0 | – | 36.2 | **45.3** |
 | Charades-STA mIoU | – | – | – | – | – | – | **60.7** |
 
-### Cosa cambia rispetto a VideoLLaMA 2
+### What changes vs VideoLLaMA 2
 
-VideoLLaMA2.1-7B viene staccato di +11.3 punti su VideoMME w/o sub, +15.6 su MLVU, +17.9 su PerceptionTest [source: raw/papers/zhang-2025-videollama-3.pdf §4.2 Tab. 8]. La differenza è attribuita a (i) paradigma vision-centric (ricetta image-first invece di video-heavy), (ii) AVT + dynamic resolution, (iii) DiffFP video compression, (iv) backbone Qwen2.5 (vs Mistral in v2).
+VideoLLaMA2.1-7B is left behind by +11.3 points on VideoMME w/o sub, +15.6 on MLVU, +17.9 on PerceptionTest [source: raw/papers/zhang-2025-videollama-3.pdf §4.2 Tab. 8]. The difference is attributed to (i) the vision-centric paradigm (image-first recipe instead of video-heavy), (ii) AVT + dynamic resolution, (iii) DiffFP video compression, (iv) Qwen2.5 backbone (vs Mistral in v2).
 
-## Limitazioni dichiarate
+## Stated limitations
 
 [source: raw/papers/zhang-2025-videollama-3.pdf §6.2]
 
-- **Qualità e diversità dati video** ancora limitate — il bottiglia non è più il modello ma il dato video.
-- **Real-time processing** non ottimizzato: overhead computazionale alto su video lunghi/ad alta risoluzione, problematico per applicazioni come autonomous driving o live analytics.
-- **Modalità non visive** non esplorate: nessun supporto audio/speech nativo (in contrasto con VideoLLaMA 2 che includeva audio encoder).
+- **Video data quality and diversity** still limited — the bottleneck is no longer the model but video data.
+- **Real-time processing** not optimized: high computational overhead on long/high-resolution videos, problematic for applications such as autonomous driving or live analytics.
+- **Non-visual modalities** not explored: no native audio/speech support (in contrast to VideoLLaMA 2, which included an audio encoder).
 
-Future work indicate: dataset video-text di qualità superiore, ottimizzazioni per inferenza real-time, espansione multimodale (audio, speech), post-training RL più sofisticato (RLHF / DPO scalato a MLLM).
+Indicated future work: higher-quality video-text datasets, real-time inference optimizations, multimodal expansion (audio, speech), more sophisticated post-training RL (RLHF / DPO scaled to MLLMs).
 
-## Domande aperte / critiche
+## Open questions / critiques
 
-- Il paradigma vision-centric funziona qui ma non c'è studio sistematico del trade-off "quante più ore di video × quanto meglio si fa": forse i guadagni image→video saturano oltre una certa scala di dati immagine. Non c'è ablation che vari la mole di image data a parità di video data.
-- DiffFP applica un threshold fisso (0.1) sulla 1-norm in pixel space: per video con illuminazione/cinematografia rumorosa potrebbe sotto-prunare; per video statici (slideshow, talking head) potrebbe sovra-prunare. Manca uno studio di sensitivity al threshold.
-- 1 FPS + max 180 frame implica un cap effettivo di ~3 minuti per video; benchmark long-video (LVBench, MLVU, LongVideoBench) coprono ore — quindi si testano comunque frame downsampled. La limitazione di context (16K vision token) è stringente rispetto a Qwen2.5-VL (24K) e Qwen3-VL (256K total).
-- Niente menzione esplicita di licenza dei pesi: il repo GitHub esiste ma il paper non specifica termini d'uso commerciale.
+- The vision-centric paradigm works here but there is no systematic study of the trade-off "more hours of video × how much better": image→video gains may saturate beyond a certain image-data scale. No ablation varying the amount of image data with fixed video data.
+- DiffFP applies a fixed threshold (0.1) on the 1-norm in pixel space: for videos with noisy lighting/cinematography it could under-prune; for static videos (slideshow, talking head) it could over-prune. A threshold-sensitivity study is missing.
+- 1 FPS + max 180 frames implies an effective ~3-minute cap per video; long-video benchmarks (LVBench, MLVU, LongVideoBench) cover hours — so downsampled frames are tested anyway. The context cap (16K vision tokens) is tight compared to Qwen2.5-VL (24K) and Qwen3-VL (256K total).
+- No explicit mention of weight licensing: the GitHub repo exists but the paper does not specify commercial-use terms.
 
-## Concetti citati
+## Cited concepts
 
 - [[video-llm]], [[vision-language-model]], [[multimodal-large-language-model]]
 - [[vision-encoder]], [[siglip]], [[vision-transformer]] (ViT)
-- [[mrope]] (qui usato come 2D-RoPE per immagini)
+- [[mrope]] (used here as 2D-RoPE for images)
 - [[positional-encoding]], [[rotary-position-embedding]]
 - [[any-resolution-vision-tokenization]], [[dynamic-resolution]]
 - [[differential-frame-pruner]], [[video-token-compression]]
-- [[qwen]] (backbone LLM)
+- [[qwen]] (LLM backbone)
 - [[instruction-tuning]], [[supervised-fine-tuning]]
 - [[video-mme]], [[mvbench]], [[mlvu]], [[longvideobench]], [[lvbench]], [[egoschema]], [[perception-test]], [[next-qa]], [[charades-sta]], [[tempcompass]], [[activitynet-qa]]
 - [[mmmu]], [[mmmu-pro]], [[blink]], [[realworldqa]], [[mathvista]], [[mathvision]], [[docvqa]], [[infovqa]], [[chartqa]], [[ocrbench]], [[ai2d]], [[gqa]], [[mme]]
 - [[coyo-700m]], [[la-1b]], [[laion-ocr]], [[panda-70m]], [[ego4d]], [[videollama]] (v2)
 
-## Citazioni dirette
+## Direct quotes
 
 > "The key insight of our vision-centric training paradigm is that high-quality image-text data is crucial for both image and video understanding. Instead of preparing massive video-text datasets, we focus on constructing large-scale, high-quality image-text datasets." (Abstract, p. 1)
 

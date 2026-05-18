@@ -8,9 +8,9 @@ updated: 2026-05-15
 
 # Label Smoothing
 
-Tecnica di regolarizzazione introdotta da Szegedy et al. (2016, Inception v3) che sostituisce il target one-hot con una distribuzione "smussata", dando massa di probabilità `ε_ls` distribuita sulle classi non-target.
+Regularization technique introduced by Szegedy et al. (2016, Inception v3) that replaces the one-hot target with a "smoothed" distribution, giving probability mass `ε_ls` distributed over the non-target classes.
 
-In [[vaswani-2017-attention]] §5.4 è usato con `ε_ls = 0.1`. Effetto: **peggiora la perplexity** (il modello impara a essere più incerto) ma **migliora accuracy e BLEU** [source: raw/papers/vaswani-2017-attention.pdf §5.4].
+In [[vaswani-2017-attention]] §5.4 it is used with `ε_ls = 0.1`. Effect: **worsens perplexity** (the model learns to be more uncertain) but **improves accuracy and BLEU** [source: raw/papers/vaswani-2017-attention.pdf §5.4].
 
 ## Sources
 

@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # Gemini 2.5 Pro
 
-MLLM closed-source di Google DeepMind (2025), successore di Gemini 1.5/2.0 Pro con miglioramenti su reasoning, long-context e video. Top performer su LVBench.
+Closed-source MLLM from Google DeepMind (2025), successor to Gemini 1.5/2.0 Pro with improvements on reasoning, long-context and video. Top performer on LVBench.
 
 ## Sources
 
 - [[wang-2025-lvbench]] — top performer
 
-## Concetti correlati
+## Related concepts
 
-- [[gemini-1-5-pro]] — predecessore
-- [[gpt-4o]] — competitor closed-source
+- [[gemini-1-5-pro]] — predecessor
+- [[gpt-4o]] — closed-source competitor

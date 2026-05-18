@@ -8,13 +8,13 @@ updated: 2026-05-15
 
 # InternVL-Chat
 
-Variante chat della famiglia InternVL (Shanghai AI Lab, 2024): vision encoder InternViT (fino a 6B) + LLM, addestrata per istruzioni visive. Modello image MLLM valutato su benchmark video tramite frame sampling.
+Chat variant of the InternVL family (Shanghai AI Lab, 2024): InternViT vision encoder (up to 6B) + LLM, trained for visual instructions. Image MLLM evaluated on video benchmarks via frame sampling.
 
 ## Sources
 
-- [[fu-2025-video-mme]] — image MLLM valutato
+- [[fu-2025-video-mme]] — image MLLM evaluated
 
-## Concetti correlati
+## Related concepts
 
-- [[internvl2]] — versione successiva
-- [[llava-onevision]] — alternativa contemporanea
+- [[internvl2]] — later version
+- [[llava-onevision]] — contemporary alternative

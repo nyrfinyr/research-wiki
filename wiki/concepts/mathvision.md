@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # MathVision
 
-MathVision è un benchmark di problemi di matematica accompagnati da figure (geometria, grafici, schemi) usato per misurare la capacità di un MLLM di combinare lettura dell'immagine e passaggi di calcolo o dimostrazione. È complementare a [[mathvista]] e tende ad enfatizzare problemi di tipo competitivo o di esame.
+MathVision is a benchmark of math problems accompanied by figures (geometry, charts, diagrams) used to measure an MLLM's ability to combine image reading with computation or proof steps. It is complementary to [[mathvista]] and tends to emphasize competition-style or exam-style problems.
 
-Compare nei report tecnici dei modelli generalisti come bench math-visual standard.
+It appears in tech reports of generalist models as a standard math-visual benchmark.
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra i benchmark math-visual di valutazione
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA
+- [[qwen3-vl-2025-tech-report]] — among the math-visual evaluation benchmarks
+- [[zhang-2025-videollama-3]] — cited as image-VQA benchmark

@@ -8,32 +8,32 @@ updated: 2026-05-15
 
 # Direct Preference Optimization (DPO)
 
-Algoritmo di alignment introdotto da Rafailov et al. (2023) che apprende da **preference pairs** `(x, y_w, y_l)` (per ciascun prompt `x`, una risposta preferita `y_w` e una rigettata `y_l`) **senza** dover addestrare un reward model esplicito né eseguire PPO. La policy ottimale è ottenuta in closed-form rispetto a un reward implicito basato sul rapporto delle log-probabilities della policy corrente e di una reference, ed è ottimizzata con un classificatore binario sui preference pair. Per il sub-mondo VLM, DPO è oggi lo *stage standard di alignment* dopo l'SFT/instruction tuning [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3; raw/papers/qwen3-vl-2025-tech-report.pdf §post-training].
+Alignment algorithm introduced by Rafailov et al. (2023) that learns from **preference pairs** `(x, y_w, y_l)` (for each prompt `x`, a preferred response `y_w` and a rejected one `y_l`) **without** having to train an explicit reward model or run PPO. The optimal policy is obtained in closed form with respect to an implicit reward based on the log-probability ratio of the current policy and a reference, and is optimized with a binary classifier on the preference pairs. For the VLM sub-world, DPO is today the *standard alignment stage* after SFT / instruction tuning [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3; raw/papers/qwen3-vl-2025-tech-report.pdf §post-training].
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **Loss DPO**:
+- **DPO loss**:
   ```
   L_DPO(π_θ; π_ref) = − E_(x,y_w,y_l) [ log σ( β log π_θ(y_w|x)/π_ref(y_w|x) − β log π_θ(y_l|x)/π_ref(y_l|x) ) ]
   ```
-  con `β` temperatura della reference. Niente reward model esplicito; niente RL on-policy.
-- **Stage finale di Qwen2.5-VL**: post-training in **due fasi** con ViT congelato — prima SFT (~2M esempi, 50% text-only, 50% multimodale), poi **DPO** per allineare lo stile alle preferenze umane [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3].
-- **Background per Qwen3-VL**: DPO è citato come "background" perché Qwen3-VL evolve verso **SAPO (Smooth and Adaptive Policy Optimization)** + strong-to-weak distillation testuale, ma DPO resta il punto di partenza concettuale per l'alignment basato su preferenze [source: raw/papers/qwen3-vl-2025-tech-report.pdf §concetti citati].
-- **Vantaggi pratici (rispetto a PPO/RLHF)**: training stabile (loss simile a cross-entropy), non richiede sampling on-policy, non richiede reward model — implementazione molto più economica e adatta a modelli di taglia 7B-235B.
+  with `β` the reference temperature. No explicit reward model; no on-policy RL.
+- **Final stage of Qwen2.5-VL**: post-training in **two phases** with ViT frozen — first SFT (~2M examples, 50% text-only, 50% multimodal), then **DPO** to align style with human preferences [source: raw/papers/qwen2-5-vl-2025-tech-report.pdf §2.3].
+- **Background for Qwen3-VL**: DPO is cited as "background" because Qwen3-VL evolves toward **SAPO (Smooth and Adaptive Policy Optimization)** + strong-to-weak text distillation, but DPO remains the conceptual starting point for preference-based alignment [source: raw/papers/qwen3-vl-2025-tech-report.pdf §cited concepts].
+- **Practical advantages (vs. PPO/RLHF)**: stable training (loss similar to cross-entropy), no on-policy sampling required, no reward model required — much cheaper implementation, well-suited to 7B-235B model sizes.
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **IPO** (Identity Preference Optimization), **KTO** (Kahneman-Tversky Optimization), **SimPO** — varianti recenti che modificano la loss DPO per evitare reward hacking o per gestire preferenze non binarie.
-- **SAPO** (Qwen3-VL): RL-based, *non* DPO; usa policy optimization smooth e adaptive per Qwen3-VL "thinking" [source: raw/papers/qwen3-vl-2025-tech-report.pdf §concetti citati].
-- **Multimodal DPO**: preference pair `(immagine, prompt, y_w, y_l)`; la policy multimodale apprende preferenze su risposte visivamente-grounded.
+- **IPO** (Identity Preference Optimization), **KTO** (Kahneman-Tversky Optimization), **SimPO** — recent variants that modify the DPO loss to avoid reward hacking or to handle non-binary preferences.
+- **SAPO** (Qwen3-VL): RL-based, *not* DPO; uses smooth-and-adaptive policy optimization for Qwen3-VL "thinking" [source: raw/papers/qwen3-vl-2025-tech-report.pdf §cited concepts].
+- **Multimodal DPO**: preference pair `(image, prompt, y_w, y_l)`; the multimodal policy learns preferences over visually-grounded responses.
 
-## Concetti correlati
+## Related concepts
 
-- [[supervised-fine-tuning]] — stage precedente; DPO presuppone una policy già instruction-tuned.
-- [[instruction-tuning]] — stage tipicamente fra pre-training e DPO.
-- [[chain-of-thought]] — DPO può apprendere preferenze fra traiettorie CoT corrette vs errate.
+- [[supervised-fine-tuning]] — preceding stage; DPO assumes an already instruction-tuned policy.
+- [[instruction-tuning]] — stage typically between pre-training and DPO.
+- [[chain-of-thought]] — DPO can learn preferences between correct vs. wrong CoT trajectories.
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — DPO come stage finale di post-training.
-- [[qwen3-vl-2025-tech-report]] — DPO citato come background; Qwen3-VL evolve verso SAPO.
+- [[qwen2-5-vl-2025-tech-report]] — DPO as the final post-training stage.
+- [[qwen3-vl-2025-tech-report]] — DPO cited as background; Qwen3-VL evolves toward SAPO.

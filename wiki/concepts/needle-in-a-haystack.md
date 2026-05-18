@@ -8,22 +8,22 @@ updated: 2026-05-15
 
 # Needle-in-a-Haystack
 
-**Needle-in-a-Haystack (NIAH)** è un paradigma di valutazione long-context: si inserisce un'informazione specifica (la "needle") in un input lungo (il "haystack") e si misura se il modello la trova/usa correttamente. Nato per gli LLM testuali (RULER, "Lost in the Middle"), è stato esteso ai [[video-llm|video-LLM]] tramite benchmark come [[vnbench]] e i task di [[lvbench]] tipo Key Information Retrieval.
+**Needle-in-a-Haystack (NIAH)** is a long-context evaluation paradigm: a specific piece of information (the "needle") is inserted into a long input (the "haystack") and the model is measured on whether it finds/uses it correctly. Originating with text LLMs (RULER, "Lost in the Middle"), it has been extended to [[video-llm|video-LLMs]] via benchmarks such as [[vnbench]] and the Key Information Retrieval-style tasks of [[lvbench]].
 
-Nel wiki appare in due contesti:
+In the wiki it appears in two contexts:
 
-- **[[doorenbos-2026-video-panels]]**: la categoria di task in cui il paneling brilla — la rappresentazione paneled aumenta la "density" temporale e facilita la localizzazione della needle.
-- **[[arnab-2025-temporal-chain-of-thought]]**: cita "lost-in-the-middle" (Liu et al. 2024) e RULER come fenomeni motivanti per la necessità di selezionare frame rilevanti invece di affidarsi al long-context bruto.
+- **[[doorenbos-2026-video-panels]]**: the task category where paneling shines — the paneled representation increases temporal "density" and facilitates needle localization.
+- **[[arnab-2025-temporal-chain-of-thought]]**: cites "lost-in-the-middle" (Liu et al. 2024) and RULER as motivating phenomena for the need to select relevant frames rather than relying on brute long-context.
 
 ## Sources
 
-- [[doorenbos-2026-video-panels]] — categoria di task.
-- [[arnab-2025-temporal-chain-of-thought]] — fenomeno motivante (lost-in-the-middle).
+- [[doorenbos-2026-video-panels]] — task category.
+- [[arnab-2025-temporal-chain-of-thought]] — motivating phenomenon (lost-in-the-middle).
 
-## Concetti correlati
+## Related concepts
 
-- [[vnbench]] — benchmark video di tipo NIAH.
-- [[long-context]] — paradigma più ampio.
-- [[long-video-understanding]] — task target.
-- [[lvbench]] — benchmark con skill Key Information Retrieval.
-- [[keyframe-sampling]] — strategia rilevante.
+- [[vnbench]] — NIAH-style video benchmark.
+- [[long-context]] — broader paradigm.
+- [[long-video-understanding]] — target task.
+- [[lvbench]] — benchmark with a Key Information Retrieval skill.
+- [[keyframe-sampling]] — relevant strategy.

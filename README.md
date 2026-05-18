@@ -1,19 +1,19 @@
 # research-wiki
 
-Wiki LLM-maintained di ricerca scientifica. Integrato con Zotero.
+LLM-maintained wiki for scientific research. Integrated with Zotero.
 
-- `raw/` — fonti immutabili (PDF copiati da Zotero, articoli, transcript).
-- `wiki/` — pagine generate e mantenute dall'LLM.
-- `CLAUDE.md` — schema specifico di questo wiki.
+- `raw/` — immutable sources (PDFs copied from Zotero, articles, transcripts).
+- `wiki/` — pages generated and maintained by the LLM.
+- `CLAUDE.md` — schema specific to this wiki.
 
-Pattern generale: `~/.claude/skills/llm-wiki/SKILL.md`. Idea originale: `~/llm-wiki.md`.
+General pattern: `~/.claude/skills/llm-wiki/SKILL.md`. Original idea: `~/llm-wiki.md`.
 
-## Uso rapido
+## Quick usage
 
-- **Ingest paper Zotero**: "ingest paper DOI ..." → l'agente risolve via `zotero --pdf`, copia in `raw/papers/`, scrive `wiki/sources/<slug>.md`, aggiorna entità/concetti, indice e log.
-- **Query**: "cosa dice il wiki su X" → l'agente legge `wiki/index.md` e drilla nelle pagine pertinenti.
-- **Lint**: "lint del wiki" → report di orphan/contraddizioni/gap.
+- **Ingest Zotero paper**: "ingest paper DOI ..." → the agent resolves via `zotero --pdf`, copies into `raw/papers/`, writes `wiki/sources/<slug>.md`, updates entities/concepts, index, and log.
+- **Query**: "what does the wiki say about X" → the agent reads `wiki/index.md` and drills into the relevant pages.
+- **Lint**: "lint the wiki" → report of orphans/contradictions/gaps.
 
-## Lettura
+## Reading
 
-Apri questa cartella come vault Obsidian. La graph view rivela hub e orphan. I `[[wikilinks]]` funzionano nativamente.
+Open this folder as an Obsidian vault. The graph view reveals hubs and orphans. `[[wikilinks]]` work natively.

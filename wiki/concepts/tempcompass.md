@@ -8,11 +8,11 @@ updated: 2026-05-15
 
 # TempCompass
 
-**TempCompass** è un benchmark di temporal reasoning per MLLM video, focalizzato sulla capacità di ragionare su ordine, durata, direzione e altre dimensioni temporali. È un complemento ai benchmark "temporal" di [[mvbench]] (Action Sequence, Moving Direction, ecc.) e tipicamente compare nei tech report MLLM accanto a [[video-mme]], [[mlvu]], [[longvideobench]].
+**TempCompass** is a temporal reasoning benchmark for video MLLMs, focused on the ability to reason over order, duration, direction, and other temporal dimensions. It complements the "temporal" benchmarks of [[mvbench]] (Action Sequence, Moving Direction, etc.) and typically appears in MLLM tech reports alongside [[video-mme]], [[mlvu]], [[longvideobench]].
 
-## Numeri di riferimento
+## Reference numbers
 
-| Modello | TempCompass Avg | Fonte |
+| Model | TempCompass Avg | Source |
 |---|---|---|
 | Qwen2.5-VL-3B | 64.4 | [[qwen2-5-vl-2025-tech-report]] |
 | Qwen2.5-VL-7B | 71.7 | [[qwen2-5-vl-2025-tech-report]] |
@@ -25,12 +25,12 @@ updated: 2026-05-15
 
 ## Sources
 
-- [[qwen2-5-vl-2025-tech-report]] — valuta Qwen2.5-VL.
-- [[zhang-2025-videollama-3]] — valuta VideoLLaMA 3.
-- [[fu-2025-video-mme]] — confronto in Tab. 1.
+- [[qwen2-5-vl-2025-tech-report]] — evaluates Qwen2.5-VL.
+- [[zhang-2025-videollama-3]] — evaluates VideoLLaMA 3.
+- [[fu-2025-video-mme]] — comparison in Tab. 1.
 
-## Concetti correlati
+## Related concepts
 
 - [[video-question-answering]] — task.
-- [[temporal-understanding]] — competenza misurata.
-- [[mvbench]] — benchmark adiacente con focus temporal.
+- [[temporal-understanding]] — capability measured.
+- [[mvbench]] — adjacent benchmark with temporal focus.

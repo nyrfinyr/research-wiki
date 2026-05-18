@@ -8,14 +8,14 @@ updated: 2026-05-15
 
 # LLaVA-1.5
 
-Versione 1.5 di LLaVA (Liu et al., ottobre 2023): rispetto al primo LLaVA introduce un projector MLP a due layer, risoluzione più alta (336²) e dataset di instruction tuning ampliato. Backbone tipico Vicuna-7B/13B + CLIP ViT-L/14. Usata come backbone target in lavori di interpretazione/attenzione su MLLM.
+Version 1.5 of LLaVA (Liu et al., October 2023): compared to the first LLaVA, it introduces a two-layer MLP projector, higher resolution (336²) and an expanded instruction tuning dataset. Typical backbone Vicuna-7B/13B + CLIP ViT-L/14. Used as target backbone in work on interpretation/attention in MLLMs.
 
 ## Sources
 
-- [[pei-2025-causal-mask-attention]] — backbone su cui viene applicata l'analisi causal mask
+- [[pei-2025-causal-mask-attention]] — backbone on which the causal mask analysis is applied
 
-## Concetti correlati
+## Related concepts
 
-- [[llava]] — famiglia di appartenenza
-- [[llava-1-6]] — successore
+- [[llava]] — family it belongs to
+- [[llava-1-6]] — successor
 - [[vicuna]] — LLM backbone

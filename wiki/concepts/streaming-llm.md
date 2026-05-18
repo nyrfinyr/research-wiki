@@ -8,28 +8,28 @@ updated: 2026-05-15
 
 # Streaming-LLM
 
-Strategia di inference (Xiao et al. 2023) per **generazione potenzialmente infinita** con modelli a contesto fissato: si mantiene un KV-cache **a finestra scorrevole** (recent window) **più alcuni token iniziali (sink token)** mantenuti in memoria permanentemente. La rimozione dei primi token, anche se sono di basso contenuto semantico (es. il BOS), provoca un crollo della perplexity; trattenerli come "sink" salva il modello e permette decoding stabile per milioni di token [source: raw/papers/gu-2024-attention-sink.pdf §1, §8]. È il principale **caso d'uso empirico** che ha motivato lo studio dell'[[attention-sink]] da parte di Gu et al. (2024), che ne ha fornito le fondamenta teoriche post-hoc.
+Inference strategy (Xiao et al. 2023) for **potentially infinite generation** with fixed-context models: a **sliding-window** KV-cache (recent window) is maintained **plus a few initial tokens (sink tokens)** kept permanently in memory. Removing the first tokens, even if they carry low semantic content (e.g. BOS), causes a collapse in perplexity; keeping them as "sinks" saves the model and allows stable decoding for millions of tokens [source: raw/papers/gu-2024-attention-sink.pdf §1, §8]. It is the main **empirical use case** that motivated the study of the [[attention-sink]] by Gu et al. (2024), who provided its theoretical foundations post-hoc.
 
-## Claim chiave / Tecnica
+## Key claims / Technique
 
-- **Sink-anchored sliding window**: il KV-cache è composto da `S = {primi k token} ∪ {ultimi W token}`, con `k` piccolo (tipicamente 4) e `W` la window recente. Il resto viene evictato. Senza i primi `k` token la perplexity esplode (Xiao 2023a citato da [source: raw/papers/gu-2024-attention-sink.pdf §1, §8]).
-- **Spiegazione meccanicistica**: il primo token funge da *key bias* lungo una direzione che minimizza l'angolo con tutte le query; rimuoverlo lascia la softmax senza il "dump di attention extra", costringendola a ridistribuirla sui token che dovrebbero portare informazione genuina ⇒ degrado dei value pesati [source: raw/papers/gu-2024-attention-sink.pdf §3.1, §7].
-- **Posizione mobile del sink**: lavori successivi hanno mostrato che il sink può essere spostato (key biases learnable, sink token apprendibile, KV-biases) con `Sink^ε_* ~73%` sui bias e `Sink^ε_1 ~0%` sul primo token a parità di validation loss (Tab. 4 di Gu); ciò suggerisce che Streaming-LLM è una soluzione *euristica* a un problema più profondo legato all'architettura — la soluzione architetturale è [[sigmoid-attention]] senza normalizzazione [source: raw/papers/gu-2024-attention-sink.pdf §7.3-7.4].
-- **Limite empirico**: Gu et al. non riprodu cono i benchmark di Streaming-LLM con il loro fix architetturale (sigmoid attention) ⇒ resta aperta la domanda se il sink-anchoring sia ancora necessario in modelli pre-trainati senza sink intrinseco [source: raw/papers/gu-2024-attention-sink.pdf §limiti].
+- **Sink-anchored sliding window**: the KV-cache consists of `S = {first k tokens} ∪ {last W tokens}`, with `k` small (typically 4) and `W` the recent window. The rest is evicted. Without the first `k` tokens perplexity explodes (Xiao 2023a cited in [source: raw/papers/gu-2024-attention-sink.pdf §1, §8]).
+- **Mechanistic explanation**: the first token acts as a *key bias* along a direction that minimizes the angle with all queries; removing it leaves softmax without the "extra attention dump", forcing it to redistribute attention over tokens that should carry genuine information ⇒ degradation of weighted values [source: raw/papers/gu-2024-attention-sink.pdf §3.1, §7].
+- **Mobile sink position**: subsequent work has shown that the sink can be moved (learnable key biases, learnable sink token, KV-biases) with `Sink^ε_* ~73%` on the biases and `Sink^ε_1 ~0%` on the first token at matched validation loss (Tab. 4 of Gu); this suggests Streaming-LLM is a *heuristic* solution to a deeper problem tied to the architecture — the architectural solution being [[sigmoid-attention]] without normalization [source: raw/papers/gu-2024-attention-sink.pdf §7.3-7.4].
+- **Empirical limit**: Gu et al. do not reproduce the Streaming-LLM benchmarks with their architectural fix (sigmoid attention) ⇒ it remains open whether sink anchoring is still needed in models pre-trained without intrinsic sink [source: raw/papers/gu-2024-attention-sink.pdf §limits].
 
-## Varianti / Estensioni
+## Variants / Extensions
 
-- **KV-cache eviction sink-aware**: famiglia che generalizza Streaming-LLM mantenendo i token più informativi (non solo i primi) + i sink.
-- **KV-cache quantization sink-aware** (Xiao 2023b): si quantizza aggressivamente *eccetto* i sink, mantenuti in alta precisione.
-- **SWAT** (Fu 2025): risolve il problema upstream cambiando l'architettura (sigmoid + sliding window), rendendo Streaming-LLM-style superfluo quando ci si addestra con SWA.
+- **Sink-aware KV-cache eviction**: family that generalizes Streaming-LLM by keeping the most informative tokens (not just the first ones) + the sinks.
+- **Sink-aware KV-cache quantization** (Xiao 2023b): aggressive quantization *except* for sinks, kept in high precision.
+- **SWAT** (Fu 2025): solves the problem upstream by changing the architecture (sigmoid + sliding window), making Streaming-LLM-style superfluous when training with SWA.
 
-## Concetti correlati
+## Related concepts
 
-- [[attention-sink]] — fenomeno empirico che Streaming-LLM sfrutta.
-- [[kv-cache]] — Streaming-LLM è una *politica di eviction* sul KV-cache.
-- [[sliding-window-attention]] — Streaming-LLM è SWA + ancoraggio dei sink token.
-- [[sigmoid-attention]] — fix architetturale alternativo che potrebbe rendere Streaming-LLM non necessario.
+- [[attention-sink]] — empirical phenomenon that Streaming-LLM exploits.
+- [[kv-cache]] — Streaming-LLM is an *eviction policy* on the KV-cache.
+- [[sliding-window-attention]] — Streaming-LLM is SWA + anchoring of sink tokens.
+- [[sigmoid-attention]] — alternative architectural fix that could make Streaming-LLM unnecessary.
 
 ## Sources
 
-- [[gu-2024-attention-sink]] — fornisce le fondamenta teoriche di Streaming-LLM e propone fix architetturali.
+- [[gu-2024-attention-sink]] — provides the theoretical foundations of Streaming-LLM and proposes architectural fixes.

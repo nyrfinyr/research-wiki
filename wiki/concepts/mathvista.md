@@ -8,11 +8,11 @@ updated: 2026-05-16
 
 # MathVista
 
-MathVista è un benchmark di ragionamento matematico visivo che raccoglie problemi in cui la soluzione richiede di leggere grafici, figure, diagrammi o formule resi come immagine. Valuta sia abilità di percezione (OCR, lettura di assi/etichette) sia capacità di ragionamento simbolico/numerico in un MLLM.
+MathVista is a visual math reasoning benchmark that collects problems where the solution requires reading charts, figures, diagrams or formulas rendered as images. It evaluates both perception abilities (OCR, axis/label reading) and symbolic/numerical reasoning capabilities in an MLLM.
 
-Nel wiki è citato come benchmark di riferimento per la dimensione "math + visual" insieme a [[mathvision]] e [[mmmu]].
+In the wiki it is cited as a reference benchmark for the "math + visual" dimension alongside [[mathvision]] and [[mmmu]].
 
 ## Sources
 
-- [[qwen3-vl-2025-tech-report]] — fra i benchmark math-visual di valutazione
-- [[zhang-2025-videollama-3]] — citato come benchmark image-VQA
+- [[qwen3-vl-2025-tech-report]] — among the math-visual evaluation benchmarks
+- [[zhang-2025-videollama-3]] — cited as image-VQA benchmark
