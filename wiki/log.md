@@ -45,3 +45,18 @@ Pages updated:
 - `wiki/index.md` (added entry under Syntheses, bumped `updated`).
 
 Dangling wikilinks intentionally left: `sources/morini-2026-look-twice`, `sources/kim-2026-map-the-flow`, `sources/kim-2026-sink-token-aware-pruning`, `sources/liu-2025-selfelicit`, `concepts/qwen2-5-vl`, `concepts/qwen3-vl` — to be resolved when the corresponding sources are ingested.
+
+## [2026-05-18] refactor | resync after discovering index drift
+
+While preparing to re-ingest the six papers cited in `syntheses/extending-look-twice-to-video-vqa.md`, found that **all six source pages already exist** in `wiki/sources/` (morini-2026-look-twice, kim-2025-map-the-flow, kim-2026-sink-token-aware-pruning, liu-2025-selfelicit, qwen2-5-vl-2025-tech-report, qwen3-vl-2025-tech-report), and most of the related concept pages exist too (look-twice, map-the-flow, stsp, self-elicit, qwen2-5-vl, evidence-highlighting, attention-sink, visual-token-pruning, mechanistic-interpretability, attention-knockout, logit-lens, video-llm, ...). The previous log entry was wrong on this point. The actual `wiki/sources/` directory holds 22 sources and `wiki/concepts/` holds ~150 concepts vs. the handful listed in `index.md` — the index is severely out of sync (created during the Vaswani ingest and not maintained since).
+
+Pages created:
+
+- `wiki/concepts/qwen3-vl.md` (was the only genuinely missing page among the synthesis's wikilinks).
+
+Pages updated:
+
+- `wiki/syntheses/extending-look-twice-to-video-vqa.md` — fixed `kim-2026-map-the-flow` → `kim-2025-map-the-flow`; replaced the (incorrect) "none of these is ingested" disclaimer with proper links to the existing source pages; added `revised:` frontmatter field.
+- `wiki/index.md` — added the six cited source entries under "Sources"; added a note flagging the broader index drift (full resync requires a lint pass).
+
+No new ingest performed. A `lint` pass is recommended to (a) fully repopulate `index.md` Sources / Concepts / Open questions sections from the filesystem, (b) check orphans / dangling links across the now-larger wiki, (c) reconcile the legacy `entities/` directory (pre-dating the no-entity-pages rule) with the current schema.

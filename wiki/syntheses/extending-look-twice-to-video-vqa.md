@@ -4,19 +4,20 @@ type: synthesis
 tags: [video-vqa, mllm, attention, training-free, evidence-highlighting, attention-sinks, video-llm]
 created: 2026-05-18
 updated: 2026-05-18
+revised: 2026-05-18
 ---
 
 # Extending Look Twice to Video-VQA — design memo
 
 ## Thesis
 
-The training-free two-pass inference of [[sources/morini-2026-look-twice]] (LoT) can be transferred from image KB-VQA to general Video-VQA, provided three of its components are rethought for the temporal dimension: layer selection for attention reading, the definition of "sink token", and the visual highlighting mechanism. The supporting primitives already exist across [[sources/kim-2026-map-the-flow]], [[sources/kim-2026-sink-token-aware-pruning]] and [[sources/liu-2025-selfelicit]]; what is missing is the integration on a modern VideoLLM backbone (Qwen3-VL).
+The training-free two-pass inference of [[sources/morini-2026-look-twice]] (LoT) can be transferred from image KB-VQA to general Video-VQA, provided three of its components are rethought for the temporal dimension: layer selection for attention reading, the definition of "sink token", and the visual highlighting mechanism. The supporting primitives already exist across [[sources/kim-2025-map-the-flow]], [[sources/kim-2026-sink-token-aware-pruning]] and [[sources/liu-2025-selfelicit]]; what is missing is the integration on a modern VideoLLM backbone (Qwen3-VL).
 
 ## What each work contributes
 
 **[[sources/morini-2026-look-twice]] — the method to transfer.** Three reusable ingredients: (i) `object-token → visual-token` attention aggregated over layers where multimodal grounding emerges; (ii) sink filtering based on hidden-state dimensions that the BOS token saturates; (iii) two-pass inference with `<START_IMPORTANT_*> / <END_IMPORTANT_*>` prompt markers. Evaluated on Qwen2/2.5/3-VL and InternVL3.5 over KB-VQA and on vision-centric / hallucination benchmarks — the image-side margin is already largely closed [source: raw/papers/morini-2026-look-twice.pdf, Tab. 1, Tab. 3].
 
-**[[sources/kim-2026-map-the-flow]] — the most useful piece for the transfer.** Mechanistic interpretability on VideoLLMs identifies a layer-wise pipeline distinct from image MLLMs: cross-frame interactions emerge in early-to-middle layers; video–language integration consolidates in middle layers over *temporal-keyword* question tokens; the answer becomes ready in middle-to-late layers [source: raw/papers/kim-2025-map-the-flow.pdf, §3.2–3.4]. Two design consequences for Video-LoT: (a) `L_vis` should split into an early-to-middle band for `object/keyword → video` attention and a middle band for the routing into temporal keywords; (b) the "target tokens" set should extend `T_obj` to include `T_temporal_keyword` (e.g. *begins, ends, first, then*) and, for MCQA, the true-option tokens, which Map the Flow identifies as the information checkpoint feeding the final position [source: raw/papers/kim-2025-map-the-flow.pdf, §3.3]. The Attention Knockout protocol from the same paper is the natural scalpel for ablating each branch of the proposed pipeline.
+**[[sources/kim-2025-map-the-flow]] — the most useful piece for the transfer.** Mechanistic interpretability on VideoLLMs identifies a layer-wise pipeline distinct from image MLLMs: cross-frame interactions emerge in early-to-middle layers; video–language integration consolidates in middle layers over *temporal-keyword* question tokens; the answer becomes ready in middle-to-late layers [source: raw/papers/kim-2025-map-the-flow.pdf, §3.2–3.4]. Two design consequences for Video-LoT: (a) `L_vis` should split into an early-to-middle band for `object/keyword → video` attention and a middle band for the routing into temporal keywords; (b) the "target tokens" set should extend `T_obj` to include `T_temporal_keyword` (e.g. *begins, ends, first, then*) and, for MCQA, the true-option tokens, which Map the Flow identifies as the information checkpoint feeding the final position [source: raw/papers/kim-2025-map-the-flow.pdf, §3.3]. The Attention Knockout protocol from the same paper is the natural scalpel for ablating each branch of the proposed pipeline.
 
 **[[sources/kim-2026-sink-token-aware-pruning]] (SToP) — the video-side sink definition.** SToP defines sink tokens as those with *spatially persistent high attention across frames*, `ŝ_i = Σ_t A^t_i`, normalized [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf, Eq. 4]. This is orthogonal to LoT's BOS-hidden-dim sink score and arguably more informative on video: an image-style sink token that vanishes after one frame is rarely harmful; a spatially persistent one is. A hybrid sink score `s_sink = α · s_BOS_dim + β · s_persistence` is the natural fusion. SToP also offers a second integration angle: as a pruning step before LoT's first pass, it can offset the cost of the two-pass inference (SToP retains performance at 10% token budget on hallucination benchmarks) [source: raw/papers/kim-2026-sink-token-aware-pruning.pdf, §5].
 
@@ -44,11 +45,9 @@ The direction is worth pursuing. The defensible slot is: *Video-LoT on Qwen3-VL,
 
 ## Sources used
 
-- `raw/papers/morini-2026-look-twice.pdf` — [[sources/morini-2026-look-twice]]
-- `raw/papers/kim-2025-map-the-flow.pdf` — [[sources/kim-2026-map-the-flow]]
-- `raw/papers/kim-2026-sink-token-aware-pruning.pdf` — [[sources/kim-2026-sink-token-aware-pruning]]
-- `raw/papers/liu-2025-selfelicit.pdf` — [[sources/liu-2025-selfelicit]]
-- `raw/papers/qwen2-5-vl-2025-tech-report.pdf` — [[concepts/qwen2-5-vl]]
-- `raw/papers/qwen3-vl-2025-tech-report.pdf` — [[concepts/qwen3-vl]]
-
-> Note. None of these sources is ingested yet; the wikilinks above are intentionally dangling and should be resolved as the corresponding source / concept pages are created.
+- [[sources/morini-2026-look-twice]] — paper introducing LoT
+- [[sources/kim-2025-map-the-flow]] — VideoLLM information-flow analysis
+- [[sources/kim-2026-sink-token-aware-pruning]] — SToP, video-side sink definition
+- [[sources/liu-2025-selfelicit]] — text-only ancestor of LoT's textual branch
+- [[sources/qwen2-5-vl-2025-tech-report]] / [[concepts/qwen2-5-vl]] — backbone candidate
+- [[sources/qwen3-vl-2025-tech-report]] / [[concepts/qwen3-vl]] — primary backbone candidate
