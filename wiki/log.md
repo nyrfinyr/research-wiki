@@ -71,3 +71,13 @@ Pages updated:
 - `CLAUDE.md` — directory-layout comment annotated; ingest workflow step "Update wiki/index.md" removed; query workflow step 1 rewritten as "list the directories"; convention 4 ("open questions live on the source page and in the index") simplified to "on the source page only".
 
 No source or concept pages were touched. The legacy `entities/` directory (pre-dating the no-entity-pages rule) is still present and remains a separate cleanup item.
+
+## [2026-05-18] query | Video-LoT design memo — revision 2 (AKS + Future-Aware Causal Mask)
+
+User requested integration of [[sources/tang-2025-adaptive-keyframe-sampling]] (AKS) and [[sources/pei-2025-causal-mask-attention]] (Pei) into the Video-LoT direction. Source pages were already in the wiki; only the synthesis was updated.
+
+Pages updated:
+
+- `wiki/syntheses/extending-look-twice-to-video-vqa.md` — rewritten as revision 2. New per-paper subsections for AKS and Pei (with citations to PDF sections / tables / equations); new "Proposed pipeline (revision 2)" with four explicit steps and a cost summary; new mapping table "How each problem from revision 1 is now addressed"; rewritten risks (6 items, distribution-shift-of-mask-bias replaces the visual-highlighting risk as the dominant one); updated open-design questions for supervisor discussion; verdict tightened around the sanity-check phase as the next concrete step.
+
+Key claims in the revised synthesis are anchored with `[source: raw/papers/...pdf §..., Tab/Eq...]` citations to support a supervisor-level technical discussion.
