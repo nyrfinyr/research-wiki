@@ -6,6 +6,10 @@ import { readdirSync, realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
+const SITE = 'https://nyrfinyr.github.io';
+const BASE = '/research-wiki';
+const withBase = (url) => (url === '/' ? `${BASE}/` : `${BASE}${url}`);
+
 // Build a slug → URL map for Obsidian-style [[wikilinks]].
 // Starlight serves a file at `<dir>/<name>.md` under `/<dir>/<name>/`.
 // We let users write either bare links (`[[self-attention]]`) or
@@ -23,12 +27,15 @@ for (const entry of readdirSync(docsDir, { recursive: true })) {
 }
 
 const resolveWikiLink = (perm) => {
-	if (fullMap.has(perm)) return fullMap.get(perm);
-	if (slugMap.has(perm)) return slugMap.get(perm);
-	return `/${perm}`;
+	if (fullMap.has(perm)) return withBase(fullMap.get(perm));
+	if (slugMap.has(perm)) return withBase(slugMap.get(perm));
+	return withBase(`/${perm}`);
 };
 
 export default defineConfig({
+	site: SITE,
+	base: BASE,
+	trailingSlash: 'ignore',
 	markdown: {
 		remarkPlugins: [
 			[
